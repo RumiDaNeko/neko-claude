@@ -6,10 +6,14 @@ const path = require('path');
 const PORT = Number(process.env.CLAUDE_CHAN_PORT || 47321);
 const WIN_W = 240;
 const WIN_H = 300;
+// .ico carries every size Windows asks for (tray, taskbar, alt-tab); png elsewhere
+const ICON = path.join(__dirname, 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png');
 
 let win;
 let tray;
 let ready = false;
+let wander = true;
+let inTaskbar = false;
 const pending = []; // events that arrive before the page has loaded
 
 function createWindow() {
@@ -26,6 +30,8 @@ function createWindow() {
     skipTaskbar: true,
     alwaysOnTop: true,
     focusable: true,
+    icon: ICON,
+    title: 'claude-chan',
     backgroundColor: '#00000000',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -75,7 +81,8 @@ function menuTemplate() {
     { label: 'Do a trick', click: () => send('command', 'trick') },
     { label: 'Take a nap', click: () => send('command', 'sleep') },
     { type: 'separator' },
-    { label: 'Let her wander', type: 'checkbox', checked: true, click: (i) => send('command', i.checked ? 'wander-on' : 'wander-off') },
+    { label: 'Let her wander', type: 'checkbox', checked: wander, click: (i) => { wander = i.checked; send('command', wander ? 'wander-on' : 'wander-off'); refreshTrayMenu(); } },
+    { label: 'Show in taskbar', type: 'checkbox', checked: inTaskbar, click: (i) => { inTaskbar = i.checked; win.setSkipTaskbar(!inTaskbar); refreshTrayMenu(); } },
     { label: 'Reset Claude status', click: () => send('command', 'reset') },
     { type: 'separator' },
     { label: 'Quit claude-chan', click: () => app.quit() },
@@ -102,11 +109,18 @@ function startBridge() {
 }
 
 function createTray() {
-  const icon = nativeImage.createFromPath(path.join(__dirname, 'renderer', 'icon.png'));
-  tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon.resize({ width: 16, height: 16 }));
+  tray = new Tray(nativeImage.createFromPath(ICON));
   tray.setToolTip('claude-chan');
-  tray.setContextMenu(Menu.buildFromTemplate(menuTemplate()));
+  refreshTrayMenu();
+  tray.on('click', () => tray.popUpContextMenu());
 }
+
+// checkbox states live here, so the tray menu is rebuilt whenever one changes
+function refreshTrayMenu() {
+  if (tray) tray.setContextMenu(Menu.buildFromTemplate(menuTemplate()));
+}
+
+if (process.platform === 'win32') app.setAppUserModelId('com.rumidaneko.neko-claude');
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();

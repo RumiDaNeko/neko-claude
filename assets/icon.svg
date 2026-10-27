@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- claude-chan icon: chibi head, simplified to read at 16px -->
+  <defs>
+    <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8946f" />
+      <stop offset="1" stop-color="#f0ab8c" />
+    </linearGradient>
+    <linearGradient id="iris" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a1c16" />
+      <stop offset="0.4" stop-color="#8e3a2c" />
+      <stop offset="0.8" stop-color="#d9705a" />
+      <stop offset="1" stop-color="#ffc0a8" />
+    </linearGradient>
+    <radialGradient id="cheek" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f59a9a" stop-opacity="0.8" />
+      <stop offset="1" stop-color="#f59a9a" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <g stroke="#b56e52" stroke-width="4" stroke-linejoin="round">
+    <!-- cat ears -->
+    <path d="M34,118 L30,22 Q32,14 40,18 L112,66 Z" fill="#e8946f" />
+    <path d="M222,118 L226,22 Q224,14 216,18 L144,66 Z" fill="#e8946f" />
+    <path d="M44,100 L42,36 L92,70 Z" fill="#f7c4bb" stroke="none" />
+    <path d="M212,100 L214,36 L164,70 Z" fill="#f7c4bb" stroke="none" />
+
+    <!-- hair mass + side locks -->
+    <path d="M22,150 C14,74 68,40 128,40 C188,40 242,74 234,150 L240,236 Q204,226 196,206 L60,206 Q52,226 16,236 Z" fill="url(#hair)" />
+
+    <!-- face -->
+    <path d="M38,152 C38,104 76,84 128,84 C180,84 218,104 218,152 C218,196 180,226 128,228 C76,226 38,196 38,152 Z" fill="#fdf3ec" stroke="#d9a493" stroke-width="3" />
+
+    <!-- bangs: soft clumps -->
+    <path d="M28,150 C18,76 72,44 128,44 C184,44 238,76 228,150
+             C224,138 218,126 210,118 C212,132 206,144 196,150
+             C192,138 186,128 176,120 C178,134 172,146 160,154
+             C156,140 148,128 138,120 C140,136 134,148 124,158
+             C120,144 112,130 102,122 C102,136 96,148 84,154
+             C80,140 72,128 64,122 C64,134 56,146 44,152
+             C38,152 32,152 28,150 Z" fill="url(#hair)" />
+    <!-- headband -->
+    <path d="M52,86 Q58,66 76,70 Q84,52 104,58 Q114,44 128,50 Q142,44 152,58 Q172,52 180,70 Q198,66 204,86 Q166,70 128,70 Q90,70 52,86 Z" fill="#ffffff" stroke-width="3" />
+  </g>
+
+  <!-- shine -->
+  <path d="M74,104 Q86,90 100,86" stroke="#fff4ee" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.8" />
+
+  <!-- eyes -->
+  <g>
+    <ellipse cx="92" cy="172" rx="25" ry="27" fill="#ffffff" />
+    <ellipse cx="92" cy="173" rx="23" ry="25.5" fill="url(#iris)" />
+    <ellipse cx="92" cy="175" rx="11" ry="13" fill="#3a120c" opacity="0.75" />
+    <ellipse cx="102" cy="160" rx="8.5" ry="9.5" fill="#ffffff" />
+    <circle cx="82" cy="184" r="4" fill="#ffffff" />
+    <path d="M64,160 Q74,142 96,144 Q112,146 118,158" stroke="#4a2620" stroke-width="6" stroke-linecap="round" fill="none" />
+
+    <ellipse cx="164" cy="172" rx="25" ry="27" fill="#ffffff" />
+    <ellipse cx="164" cy="173" rx="23" ry="25.5" fill="url(#iris)" />
+    <ellipse cx="164" cy="175" rx="11" ry="13" fill="#3a120c" opacity="0.75" />
+    <ellipse cx="174" cy="160" rx="8.5" ry="9.5" fill="#ffffff" />
+    <circle cx="154" cy="184" r="4" fill="#ffffff" />
+    <path d="M138,158 Q144,146 160,144 Q182,142 192,160" stroke="#4a2620" stroke-width="6" stroke-linecap="round" fill="none" />
+  </g>
+
+  <!-- blush + mouth -->
+  <ellipse cx="62" cy="204" rx="20" ry="11" fill="url(#cheek)" />
+  <ellipse cx="194" cy="204" rx="20" ry="11" fill="url(#cheek)" />
+  <path d="M120,208 Q124,213 128,209 Q132,213 136,208" stroke="#6a352a" stroke-width="4" stroke-linecap="round" fill="none" />
+
+  <!-- Clawd hairclip with its bow -->
+  <g transform="translate(150 60) rotate(12) scale(2.6)" shape-rendering="crispEdges">
+    <rect x="-1" y="-1" width="19.6" height="14.2" fill="#ffffff" opacity="0.9" />
+    <rect x="1.6" y="0" width="14.4" height="8" fill="#d97757" />
+    <rect x="0" y="3.2" width="17.6" height="3.2" fill="#d97757" />
+    <rect x="4.8" y="1.6" width="1.6" height="3.2" fill="#1f1410" />
+    <rect x="11.2" y="1.6" width="1.6" height="3.2" fill="#1f1410" />
+    <rect x="3.2" y="8" width="1.6" height="3.2" fill="#d97757" />
+    <rect x="6.4" y="8" width="1.6" height="3.2" fill="#d97757" />
+    <rect x="9.6" y="8" width="1.6" height="3.2" fill="#d97757" />
+    <rect x="12.8" y="8" width="1.6" height="3.2" fill="#d97757" />
+    <rect x="9.6" y="-3.2" width="3.2" height="3.2" fill="#6e4038" />
+    <rect x="12.8" y="-1.6" width="1.6" height="1.6" fill="#4e2a24" />
+    <rect x="14.4" y="-3.2" width="3.2" height="3.2" fill="#6e4038" />
+  </g>
+</svg>
