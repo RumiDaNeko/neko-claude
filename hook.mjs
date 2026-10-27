@@ -31,6 +31,7 @@ process.stdin.on('end', async () => {
     session: input.session_id || 'default',
     tool: input.tool_name,
     message: input.message,
+    error: typeof input.error === 'string' ? input.error.slice(0, 200) : undefined,
     cwd: input.cwd,
     at: Date.now(),
   };

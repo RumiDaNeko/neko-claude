@@ -5,7 +5,7 @@ const hit = document.getElementById('hit');
 const bubble = document.getElementById('bubble');
 const bubbleText = document.getElementById('bubble-text');
 
-const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk', 'hop', 'snack', 'megane', 'peek'];
+const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk', 'hop', 'snack', 'megane', 'peek', 'pullout', 'stalk', 'pounce', 'perch', 'stuffed'];
 
 // Goofy tricks she does now and then: [pose, duration ms, lines]
 const TRICKS = [
@@ -19,6 +19,12 @@ const GLASSES = 'round'; // work glasses: 'round' | 'half' | 'square'
 const SLEEP_AFTER_MS = 60 * 60 * 1000; // falls asleep
 const TOPPLE_AFTER_MS = 30 * 60 * 1000; // asleep this long: tips over and wakes up
 const STALE_SESSION_MS = 15 * 60 * 1000;
+const NIGHT_SLEEP_AFTER_MS = 20 * 60 * 1000; // after 23:00 she nods off sooner
+const BREAK_AFTER_MS = 60 * 60 * 1000; // an hour of coding: water break
+const BREAK_RESET_MS = 20 * 60 * 1000; // a pause this long counts as a break already
+const FULL_AFTER = 4; // treats within FULL_WINDOW_MS before she's stuffed
+const FULL_WINDOW_MS = 10 * 60 * 1000;
+const FULL_FOR_MS = 3 * 60 * 1000;
 
 const state = {
   x: 0, y: 0, w: 240, h: 300,
@@ -31,7 +37,14 @@ const state = {
   napping: false,
   leaving: false,
   sulkUntil: 0, sulkPats: 0,
+  laptopGone: false, yeetAt: 0, // she threw it: the next work session starts with a spare from her pocket
   hideSeek: null, // { phase: "going" | "hidden", side, since, hintAt }
+  bugTool: null, bugAt: 0, panicUntil: 0, // Claude's last failed tool, for the "fixed it!" moment
+  pouncing: false, pouncedAt: 0,
+  codingSince: 0, lastClaudeAt: 0, offering: false,
+  perch: null, leap: null, // perched on a window: { id, dx, until }
+  treats: [], fullUntil: 0,
+  chase: null, // the kitty: { dir, kx, phase, until }
   glassesUntil: 0, alwaysGlasses: false,
   asleepSince: 0,
   lastActivity: Date.now(),
@@ -89,6 +102,9 @@ function airReact(event) {
 
 api.onClaude((ev) => {
   const id = ev.session || 'default';
+  const at = Date.now();
+  if (ev.event === 'UserPromptSubmit' && (!state.codingSince || at - state.lastClaudeAt > BREAK_RESET_MS)) state.codingSince = at;
+  state.lastClaudeAt = at;
   if (state.hideSeek && /UserPromptSubmit|Notification/.test(ev.event)) endHideSeek();
   if (state.dragging) queueMicrotask(() => airReact(ev.event));
   const prev = sessions.get(id);
@@ -99,11 +115,13 @@ api.onClaude((ev) => {
       sessions.set(id, { status: 'idle', at: Date.now() });
       doAction('hello', 2500);
       say('Hi! Let\'s build something ✨', 3000);
+      morningCoffee();
       break;
     case 'UserPromptSubmit':
       sessions.set(id, { status: 'working', tool: null, at: Date.now() });
       turn.start = Date.now();
       turn.tools = 0;
+      turn.errors = 0;
       turn.doneUntil = 0;
       if (Math.random() < 0.4) {
         setFace('fired', 2000);
@@ -118,6 +136,16 @@ api.onClaude((ev) => {
       if (!turn.start) turn.start = Date.now();
       turn.tools++;
       if (!prev || prev.tool !== ev.tool || prev.status !== 'working') say(toolLine(ev.tool), 4000);
+      break;
+    case 'PostToolUseFailure':
+      turn.errors = (turn.errors || 0) + 1;
+      state.bugTool = ev.tool;
+      state.bugAt = Date.now();
+      oops(turn.errors);
+      break;
+    case 'PostToolUse':
+      // the command that failed earlier just went through
+      if (state.bugTool && ev.tool === state.bugTool && Date.now() - state.bugAt < 15 * 60 * 1000) fixedIt();
       break;
     case 'Notification': {
       sessions.set(id, { status: 'waiting', tool: prev?.tool, at: Date.now() });
@@ -141,7 +169,12 @@ api.onClaude((ev) => {
         doAction('cheer', 2200);
         const f = Math.random();
         if (f < 0.4) setFace('star', 2200); else if (f < 0.6) setFace('uwu', 2200);
-        say(pick(['Done! ✨', 'All finished!', 'Ta-da~!', 'Your turn!']), 5000);
+        say(turn.errors ? pick(['Done! We beat those errors ✨', 'Finished… after a fight! 💪', 'Ta-da~ bugs defeated!'])
+          : isNight() && Math.random() < 0.35 ? pick(['Done! …now go to sleep? 🌙', 'All finished~ it\'s late, you know 🌙'])
+          : pick(['Done! ✨', 'All finished!', 'Ta-da~!', 'Your turn!']), 5000);
+        state.bugTool = null;
+        // an hour of this: time for a water break
+        if (state.codingSince && Date.now() - state.codingSince > BREAK_AFTER_MS) { state.codingSince = Date.now(); setTimeout(breakReminder, 2800); }
       }
       break;
     case 'SessionEnd':
@@ -164,6 +197,8 @@ const TREATS = {
     after: () => { setFace('heart', 1800); say(pick(['Boba is life~ 🧋♡', 'The pearls are so chewy~ ♡']), 2200); popHearts(3); } },
   matcha: { face: 'sip', hello: ['Matcha~ 🍵', 'Tea time~'], during: '*sip*… ahh~',
     after: () => { setFace('uwu', 2400); say(pick(['So calming~ 🍵', 'Ahh~ peaceful…']), 2400); } },
+  water: { face: 'sip', hello: ['Water! 💧', 'Hydration time~'], during: '*gulp gulp*',
+    after: () => { setFace('uwu', 2200); say(pick(['Refreshing~ 💧', 'Ahh~ much better 💧']), 2200); } },
   milk: { face: 'sip', hello: ['Milk! 🥛', 'Gotta grow tall~'], during: '*gulp gulp*',
     after: () => { setFace('milk', 3000); say(pick(['Ehehe~ milk mustache 🥛', 'Do I have something on my face?']), 3000); } },
 };
@@ -173,9 +208,21 @@ const ITEMS = Object.keys(TREATS);
 function snack(item = 'cookie', line) {
   if (state.leaving || state.dragging) return;
   const t = TREATS[item] || TREATS.cookie;
+  const now = Date.now();
+  if (item !== 'water') {
+    if (now < state.fullUntil) {
+      setFace('xx', 1600);
+      say(pick(['N-no more… I\'m so full~', 'I can\'t… not one more bite… 😵', '*shakes head* …later…']), 2000);
+      return;
+    }
+    state.treats = state.treats.filter((t0) => now - t0 < FULL_WINDOW_MS);
+    state.treats.push(now);
+    if (state.treats.length >= FULL_AFTER) setTimeout(stuffed, 3300);
+  }
   const forgiven = sulking();
   state.sulkUntil = 0;
   for (const i of ITEMS) charEl.classList.toggle('item-' + i, i === item);
+  charEl.classList.remove('offering');
   charEl.classList.toggle('drinking', item !== 'cookie');
   charEl.classList.toggle('sipstraw', item === 'boba');
   doAction('snack', 3200);
@@ -238,6 +285,261 @@ function endHideSeek() {
   setTimeout(() => { if (!state.hideSeek) charEl.classList.remove('hiding'); }, 800);
 }
 
+// ---------- Claude hit an error / fixed it ----------
+function oops(n) {
+  state.panicUntil = Date.now() + 8000;
+  flash('jolt', 450);
+  setFace('shock', 900);
+  setTimeout(() => setFace(n >= 3 ? 'cry' : 'nervous', 6000), 900);
+  say(n >= 3 ? pick(['Why won\'t it work?! 😭', 'Another one?! T_T', 'The bugs keep coming…!'])
+    : pick(['Eek! An error! 😱', 'Uh-oh… red text!', 'Th-that\'s not supposed to happen!', 'Huh?! It broke?!']), 2600);
+}
+function fixedIt() {
+  state.bugTool = null;
+  state.panicUntil = 0;
+  setFace('star', 2400);
+  flash('sparkle', 1600);
+  popHearts(2);
+  say(pick(['Fixed it! ✨', 'It works now! 🎉', 'Bug squashed! 🐛💥', 'Green! Yatta~ ✨']), 2600);
+}
+
+// ---------- pounce on a still cursor ----------
+function feetY() { const m = svgRoot.getScreenCTM(); return state.y + m.d * 231 + m.f; }
+function updatePounce(now) {
+  if (!state.wander || state.dragging || state.falling || state.action || state.perch || state.leap || state.chase || state.hideSeek || state.leaving || state.offering) return;
+  if (state.walkTarget != null || sulking() || claudeStatus().status !== 'idle' || now - state.lastActivity > LOUNGE_AFTER_MS) return;
+  const still = now - cursor.movedAt;
+  if (still < 1200 || still > 6000 || cursor.movedAt <= state.pouncedAt) return;
+  const dx = cursor.x - (state.x + state.w / 2);
+  const fy = feetY();
+  if (Math.abs(dx) < 70 || Math.abs(dx) > 260 || cursor.y < fy - 120 || cursor.y > fy + 15) return;
+  state.pouncedAt = now;
+  if (Math.random() < 0.4) return; // not every time
+  state.dir = Math.sign(dx);
+  charEl.style.setProperty('--pdir', state.dir);
+  doAction('stalk', 1300);
+  setFace('cat', 1500);
+  say(pick(['…!', '*wiggle wiggle*', 'Target locked~', 'Nya…']), 1300);
+  setTimeout(() => {
+    if (state.dragging || state.falling || state.action !== 'stalk') return;
+    const tx = clampX(cursor.x - state.w / 2);
+    state.action = null;
+    state.pouncing = true;
+    state.vy = -10.8;
+    state.vx = (tx - state.x) / 24;
+    state.falling = true;
+  }, 1300);
+}
+function landPounce() {
+  state.pouncing = false;
+  const near = Math.abs(cursor.x - (state.x + state.w / 2)) < 70 && Math.abs(cursor.y - feetY()) < 130;
+  if (near) { setFace('star', 1800); say(pick(['Got it! ✨', 'Caught you~!', 'Gotcha! 🐾']), 2000); }
+  else { setFace('surprised', 1500); say(pick(['Eh? Where did it go?', 'Missed…!', 'Hmph, too fast!']), 2000); }
+}
+
+// ---------- break reminder: an hour of coding, have some water ----------
+function breakReminder() {
+  if (state.leaving || state.dragging || state.action || claudeStatus().status !== 'idle') return;
+  for (const i of ITEMS) charEl.classList.toggle('item-' + i, i === 'water');
+  charEl.classList.add('drinking', 'offering');
+  charEl.classList.remove('sipstraw');
+  state.offering = true;
+  doAction('snack', 6000);
+  setFace('uwu', 6000);
+  say(pick(['An hour of coding! Drink some water~ 💧', 'Break time! Here, water 💧', 'Stretch and hydrate~ 💧']), 6000);
+  setTimeout(() => {
+    if (!state.offering) return;
+    state.offering = false;
+    snack('water', 'No? Then I\'ll drink it~ 💧');
+  }, 6000);
+}
+function takeWater() {
+  state.offering = false;
+  state.action = null;
+  charEl.classList.remove('offering');
+  setFace('heart', 2000);
+  popHearts(3);
+  say(pick(['Good job~ stay hydrated ♡', 'Ehehe~ drink it all! ♡']), 2400);
+}
+
+// ---------- time of day ----------
+const isNight = () => { const h = new Date().getHours(); return h >= 23 || h < 5; };
+function morningCoffee() {
+  const d = new Date();
+  if (d.getHours() < 5 || d.getHours() >= 10) return;
+  const today = d.toDateString();
+  try { if (localStorage.getItem('morning') === today) return; localStorage.setItem('morning', today); } catch { /* fine */ }
+  setTimeout(() => { if (!state.action && claudeStatus().status === 'idle') snack('coffee', 'Good morning~ ☕'); }, 2800);
+}
+// the cap rides along on the walking (3/4) head too
+(function capToSide() {
+  const cap = document.getElementById('nightcap').cloneNode(true);
+  cap.removeAttribute('id');
+  cap.setAttribute('class', 'nightcap-side');
+  cap.setAttribute('transform', 'matrix(0.771 0 0 1 35.4 0)');
+  document.getElementById('sHead').appendChild(cap);
+})();
+
+// ---------- perching on window title bars ----------
+let wins = [];
+setInterval(async () => {
+  try { wins = (api.windows && await api.windows()) || []; } catch { wins = []; }
+  if (state.perch) updatePerch();
+}, 500);
+// where her seat sits, measured from the top of her window, when she sits
+function seatOffset() { const m = svgRoot.getScreenCTM(); return m.d * 214 + m.f; }
+const frontOf = (i, x, y) => wins.slice(0, i).some((o) => x > o.x && x < o.x + o.w && y > o.y && y < o.y + o.h);
+function perchSpot() {
+  const a = state.area;
+  const mid = state.x + state.w / 2;
+  let best = null;
+  wins.forEach((w, i) => {
+    if (w.max || w.w < 260 || w.y < a.y + 140 || w.y > a.y + a.height - 140 || w.x + w.w < a.x || w.x > a.x + a.width) return;
+    const sx = Math.min(Math.max(mid, w.x + 60), w.x + w.w - 60);
+    if (frontOf(i, sx, w.y)) return; // that bit of the bar is covered by a window in front
+    const d = Math.abs(sx - mid) + Math.abs(w.y - state.y) * 0.3;
+    if (!best || d < best.d) best = { w, sx, d };
+  });
+  return best;
+}
+function goPerch(asked) {
+  if (state.perch || state.leap || state.dragging || state.falling || state.leaving || state.hideSeek || state.chase) return;
+  if (claudeStatus().status !== 'idle') return;
+  const spot = perchSpot();
+  if (!spot) { if (asked) say(pick(['No windows to climb~', 'Hmm, nowhere to sit up there…']), 2000); return; }
+  state.action = null;
+  state.walkTarget = null;
+  state.dir = Math.sign(spot.sx - (state.x + state.w / 2)) || state.dir;
+  charEl.style.setProperty('--pdir', state.dir);
+  say(pick(['Hup!', 'Up we go~', 'Climbing!']), 1200);
+  const x1 = spot.sx - state.w / 2;
+  const y1 = spot.w.y - seatOffset();
+  state.leap = { x0: state.x, y0: state.y, x1, y1, t0: Date.now(), dur: 750, arc: 70 + Math.max(0, state.y - y1) * 0.25, win: spot.w };
+}
+function updateLeap(now) {
+  const l = state.leap;
+  const t = Math.min(1, (now - l.t0) / l.dur);
+  state.x = l.x0 + (l.x1 - l.x0) * t;
+  state.y = l.y0 + (l.y1 - l.y0) * t - l.arc * 4 * t * (1 - t);
+  api.setPos(state.x, state.y);
+  if (t < 1) return;
+  state.leap = null;
+  sitOn(l.win, 'Nice view up here~ ✨');
+}
+function sitOn(w, line) {
+  state.perch = { id: w.id, dx: state.x - w.x, until: Date.now() + 40000 + Math.random() * 50000 };
+  state.falling = false;
+  state.vx = state.vy = 0;
+  state.y = w.y - seatOffset();
+  api.setPos(state.x, state.y);
+  flash('land', 350);
+  setFace('cat', 1600);
+  say(line, 2200);
+}
+function updatePerch() {
+  const p = state.perch;
+  const w = wins.find((o) => o.id === p.id);
+  // the window closed, minimised or maximised: down she goes
+  if (!w || w.max) return dropFromPerch();
+  const x = Math.min(Math.max(w.x + p.dx, w.x - state.w / 2 + 30), w.x + w.w - state.w / 2 - 30);
+  const y = w.y - seatOffset();
+  if (Math.abs(x - state.x) > 0.5 || Math.abs(y - state.y) > 0.5) { state.x = x; state.y = y; api.setPos(x, y); }
+}
+async function dropFromPerch() {
+  state.perch = null;
+  state.area = await api.workAreaAt(state.x + state.w / 2, state.y + state.h);
+  state.vx = 0;
+  state.vy = -2;
+  state.falling = true;
+  setFace('surprised', 1400);
+  say(pick(['Waah—!', 'Hey! My seat!', 'Eek—!']), 1600);
+}
+async function hopDown() {
+  if (!state.perch) return;
+  state.perch = null;
+  state.area = await api.workAreaAt(state.x + state.w / 2, state.y + state.h);
+  state.pouncing = false;
+  state.vx = state.dir * 2.5;
+  state.vy = -7;
+  state.falling = true;
+  say(pick(['Wheee~', 'Coming down!', 'Hup!']), 1400);
+}
+// tossed through the air: land on a title bar if one is right under her
+function landOnWindow() {
+  const off = seatOffset();
+  const seatNow = state.y + off;
+  const seatBefore = seatNow - state.vy;
+  const mid = state.x + state.w / 2;
+  for (let i = 0; i < wins.length; i++) {
+    const w = wins[i];
+    if (w.max || seatBefore > w.y || seatNow < w.y || mid < w.x + 40 || mid > w.x + w.w - 40 || frontOf(i, mid, w.y)) continue;
+    if (w.y < state.area.y + 100) continue;
+    sitOn(w, pick(['Safe landing~ ✨', 'Nailed it! ✨', 'Ta-da~ I\'m up here!']));
+    return true;
+  }
+  return false;
+}
+
+// ---------- too many treats ----------
+function stuffed() {
+  if (state.dragging || state.leaving) return;
+  state.fullUntil = Date.now() + FULL_FOR_MS;
+  state.treats = [];
+  doAction('stuffed', 7000);
+  setFace('drowsy', 3800);
+  say(pick(['Ugh… so full~ I can\'t move…', 'I ate too much… 😵', '*flops* …so… full…']), 3400);
+  setTimeout(() => { setFace('blush', 2200); say('*hic* …excuse me! 😳', 2200); }, 4000);
+}
+
+// ---------- the kitty dashes by; she gives chase ----------
+const kittyEl = document.getElementById('kitty');
+function startKitty(asked) {
+  if (state.chase || state.perch || state.leap || state.dragging || state.falling || state.leaving || state.hideSeek || state.offering) return;
+  if (claudeStatus().status !== 'idle') { if (asked) say('Not now, I\'m working~', 1500); return; }
+  const a = state.area;
+  let dir = Math.random() < 0.5 ? 1 : -1;
+  const room = (d) => (d > 0 ? a.x + a.width - (state.x + state.w) : state.x - a.x);
+  if (room(dir) < 250) dir = -dir;
+  state.action = null;
+  state.walkTarget = null;
+  state.chase = { dir, kx: dir > 0 ? state.x - 40 : state.x + state.w + 40, phase: 'pass', until: 0 };
+  kittyEl.classList.add('on');
+  kittyEl.classList.toggle('left', dir < 0);
+}
+function updateChase(dt, now) {
+  const c = state.chase;
+  c.kx += c.dir * 4.6 * dt;
+  const mid = state.x + state.w / 2;
+  if (c.phase === 'pass' && (c.kx - mid) * c.dir > 10) {
+    c.phase = 'notice';
+    c.until = now + 550;
+    state.dir = c.dir;
+    setFace('surprised', 700);
+    say(pick(['!! A kitty!', 'Nya?! A cat!', 'Kitty!! 🐈']), 1200);
+  } else if (c.phase === 'notice' && now > c.until) {
+    c.phase = 'run';
+    c.until = now + 3200;
+    setFace('star', 3200);
+    say(pick(['Wait for meee~!', 'Come back, kitty!', 'Let me pet you!!']), 2400);
+  } else if (c.phase === 'run') {
+    const x = clampX(state.x + c.dir * 3.4 * dt);
+    const stuck = x === state.x;
+    state.x = x;
+    api.setPos(state.x, state.y);
+    if (now > c.until || stuck) {
+      state.chase = null;
+      kittyEl.classList.remove('on');
+      setFace('teary', 2200);
+      say(pick(['Haa… haa… it got away~', 'So fast…', 'Next time, kitty…']), 2600);
+      return;
+    }
+  }
+  // kitty runs along the floor line; its screen x is kx
+  const b = svgRoot.getBoundingClientRect();
+  kittyEl.style.left = (c.kx - state.x - 24) + 'px';
+  kittyEl.style.top = (b.top + b.height * (231 / 240) - 33) + 'px';
+}
+
 // Claude closed: a tiny EXIT door pops up, she waves and backs into it, then the app quits.
 // (the SessionStart hook brings her back next time)
 const LEAVE_MS = 6000;
@@ -267,8 +569,11 @@ api.onCommand((cmd) => {
   if (cmd === 'leave') leave();
   if (cmd === 'snack') snack();
   if (cmd === 'hide') startHideSeek();
+  if (cmd === 'perch') goPerch(true);
+  if (cmd === 'kitty') startKitty(true);
   if (cmd.startsWith('treat:')) snack(cmd.slice(6));
   if (cmd === 'glasses-on') { state.alwaysGlasses = true; putOnGlasses(0); }
+  if (cmd === 'glasses-on-quiet') state.alwaysGlasses = true; // remembered from last time
   if (cmd === 'glasses-off') { state.alwaysGlasses = false; state.glassesUntil = 0; say('*takes off glasses*', 1500); }
 });
 
@@ -323,7 +628,7 @@ let cursor = { x: 0, y: 0, movedAt: 0 };
 api.onCursor((p) => {
   if (p.x !== cursor.x || p.y !== cursor.y) cursor = { x: p.x, y: p.y, movedAt: Date.now() };
 });
-const TRACK_POSES = ['idle', 'lounge', 'hello', 'cheer', 'wait', 'dance', 'hop', 'megane'];
+const TRACK_POSES = ['idle', 'lounge', 'hello', 'cheer', 'wait', 'dance', 'hop', 'megane', 'stalk', 'perch'];
 function updateTracking(pose) {
   const glancing = pose === 'work' && charEl.classList.contains('glance');
   const on = (TRACK_POSES.includes(pose) || glancing)
@@ -467,6 +772,9 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('flip', state.dir < 0 && pose === 'walk');
   if (!spinning) charEl.classList.toggle('view-back', pose === 'sulk');
   charEl.classList.toggle('specs', state.alwaysGlasses || Date.now() < state.glassesUntil);
+  charEl.classList.toggle('panic', Date.now() < state.panicUntil);
+  charEl.classList.toggle('night', isNight());
+  charEl.classList.toggle('running', !!state.chase && state.chase.phase === 'run');
   updateTracking(pose);
   updateBadge(pose);
 }
@@ -484,21 +792,30 @@ function choosePose(now) {
     const c = claudeStatus().status;
     return ['drag', c === 'working' ? ['airwork'] : c === 'waiting' ? ['airwait'] : []];
   }
+  if (state.leap || (state.falling && state.pouncing)) return ['pounce'];
   if (state.falling) return ['fall'];
+  if (state.chase) return [state.chase.phase === 'run' ? 'walk' : 'idle'];
   if (state.action && now < state.actionUntil) return [state.action, now < state.happyUntil ? ['happy'] : []];
   state.action = null;
 
   const claude = claudeStatus();
+  if (state.perch && claude.status !== 'idle') { hopDown(); return ['pounce']; }
   if (claude.status === 'waiting') return ['wait'];
   if (claude.status === 'working') {
     state.walkTarget = null;
+    if (state.laptopGone) {
+      if (now < state.sulkUntil && now - state.yeetAt < 5000) return ['sulk'];
+      pullLaptop();
+      return [state.action];
+    }
     return ['work', claude.tool ? [] : ['thinking']];
   }
   if (bubbleSticky) hideBubble();
   if (now < state.sulkUntil) return ['sulk'];
   if (state.hideSeek && state.hideSeek.phase === 'hidden') return ['peek'];
+  if (state.perch) return ['perch'];
 
-  if (state.napping || now - state.lastActivity > SLEEP_AFTER_MS) {
+  if (state.napping || now - state.lastActivity > (isNight() ? NIGHT_SLEEP_AFTER_MS : SLEEP_AFTER_MS)) {
     if (!state.asleepSince) state.asleepSince = now;
     if (now - state.asleepSince > TOPPLE_AFTER_MS) {
       topple();
@@ -520,6 +837,12 @@ function think(now) {
   if (now < state.nextIdeaAt) return;
   state.nextIdeaAt = now + 5000 + Math.random() * 9000;
   if (state.hideSeek) return updateHideSeek(now);
+  if (state.perch) {
+    if (now > state.perch.until) return hopDown();
+    if (Math.random() < 0.25) say(pick(['Nice view up here~', '*swings legs*', 'I\'m taller than you now~', '♪~']), 2200);
+    return;
+  }
+  if (state.chase || state.leap || state.offering) return;
   if (!state.wander || state.dragging || state.falling || state.action || state.napping || now < state.sulkUntil) return;
   if (claudeStatus().status !== 'idle') return;
   if (now - state.lastActivity > LOUNGE_AFTER_MS) {
@@ -529,6 +852,14 @@ function think(now) {
     return;
   }
 
+  // late at night she gets sleepy and says so
+  if (isNight() && Math.random() < 0.08) { setFace('yawn', 2200); say(pick(['It\'s late… 🌙', 'Shouldn\'t you sleep? 🌙', '*yawn* …so late~']), 2600); return; }
+  // the cursor moved off somewhere: tag along
+  const cdx = cursor.x - (state.x + state.w / 2);
+  if (now - cursor.movedAt < 2500 && cursor.y > state.y + 60 && Math.abs(cdx) > 150 && Math.abs(cdx) < 700 && Math.random() < 0.6) {
+    state.walkTarget = clampX(cursor.x - state.w / 2 - Math.sign(cdx) * 70);
+    return;
+  }
   const r = Math.random();
   if (r < 0.5) {
     const span = Math.min(500, state.area.width / 2);
@@ -548,6 +879,10 @@ function think(now) {
     say(pick(['~♪', 'Hmm hmm~', 'What should we make?', 'Stretch break!', '☕?']), 2500);
   } else if (r < 0.88) {
     putOnGlasses();
+  } else if (r < 0.92) {
+    goPerch(false);
+  } else if (r < 0.94) {
+    startKitty(false);
   }
 }
 
@@ -561,18 +896,23 @@ function tick(t) {
   updatePat(t);
   updateWorkHead(t, dt);
   updateTickle(Date.now());
+  if (state.leap) updateLeap(now);
+  if (state.chase) updateChase(dt, now);
+  updatePounce(now);
 
   if (state.falling) {
     state.vy += 0.9 * dt;
     state.x = clampX(state.x + state.vx * dt);
     state.y += state.vy * dt;
     state.vx *= 0.99;
+    if (state.vy > 0 && !state.pouncing && landOnWindow()) return void requestAnimationFrame(tick);
     if (state.y >= ground()) {
       state.y = ground();
       state.falling = false;
       if (state.vy > 22) { charEl.classList.add('oops'); setFace(Math.random() < 0.5 ? 'cry' : 'teary', 2200); say(pick(['Ouch!', 'Owie… >_<', 'That hurt!']), 2200); setTimeout(() => charEl.classList.remove('oops'), 1500); }
       state.vy = state.vx = 0;
       flash('land', 350);
+      if (state.pouncing) landPounce();
     }
     api.setPos(state.x, state.y);
   } else if (!state.dragging && state.walkTarget != null && !state.action && claudeStatus().status === 'idle') {
@@ -621,6 +961,9 @@ hit.addEventListener('pointermove', (e) => {
     state.walkTarget = null;
     state.action = null;
     if (state.hideSeek) endHideSeek();
+    state.perch = null;
+    state.leap = null;
+    state.pouncing = false;
     say(pick(['Waah!', 'Eek!', 'Wheee~', 'Where are we going?']), 1500);
     setFace(Math.random() < 0.3 ? 'shock' : 'surprised', 1200);
     drag.since = Date.now();
@@ -639,6 +982,7 @@ hit.addEventListener('pointerup', async (e) => {
   const d = drag;
   drag = null;
   if (!hovering) api.ignoreMouse(true);
+  if (!d.moved && state.offering) return takeWater();
   if (!d.moved && state.hideSeek) return found();
   if (!d.moved) return onCheek(e) ? cheek() : onHead(e) ? pat() : poke();
 
@@ -835,10 +1179,12 @@ function pat() {
     if (++state.sulkPats < 3) { say(pick(['Hmph…', '…', '*pouts*']), 1400); return; }
     // made up: turns back around
     state.sulkUntil = 0;
-    doAction('hello', 1500);
+    // no standing up from the cushion mid-work
+    if (claudeStatus().status === 'idle') doAction('hello', 1500);
     setFace('blush', 2600);
     say(pick(['…fine. Forgiven ♡', 'Mou… okay ♡', '…don\'t do it again ♡']), 2600);
-    setTimeout(() => { if (!charEl.classList.contains('has-face')) { setFace('cry', 2600); say('…but my laptop T_T', 2600); } }, 3200);
+    // no crying over the laptop while typing on one
+    setTimeout(() => { if (state.laptopGone && claudeStatus().status === 'idle' && !charEl.classList.contains('has-face')) { setFace('cry', 2600); say('…but my laptop T_T', 2600); } }, 3200);
     for (let i = 0; i < 3; i++) setTimeout(spawnHeart, i * 120);
     return;
   }
@@ -860,9 +1206,21 @@ function pat() {
   else say(pick(['♡', 'Hehe~', 'Pat pat~']), 1400);
 }
 
+// she needs a laptop again after throwing hers: a spare comes out of the apron pocket
+function pullLaptop() {
+  state.laptopGone = false;
+  const grumpy = sulking();
+  state.sulkUntil = 0;
+  doAction('pullout', 2200);
+  setFace(grumpy ? 'pout' : 'smug', 2600);
+  say(grumpy ? pick(['Hmph… work is work. 💢', '…fine. I have a spare. Hmph.']) : pick(['Good thing I keep a spare~ ✨', '*pulls a laptop out of her pocket*', 'Backup laptop, go! ✨']), 2600);
+}
+
 // teased too much: up goes the laptop, and it's coming at you
 function yeet() {
   pokes.length = 0;
+  state.laptopGone = true;
+  state.yeetAt = Date.now();
   state.sulkUntil = Date.now() + 1800 + 25000;
   state.sulkPats = 0;
   doAction('yeet', 1800);

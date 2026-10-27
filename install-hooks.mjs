@@ -16,7 +16,7 @@ const target = global
 
 const hookPath = path.join(here, 'hook.mjs').replace(/\\/g, '/');
 const command = `node "${hookPath}"`;
-const EVENTS = ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'Notification', 'Stop', 'SessionEnd'];
+const EVENTS = ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'PostToolUseFailure', 'Notification', 'Stop', 'SessionEnd'];
 
 let settings = {};
 if (fs.existsSync(target)) settings = JSON.parse(fs.readFileSync(target, 'utf8'));
@@ -29,7 +29,9 @@ for (const ev of EVENTS) {
   })).filter((g) => g.hooks.length);
   if (!remove) {
     const group = { hooks: [{ type: 'command', command, timeout: 5 }] };
-    if (ev === 'PreToolUse') group.matcher = '*';
+    if (ev === 'PreToolUse' || ev === 'PostToolUseFailure') group.matcher = '*';
+    // successes only matter for commands (a failing test that passes again)
+    if (ev === 'PostToolUse') group.matcher = 'Bash|PowerShell';
     groups.push(group);
   }
   if (groups.length) settings.hooks[ev] = groups; else delete settings.hooks[ev];
