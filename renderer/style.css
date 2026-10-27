@@ -1392,7 +1392,9 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 #char.moonwalk #sArmF { animation: none !important; transform: rotate(-8deg); }
 #char.moonwalk #sArmB { animation: none !important; transform: rotate(8deg); }
 #char.moonwalk #sHead { animation: mwNod 0.75s ease-in-out infinite !important; }
-@keyframes mwNod { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-3deg); } }
+/* chin down, eyes under the brim; the hat arm tilts with the head so the hand stays on the brim */
+@keyframes mwNod { 0%, 100% { transform: rotate(9deg); } 50% { transform: rotate(12deg); } }
+#char.moonwalk #sHatArm { transform-box: view-box; transform-origin: 104px 140px; animation: mwNod 0.75s ease-in-out infinite; }
 #char.moonwalk #shadow { animation: none; }
 
 /* ---------- michael clawdeson: fedora, one sparkly glove, the toe-stand ---------- */
@@ -1427,3 +1429,12 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 #sHatArm { display: none; }
 #char.moonwalk #sHatArm { display: inline; }
 #char.moonwalk #sArmF { display: none; }
+
+/* michael clawdeson's black vest (all three views) */
+.vest { display: none; }
+#char.mj .vest { display: inline; }
+.vest-panel { fill: #2a2630; stroke: #111; stroke-width: 1; stroke-linejoin: round; }
+.vest-button { fill: #e9e4d6; }
+/* toe-stand: chin tucked down and to the side (the hat arm goes with the head) */
+#char.toestand #head, #char.toestand #hatArm { transform-box: view-box; transform-origin: 100px 140px; animation: chinDown 1.5s ease-out both; }
+@keyframes chinDown { 0% { transform: none; } 20%, 85% { transform: translateY(3px) rotate(7deg); } 100% { transform: none; } }
