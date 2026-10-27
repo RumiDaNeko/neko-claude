@@ -130,7 +130,11 @@ api.onClaude((ev) => {
   if (state.hideSeek && /UserPromptSubmit|Notification/.test(ev.event)) endHideSeek();
   if (state.dragging) queueMicrotask(() => airReact(ev.event));
   const prev = sessions.get(id);
-  wake(true);
+  quietSleep = false;
+  if (state.asleepSince && bedHours()) {
+    if (ev.event === 'PreToolUse' && Math.random() < 0.12) say(pick(['zzz… *mumbles* …tests pass…', '…mmh… git push… zzz', '*sleep-talks* …one more bug…', 'zzz… Claude… do your best… zzz']), 2400);
+    quietSleep = true; // she keeps track of Claude, but sleeps through it: no lines, faces, poses or sounds
+  } else wake(true);
   switch (ev.event) {
     case 'SessionStart':
       if (state.leaving) cancelLeave();
@@ -237,6 +241,7 @@ api.onClaude((ev) => {
       doAction('hello', 1800);
       break;
   }
+  quietSleep = false;
 });
 
 // a cookie from the menu: three bites, crumbs, heart eyes (and all is forgiven)
@@ -452,6 +457,8 @@ function takeWater() {
 
 // ---------- time of day ----------
 const isNight = () => { const h = new Date().getHours(); return h >= 23 || h < 5; };
+// once she's gone to bed she sleeps till 8 (Claude can't wake her then, only you can)
+const bedHours = () => { const h = new Date().getHours(); return h >= 23 || h < 8; };
 function morningCoffee() {
   const d = new Date();
   if (d.getHours() < 5 || d.getHours() >= 10) return;
@@ -699,23 +706,25 @@ async function hopDown() {
   say(pick(['Wheee~', 'Coming down!', 'Hup!']), 1400);
 }
 // falling past a window: a gentle drop lands her sitting on it; a fast one, she grabs the edge and climbs up
-function catchWindow() {
+// prevY: where she was last frame (a fast fall moves her many pixels per frame, so check the whole stretch)
+function catchWindow(prevY) {
   if (state.hideAfterLanding) return false; // on her way down to play hide and seek
   const mid = state.x + state.w / 2;
   const seatNow = state.y + seatOffset();
   const handNow = state.y + handOffset();
+  const fell = state.y - prevY;
   for (let i = 0; i < wins.length; i++) {
     const w = wins[i];
     if (w.min || w.max || w.id === state.noCatchId || mid < w.x + 40 || mid > w.x + w.w - 40 || w.y < state.area.y + 100) continue;
     if (frontOf(i, mid, w.y)) continue;
-    if (state.vy < 7 && seatNow - state.vy <= w.y && seatNow >= w.y) {
+    if (state.vy < 7 && seatNow - fell <= w.y && seatNow >= w.y) {
       sitOn(w);
       flash('land', 350);
       setFace('cat', 1600);
       say(pick(['Safe landing~ ✨', 'Nailed it! ✨', 'Ta-da~ I\'m up here!']), 2200);
       return true;
     }
-    if (handNow - state.vy <= w.y && handNow >= w.y) {
+    if (handNow - fell <= w.y && handNow >= w.y) {
       sitOn(w, true);
       setFace('nervous', HANG_MS + CLIMB_MS);
       say(pick(['Hnngh—! Caught it!', '*grabs on*', 'S-safe…!']), 1600);
@@ -830,6 +839,7 @@ const SFX = {
   meow: () => { tone(700, 1100, 0.12, 'sawtooth', 0.03); tone(1100, 620, 0.25, 'sawtooth', 0.03, 0.12); },
 };
 function sfx(name) {
+  if (quietSleep) return;
   if (!soundOn) return;
   try { actx = actx || new AudioContext(); SFX[name](); } catch { /* no audio */ }
 }
@@ -1164,7 +1174,10 @@ function nextToast() {
   }, 3600);
 }
 
+// set while a Claude event is handled with her asleep in bed
+let quietSleep = false;
 function say(text, ms = 3000, sticky = false) {
+  if (quietSleep) return;
   clearTimeout(bubbleTimer);
   bubbleText.textContent = text;
   bubble.title = text;
@@ -1272,6 +1285,7 @@ function updateTracking(pose) {
 })();
 
 function setFace(name, ms = 0) {
+  if (quietSleep) return;
   clearTimeout(faceTimer);
   charEl.classList.remove('has-face', ...FACES.map((f) => 'face-' + f));
   if (!name) return;
@@ -1340,6 +1354,7 @@ function spin(times = 1, stepMs = 85) {
 }
 
 function doAction(name, ms) {
+  if (quietSleep) return;
   state.action = name;
   state.actionUntil = Date.now() + ms;
   state.walkTarget = null;
@@ -1347,6 +1362,7 @@ function doAction(name, ms) {
 
 // slept her fill (an hour's nap, or the night's over): stretches and gets up
 function wakeFromNap() {
+  state.inBed = false;
   wake();
   achieve('nap');
   doAction('cheer', 1800);
@@ -1362,14 +1378,20 @@ function wake(fromClaude = false) {
   state.napping = false;
   if (fromClaude) { state.grumpyNight = false; return; }
   if (state.juice && wasAsleep && !isNight()) say(pick(['…is the quota back yet? 😪', '*mumbles* …still recharging…', 'Five more minutes… till the reset~ 🔋']), 2400);
-  if (isNight() && (wasAsleep || state.grumpyNight)) {
-    // woken up in the middle of the night: grumpy, and she heads back to bed in a few seconds
+  if (bedHours() && (wasAsleep || state.grumpyNight)) {
+    // woken up in bed: grumpy, and she heads back to bed in a few seconds
     state.lastActivity = Date.now() - NIGHT_SLEEP_AFTER_MS + BACK_TO_BED_MS;
     if (wasAsleep) {
       state.grumpyNight = true;
-      achieve('grumpy');
       setFace('pout', 3000);
-      say(pick(['Mmh… it\'s the middle of the night… 💢', 'Five more minutes… 😾', 'Nooo… I was sleeping… 💢', '*grumble* …it\'s so late…']), 2800);
+      const h = new Date().getHours();
+      if (h >= 6 && h < 8) {
+        achieve('earlybird');
+        say(pick(['Mmh… it\'s not even 8 yet… ☀️😪', 'Too early… the sun\'s barely up… 😾', '*squints at the sunrise* …five more minutes~']), 2800);
+      } else {
+        achieve('grumpy');
+        say(pick(['Mmh… it\'s the middle of the night… 💢', 'Five more minutes… 😾', 'Nooo… I was sleeping… 💢', '*grumble* …it\'s so late…']), 2800);
+      }
     }
   }
 }
@@ -1448,6 +1470,8 @@ function choosePose(now) {
   if (state.action && now < state.actionUntil) return [state.action, now < state.happyUntil ? ['happy'] : []];
   state.action = null;
 
+  // asleep in bed: she sleeps through Claude's work (only you can wake her)
+  if (state.asleepSince && bedHours()) { state.inBed = true; return ['sleep', ['lie', 'inbed']]; }
   const claude = claudeStatus();
   if (claude.status === 'waiting') return ['wait'];
   if (claude.status === 'working') {
@@ -1464,14 +1488,16 @@ function choosePose(now) {
   if (state.hideSeek && state.hideSeek.phase === 'hidden') return ['peek'];
   if (state.perch) return [state.perch.climb ? state.perch.climb.stage : 'perch', state.perch.moving ? ['quake'] : []];
 
-  if (state.napping || now - state.lastActivity > (isNight() ? NIGHT_SLEEP_AFTER_MS : SLEEP_AFTER_MS)) {
+  // 8 o'clock: the night in bed is over, however long she's been back asleep
+  if (state.inBed && !bedHours()) { state.inBed = false; wakeFromNap(); return ['idle']; }
+  if (state.napping || now - state.lastActivity > (bedHours() ? NIGHT_SLEEP_AFTER_MS : SLEEP_AFTER_MS)) {
     if (!state.asleepSince) {
       state.asleepSince = now;
       state.grumpyNight = false;
       if (isNight()) { achieve('bed'); say(pick(['Bedtime~ 🛏️', 'Good night… 🌙', '*yawn* …off to bed~']), 2200); }
     }
     // after 23:00 a little bed pops up and she sleeps in it till morning
-    if (isNight()) return ['sleep', ['lie', 'inbed']];
+    if (bedHours()) { state.inBed = true; return ['sleep', ['lie', 'inbed']]; }
     const slept = now - state.asleepSince;
     if (slept > NAP_WAKE_MS && !state.juice) { wakeFromNap(); return ['idle']; }
     return ['sleep', slept > LIE_DOWN_MS ? ['lie'] : []];
@@ -1580,13 +1606,16 @@ function tick(t) {
   if (state.falling) {
     state.vy += 0.9 * dt;
     state.x = clampX(state.x + state.vx * dt);
+    const prevY = state.y;
     state.y += state.vy * dt;
     state.vx *= 0.99;
-    if (state.vy > 0 && !state.pouncing && catchWindow()) return void requestAnimationFrame(tick);
+    if (state.vy > 0 && !state.pouncing && catchWindow(prevY)) return void requestAnimationFrame(tick);
     if (state.y >= ground()) {
       state.y = ground();
       state.falling = false;
       if (state.vy > 22) { charEl.classList.add('oops'); setFace(Math.random() < 0.5 ? 'cry' : 'teary', 2200); say(pick(['Ouch!', 'Owie… >_<', 'That hurt!']), 2200); setTimeout(() => charEl.classList.remove('oops'), 1500); }
+      // a smaller drop (off a low window, or a toss): still an ow, just no tears
+      else if (state.vy > 13 && !state.pouncing) { flash('oops', 900); setFace('pout', 1500); say(pick(['Ow!', 'Ow ow ow…', 'Oof!', '*rubs bottom* …ow.']), 1600); }
       state.vy = state.vx = 0;
       flash('land', 350);
       state.noCatchId = null;
