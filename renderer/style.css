@@ -1325,3 +1325,10 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 #char.running .d2 { animation-delay: -0.11s; }
 #char.running .d3 { animation-delay: -0.23s; }
 @keyframes dustPuff { 0% { opacity: 0.85; transform: translate(0, 0) scale(0.4); } 100% { opacity: 0; transform: translate(-16px, -4px) scale(1.5); } }
+
+/* ---------- up on a window while Claude works or needs you: no cushion, legs over the edge ---------- */
+#char.perched #cushion, #char.perched #shadow { display: none !important; }
+#char.perched.work .sit-leg:nth-of-type(1) { animation: kick 1.6s ease-in-out infinite; transform-origin: 50% 0%; }
+#char.perched.wait #legL, #char.perched.wait #legR { display: none; }
+#char.perched.wait #sit { display: inline; }
+#char.perched.wait #body { animation: none; transform: translateY(16px); }

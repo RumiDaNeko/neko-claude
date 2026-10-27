@@ -914,6 +914,7 @@ function setPose(pose, extra = []) {
   if (!spinning) charEl.classList.toggle('view-back', pose === 'sulk');
   charEl.classList.toggle('specs', state.alwaysGlasses || Date.now() < state.glassesUntil);
   charEl.classList.toggle('panic', Date.now() < state.panicUntil);
+  charEl.classList.toggle('perched', !!state.perch && !state.perch.climb); // working / waving up on a window
   charEl.classList.toggle('night', isNight());
   charEl.classList.toggle('running', (!!state.chase && state.chase.phase === 'run') || (!!state.hideSeek && state.hideSeek.phase === 'going' && state.walkTarget != null));
   updateTracking(pose);
@@ -940,7 +941,6 @@ function choosePose(now) {
   state.action = null;
 
   const claude = claudeStatus();
-  if (state.perch && claude.status !== 'idle') { hopDown(); return ['pounce']; }
   if (claude.status === 'waiting') return ['wait'];
   if (claude.status === 'working') {
     state.walkTarget = null;
@@ -979,6 +979,7 @@ function think(now) {
   state.nextIdeaAt = now + 5000 + Math.random() * 9000;
   if (state.hideSeek) return updateHideSeek(now);
   if (state.perch) {
+    if (claudeStatus().status !== 'idle') return; // busy up here: stay put
     if (now > state.perch.until) return hopDown();
     if (Math.random() < 0.25) say(pick(['Nice view up here~', '*swings legs*', 'I\'m taller than you now~', '♪~']), 2200);
     return;
