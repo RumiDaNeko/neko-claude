@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
-<title>claude-chan</title>
+<title>clawde~</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -47,16 +47,27 @@
           <stop offset="1" stop-color="#e8775a" />
         </radialGradient>
         <clipPath id="faceClip"><path d="M46,106 C46,80 66,62 100,62 C134,62 154,80 154,106 C154,127 133,139 100,140 C67,139 46,127 46,106 Z" /></clipPath>
-      </defs>
-
-      <ellipse id="shadow" cx="100" cy="233" rx="30" ry="4.5" />
-
-      <g id="body" filter="url(#soften)">
-        <!-- long wavy hair behind everything; sways with #head -->
-        <g id="puffs"><g transform="translate(100 140) scale(1.12) translate(-100 -140)">
+        <g id="hairLong"><g transform="translate(100 140) scale(1.12) translate(-100 -140)">
           <path class="hair-long" d="M56,80 C40,100 36,124 40,146 C43,162 36,172 38,184 C40,194 48,198 46,206 C42,210 36,208 34,203 C35,213 46,217 54,211 C58,206 58,198 62,192 C64,186 68,182 72,178 L128,178 C132,182 136,186 138,192 C142,198 142,206 146,211 C154,217 165,213 166,203 C164,208 158,210 154,206 C152,198 160,194 162,184 C164,172 157,162 160,146 C164,124 160,100 144,80 Z" />
           <path class="hair-strand" d="M50,104 C42,130 50,160 42,186 C40,196 44,202 44,206 M60,120 C54,146 62,168 56,192 M150,104 C158,130 150,160 158,186 C160,196 156,202 156,206 M140,120 C146,146 138,168 144,192" />
         </g></g>
+      <clipPath id="hairHalfL" clipPathUnits="userSpaceOnUse"><rect x="-40" y="-40" width="140" height="320" /></clipPath>
+      <clipPath id="hairHalfR" clipPathUnits="userSpaceOnUse"><rect x="100" y="-40" width="140" height="320" /></clipPath>
+    </defs>
+
+      <ellipse id="shadow" cx="100" cy="233" rx="30" ry="4.5" />
+
+      <!-- floor cushion: outside #body so it stays put when she moves -->
+      <g id="cushion" filter="url(#soften)"><g transform="translate(0 16)">
+        <ellipse cx="100" cy="214" rx="52" ry="10" class="cushion" />
+        <path class="cushion-top" d="M52,211 Q100,200 148,211" />
+      </g></g>
+      <g id="body" filter="url(#soften)">
+        <!-- long wavy hair behind everything; sways with #head -->
+        <g id="puffs">
+          <g id="puffL" clip-path="url(#hairHalfL)"><use href="#hairLong" /></g>
+          <g id="puffR" clip-path="url(#hairHalfR)"><use href="#hairLong" /></g>
+        </g>
 
         <!-- cat tail -->
         <g id="cattail">
@@ -66,8 +77,6 @@
 
         <!-- sitting (while Claude works): floor cushion + legs toward the viewer -->
         <g id="sit">
-          <ellipse cx="100" cy="214" rx="52" ry="10" class="cushion" />
-          <path class="cushion-top" d="M52,211 Q100,200 148,211" />
           <g class="sit-leg">
             <rect x="83" y="198" width="10" height="12" rx="5" class="skin" />
             <ellipse cx="87" cy="213" rx="7.5" ry="8" class="sock" />

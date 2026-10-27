@@ -5,7 +5,7 @@ const hit = document.getElementById('hit');
 const bubble = document.getElementById('bubble');
 const bubbleText = document.getElementById('bubble-text');
 
-const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple'];
+const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet'];
 
 // Goofy tricks she does now and then: [pose, duration ms, lines]
 const TRICKS = [
@@ -306,6 +306,7 @@ function tick(t) {
   think(now);
   updateHearts(t);
   updatePat(t);
+  updateWorkHead(t, dt);
 
   if (state.falling) {
     state.vy += 0.9 * dt;
@@ -474,6 +475,16 @@ function pat() {
   else say(pick(['♡', 'Hehe~', 'Pat pat~']), 1400);
 }
 
+// teased too much: up goes the laptop, and it's coming at you
+function yeet() {
+  pokes.length = 0;
+  doAction('yeet', 1800);
+  setFace('pout', 3200);
+  say('THAT\'S IT!! 💢', 900);
+  setTimeout(() => say(pick(['Take THIS!', 'Hmph!! 💢', '*yeet*']), 1300), 900);
+  setTimeout(() => say(pick(['…oops. That was my laptop.', 'Hmph. Serves you right.', 'I\'m not sorry!']), 2600), 2200);
+}
+
 function poke() {
   if (claudeStatus().status === 'waiting') {
     say('Go check the terminal! 👉', 2500);
@@ -483,6 +494,7 @@ function poke() {
   const now = Date.now();
   pokes.push(now);
   while (pokes.length && now - pokes[0] > 6000) pokes.shift();
+  if (pokes.length >= 8) return yeet();
   if (pokes.length >= 5) {
     setFace('pout', 2600);
     say(pick(['Mou! Stop it! 💢', 'Hmph!', 'I\'m not a button!']), 2600);
@@ -496,6 +508,21 @@ function poke() {
   doAction('hello', 900);
   if (Math.random() < 0.5) setFace('wink', 1200); else state.happyUntil = now + 900;
   say(pick(POKE_LINES), 2000);
+}
+
+// working head: nods over the keyboard, eases into a slow sway while glancing up
+let glanceMix = 0;
+let workT0 = null;
+function updateWorkHead(t, dt) {
+  if (!charEl.classList.contains('work')) { glanceMix = 0; workT0 = null; return; }
+  if (workT0 === null) workT0 = t;
+  const target = charEl.classList.contains('glance') ? 1 : 0;
+  glanceMix += (target - glanceMix) * Math.min(1, dt * 0.06);
+  const nod = (1 - Math.cos(((t - workT0) / 1600) * Math.PI * 2)) / 2;
+  const sway = Math.sin(((t - workT0) / 3000) * Math.PI * 2);
+  const m = glanceMix * glanceMix * (3 - 2 * glanceMix);
+  charEl.style.setProperty('--wr', ((1 - m) * 2 * nod - m * 3 * sway).toFixed(3) + 'deg');
+  charEl.style.setProperty('--wy', ((1 - m) * nod - m * 1.5).toFixed(3) + 'px');
 }
 
 // while working she now and then glances up from the laptop

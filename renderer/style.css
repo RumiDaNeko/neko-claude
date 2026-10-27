@@ -735,8 +735,78 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
   14% { transform: translateY(16px) rotate(7deg); }
   26% { transform: translateY(16px) rotate(-5deg); }
   40% { transform: translateY(16px) rotate(14deg); }
-  52%, 76% { transform: translate(-6px, 42px) rotate(86deg); }
-  56% { transform: translate(-6px, 36px) rotate(84deg); }
-  60% { transform: translate(-6px, 42px) rotate(86deg); }
+  52%, 76% { transform: translate(-22px, 58px) rotate(86deg); }
+  56% { transform: translate(-22px, 52px) rotate(84deg); }
+  60% { transform: translate(-22px, 58px) rotate(86deg); }
   100% { transform: translateY(16px); }
 }
+
+/* cushion is its own layer now */
+#cushion { display: none; }
+#char.work #cushion, #char.sleep #cushion, #char.topple #cushion { display: inline; }
+
+/* long hair halves: they hang from the sides of her head */
+#puffL, #puffR { transform-box: view-box; }
+#puffL { transform-origin: 54px 76px; }
+#puffR { transform-origin: 146px 76px; }
+/* falling over: the hair lags behind the sway, whips on impact, then the upper tail drapes down toward the floor */
+#char.topple #puffL { animation: hairDrapeL 3.6s ease-in-out both; }
+#char.topple #puffR { animation: hairDrapeR 3.6s ease-in-out both; }
+@keyframes hairDrapeL {
+  0% { transform: none; }
+  14% { transform: rotate(-5deg); }
+  26% { transform: rotate(5deg); }
+  40% { transform: rotate(-9deg); }
+  52% { transform: rotate(14deg); }
+  58% { transform: rotate(-62deg); }
+  63% { transform: rotate(-44deg); }
+  68%, 76% { transform: rotate(-52deg); }
+  100% { transform: none; }
+}
+@keyframes hairDrapeR {
+  0% { transform: none; }
+  14% { transform: rotate(-5deg); }
+  26% { transform: rotate(5deg); }
+  40% { transform: rotate(-9deg); }
+  52% { transform: rotate(12deg); }
+  58% { transform: rotate(-8deg); }
+  64%, 76% { transform: rotate(-3deg); }
+  100% { transform: none; }
+}
+
+/* ---------- yeet: teased too much, the laptop flies at you ---------- */
+#char.yeet #laptop { display: inline; transform-origin: 50% 50%; animation: yeetLaptop 1.8s ease-in both; }
+#char.yeet #armL { animation: yeetArmL 1.8s ease-in-out both; }
+#char.yeet #armR { animation: yeetArmR 1.8s ease-in-out both; }
+#char.yeet #body { animation: yeetBody 1.8s ease-in-out both; }
+@keyframes yeetLaptop {
+  0% { transform: none; opacity: 1; }
+  22%, 34% { transform: translate(52px, -74px) rotate(-24deg) scale(0.9); opacity: 1; }
+  40% { transform: translate(60px, -80px) rotate(-34deg) scale(0.85); opacity: 1; }
+  52% { transform: translate(18px, -60px) rotate(-200deg) scale(2.2); opacity: 1; }
+  64% { transform: translate(-6px, -44px) rotate(-360deg) scale(4.2); opacity: 0; }
+  100% { transform: translate(-6px, -44px) rotate(-360deg) scale(4.2); opacity: 0; }
+}
+@keyframes yeetArmR {
+  0% { transform: rotate(-14deg); }
+  22%, 34% { transform: rotate(-150deg); }
+  40% { transform: rotate(-165deg); }
+  52% { transform: rotate(-60deg); }
+  64%, 100% { transform: rotate(-20deg); }
+}
+@keyframes yeetArmL {
+  0% { transform: rotate(14deg); }
+  22%, 40% { transform: rotate(40deg); }
+  52%, 100% { transform: rotate(20deg); }
+}
+@keyframes yeetBody {
+  0% { transform: none; }
+  22%, 34% { transform: rotate(4deg); }
+  40% { transform: rotate(7deg) translateY(2px); }
+  52% { transform: rotate(-6deg) translateY(-2px); }
+  64% { transform: rotate(-2deg); }
+  100% { transform: none; }
+}
+
+/* working: nod <-> glance-up sway is blended per frame in app.js (no animation swap, no snap) */
+#char.work:not(.patting) #head, #char.work:not(.patting) #puffs { animation: none !important; transition: none !important; transform: translateY(var(--wy, 0px)) rotate(var(--wr, 0deg)) !important; }

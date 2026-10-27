@@ -39,13 +39,13 @@ When Claude is idle:
 - she wanders along the taskbar, turning to a 3/4 view as she walks
 - she dances, and every so often does something goofy: trips and faceplants, does a full 360° twirl, backflips, or sneezes her hairclip off
 - after 5 idle minutes she sits on the floor and stares into space; after an hour she drags her cushion over and falls asleep on it
-- if she sleeps for half an hour she nods off sideways, tips over, and wakes up with a start
+- if she sleeps for half an hour she nods off sideways, tips off her cushion onto the floor (her hair spilling down), and wakes up with a start
 
 **Pat pat:** click her head and the classic petpet hand pats it, her head squishes (her long hair stays put) and hearts pop out; keep patting and she starts purring.
 
-**Expressions:** sparkly star eyes when Claude finishes, a wink when you poke her, flustered >///< then a 💢 pout if you keep poking, surprised when picked up, xx eyes if you hold her up too long, teary >_< after a hard landing, a thinking look when you send a prompt, plus a smug grin, a cat smile and yawns while idle.
+**Expressions:** sparkly star eyes when Claude finishes, a wink when you poke her, flustered >///< then a 💢 pout if you keep poking, and if you still don't stop she hurls her laptop at you, surprised when picked up, xx eyes if you hold her up too long, teary >_< after a hard landing, a thinking look when you send a prompt, plus a smug grin, a cat smile and yawns while idle.
 
-Drag her anywhere and let go to toss her (she falls with gravity). Click her body to poke her. Right-click her, or click her tray icon, for the menu (dance, do a trick, nap, toggle wandering, show in taskbar, quit). On Windows 11 the tray icon starts in the hidden-icons overflow (^); drag it onto the taskbar to keep it visible.
+Drag her anywhere and let go to toss her (she falls with gravity). Click her body to poke her. Right-click her, or click her tray icon, for the menu (dance, do a trick, nap, toggle wandering, show in taskbar, quit). In the tray and taskbar she goes by **clawde~**. On Windows 11 the tray icon starts in the hidden-icons overflow (^); drag it onto the taskbar to keep it visible.
 
 The icon lives in `assets/icon.svg`; `npm run build:icon` regenerates `icon.png`, `tray.png` and the multi-size `icon.ico`.
 
