@@ -65,7 +65,7 @@ Right-click her (or click the tray icon) for the menu.
 
 ## Achievements 🏆
 
-34 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in  in the app's user-data folder; the list lives in  in .
+34 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in `achievements.json` in the app's user-data folder; the list lives in `ACHIEVEMENTS` in `main.js`.
 
 **Mood:** pats, treats, finding her, finished work and passing tests cheer her up; teasing, errors and being ignored wear her down. A happy clawde chan hums and dances more; a grumpy one mopes and has a shorter fuse. Her mood and the menu toggles are remembered across restarts.
 
