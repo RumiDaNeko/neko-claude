@@ -1571,3 +1571,10 @@ body.toasting #bubble { top: 48px; }
 @keyframes boltPulse { 0%, 100% { scale: 0.85; opacity: 0.6; } 50% { scale: 1.1; opacity: 1; } }
 /* the battery takes the corner the zzz's normally use */
 #char.tk-battery #fx-zzz { display: none !important; }
+
+/* fetch: holding the ball (bigger in her arms than rolling far away) */
+.held-ball { display: none; }
+#char.carrying.walk #side .held-ball, #char.carrying:not(.walk) #body .held-ball { display: inline; }
+#char.carrying.walk #sArmF { animation: none !important; transform: rotate(-58deg) !important; }
+#char.carrying:not(.walk) #armL { animation: none !important; transform: rotate(-13deg) !important; }
+#char.carrying:not(.walk) #armR { animation: none !important; transform: rotate(13deg) !important; }

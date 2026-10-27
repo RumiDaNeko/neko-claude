@@ -54,7 +54,7 @@ const state = {
   glassesUntil: 0, alwaysGlasses: false,
   asleepSince: 0,
   lastBoop: 0, chinAt: 0, chinCount: 0, tailAt: 0, earsUntil: 0, dizzyUntil: 0,
-  handHold: false, laser: false, laserPounceAt: 0, fetch: null, highFive: 0, juice: null,
+  handHold: false, laser: false, laserPounceAt: 0, fetch: null, highFive: 0, juice: null, upsetUntil: 0,
   lastActivity: Date.now(),
   nextIdeaAt: Date.now() + 4000,
 };
@@ -940,6 +940,8 @@ function chatgpt() {
   if (state.leaving || state.dragging || state.perch || state.leap || state.falling) return;
   wake();
   state.walkTarget = null;
+  state.action = null;
+  state.upsetUntil = Date.now() + 7000; // no tricks while she takes this in
   achieve('chatgpt');
   changeMood(-15);
   setFace('shock', 1300);
@@ -1487,6 +1489,7 @@ function clampX(x) { return Math.min(Math.max(x, state.area.x - 20), state.area.
 function think(now) {
   if (now < state.nextIdeaAt) return;
   state.nextIdeaAt = now + 5000 + Math.random() * 9000;
+  if (state.leaving || now < state.upsetUntil) return; // storming off (or about to): no tricks, no wandering
   if (state.handHold || state.laser || state.fetch) return; // busy playing with you
   if (state.juice && !state.napping && claudeStatus().status === 'idle' && !state.perch && !state.leap && !state.hideSeek) {
     if (now - lastInteraction > 25000) { state.napping = true; say(pick(['*yawn* …wake me when the quota\'s back 😪', 'Recharging… 🔋💤']), 2600); return; }
@@ -1922,7 +1925,7 @@ function fetchBall() {
 }
 function updateFetch(dt, now) {
   const f = state.fetch;
-  if (!f) { ballEl.classList.remove('on'); return; }
+  if (!f) { ballEl.classList.remove('on'); charEl.classList.remove('carrying'); return; }
   if (claudeStatus().status !== 'idle' || state.dragging || state.leaving) { state.fetch = null; state.walkTarget = null; return; }
   const a = state.area;
   if (f.phase === 'fly' || f.phase === 'rest') {
@@ -1955,11 +1958,10 @@ function updateFetch(dt, now) {
   else if (f.phase === 'dropped' && now > f.until) { state.fetch = null; ballEl.classList.remove('on'); return; }
   // draw it: on the floor (or in the air), or held in her mouth, cat style
   let bx, by;
-  if (f.phase === 'carry' || f.phase === 'keep') {
-    const m = svgRoot.getScreenCTM();
-    bx = m.a * 112 + m.c * 140 + m.e;
-    by = m.b * 112 + m.d * 140 + m.f;
-  } else { bx = f.x - state.x; by = f.y - state.y - 7; }
+  const held = f.phase === 'carry' || f.phase === 'keep';
+  charEl.classList.toggle('carrying', held); // arms around the ball
+  // held: the ball drawn in her hands takes over (see .held-ball); the loose one hides
+  if (held) { ballEl.classList.remove('on'); return; } else { bx = f.x - state.x; by = f.y - state.y - 7; }
   ballEl.classList.add('on');
   ballEl.style.left = bx + 'px';
   ballEl.style.top = by + 'px';
