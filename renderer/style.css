@@ -852,3 +852,33 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 .sulk-mark path { fill: none; stroke: #e2553a; stroke-width: 2.6; stroke-linecap: round; }
 .sulk-mark { animation: sulkPulse 0.6s ease-in-out infinite alternate; }
 @keyframes sulkPulse { from { transform: scale(0.85); } to { transform: scale(1.15); } }
+
+/* ---------- more expressions ---------- */
+.heart-eye-fill { fill: #ff6f91; stroke: #b8405e; stroke-width: 1.2; }
+.heart-eye { transform-origin: 50% 50%; animation: heartBeat 0.7s ease-in-out infinite; }
+@keyframes heartBeat { 0%, 100% { transform: scale(1); } 30% { transform: scale(1.18); } 50% { transform: scale(0.96); } }
+.shock-white { fill: #ffffff; stroke: #3a1d16; stroke-width: 2; }
+.shock-dot { fill: #3a1d16; }
+#brows-fired path { fill: none; stroke: #3a1d16; stroke-width: 3.4; stroke-linecap: round; }
+#tears-stream path { fill: none; stroke: #9fd4f5; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 7 4; opacity: 0.9; animation: stream 0.5s linear infinite; }
+@keyframes stream { to { stroke-dashoffset: -11; } }
+#fx-drop { fill: #bfe6ff; stroke: #ffffff; stroke-width: 1; animation: dropSlide 1.4s ease-in infinite; }
+@keyframes dropSlide { 0% { transform: translateY(-3px); } 100% { transform: translateY(4px); } }
+#fx-gloom path { fill: none; stroke: #7d8fd6; stroke-width: 2.2; stroke-linecap: round; opacity: 0.75; }
+#glint { display: none; }
+#glint path { fill: none; stroke: #ffffff; stroke-width: 2.6; stroke-linecap: round; }
+#char.work.glint #glint { display: inline; animation: glintSweep 0.8s ease-out both; }
+@keyframes glintSweep { 0% { opacity: 0; transform: translateX(-10px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateX(10px); } }
+
+#char.face-heart #eyes-heart, #char.face-heart #mouth-open, #char.face-heart #blush-hatch-heavy { display: inline !important; }
+#char.face-uwu #eyes-closed, #char.face-uwu #mouth-cat, #char.face-uwu #blush-hatch-heavy { display: inline !important; }
+#char.face-nervous #eyes-open, #char.face-nervous #mouth-wavy, #char.face-nervous #fx-drop { display: inline !important; }
+#char.face-nervous .rig .pupil { transform: scale(0.6) !important; }
+#char.face-nervous .rig .gaze { transform: translate(-4px, 0) !important; }
+#char.face-fired #eyes-open, #char.face-fired #brows-fired, #char.face-fired #mouth-grin { display: inline !important; }
+#char.face-fired .rig .lidpos { transform: translateY(5px) !important; }
+#char.face-cry #eyes-tt, #char.face-cry #tears-stream, #char.face-cry #mouth-wavy { display: inline !important; }
+#char.face-shock #eyes-shock, #char.face-shock #mouth-open, #char.face-shock #fx-gloom { display: inline !important; }
+#char.face-drowsy #eyes-open, #char.face-drowsy #mouth-dot { display: inline !important; }
+#char.face-drowsy .rig .lidpos { transform: translateY(10px) !important; }
+#char.face-drowsy #head, #char.face-drowsy #puffs { animation: sway 4s ease-in-out infinite; }

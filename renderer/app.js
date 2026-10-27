@@ -77,8 +77,13 @@ api.onClaude((ev) => {
       break;
     case 'UserPromptSubmit':
       sessions.set(id, { status: 'working', tool: null, at: Date.now() });
-      say(pick(['On it!', 'Leave it to me!', 'Okay~ thinking…', 'Let\'s go!']), 2500);
-      setFace('think', 1800);
+      if (Math.random() < 0.4) {
+        setFace('fired', 2000);
+        say(pick(['Let\'s go! 🔥', 'Leave it to me! 🔥', 'Yosh!']), 2500);
+      } else {
+        setFace('think', 1800);
+        say(pick(['On it!', 'Okay~ thinking…', 'Hmm, let me see…']), 2500);
+      }
       break;
     case 'PreToolUse':
       sessions.set(id, { status: 'working', tool: ev.tool, at: Date.now() });
@@ -91,14 +96,15 @@ api.onClaude((ev) => {
         : /waiting|idle/i.test(msg) ? 'Psst… your turn~'
         : msg.slice(0, 60) || 'Hey! I need you 👋';
       say(line, 0, true);
-      setFace('surprised', 1000);
+      setFace(/permission/i.test(msg) ? 'nervous' : 'surprised', 2000);
       break;
     }
     case 'Stop':
       sessions.set(id, { status: 'idle', at: Date.now() });
       if (claudeStatus().status === 'idle') {
         doAction('cheer', 2200);
-        if (Math.random() < 0.5) setFace('star', 2200);
+        const f = Math.random();
+        if (f < 0.4) setFace('star', 2200); else if (f < 0.6) setFace('uwu', 2200);
         say(pick(['Done! ✨', 'All finished!', 'Ta-da~!', 'Your turn!']), 5000);
       }
       break;
@@ -155,7 +161,7 @@ function say(text, ms = 3000, sticky = false) {
 function hideBubble() { bubble.classList.add('hidden'); bubbleSticky = false; }
 
 // ---------- expressions ----------
-const FACES = ['star', 'wink', 'xx', 'teary', 'surprised', 'smug', 'pout', 'blush', 'think', 'yawn', 'cat', 'pat'];
+const FACES = ['star', 'wink', 'xx', 'teary', 'surprised', 'smug', 'pout', 'blush', 'think', 'yawn', 'cat', 'pat', 'heart', 'uwu', 'nervous', 'fired', 'cry', 'shock', 'drowsy'];
 let faceTimer;
 // copy every front expression part into the 3/4 head so faces stay on while she walks
 (function cloneFacesToSide() {
@@ -307,6 +313,7 @@ function think(now) {
   if (now - state.lastActivity > LOUNGE_AFTER_MS) {
     if (Math.random() < 0.15) say(pick(['…', 'Hmm…', '*stares at the ceiling*', 'Bored~', 'Still there?']), 2500);
     else if (Math.random() < 0.08) { setFace('yawn', 2200); say('Fuaah~', 2200); }
+    else if (Math.random() < 0.1) { setFace('drowsy', 3500); say('*blinks slowly*', 2500); }
     return;
   }
 
@@ -322,7 +329,7 @@ function think(now) {
     const idleFor = now - state.lastActivity;
     const [face, lines] = idleFor > 2 * 60 * 1000 && Math.random() < 0.6
       ? ['yawn', ['*yawn*', 'Fuaah~', 'Sleepy…']]
-      : pick([['smug', ['Heh~', 'Fufu~', 'I know something you don\'t~']], ['cat', ['Nya~', '♪', 'Hehe~']]]);
+      : pick([['smug', ['Heh~', 'Fufu~', 'I know something you don\'t~']], ['cat', ['Nya~', '♪', 'Hehe~']], ['uwu', ['uwu', 'Ehehe~', '♡']]]);
     setFace(face, 2400);
     say(pick(lines), 2400);
   } else if (r < 0.8) {
@@ -348,7 +355,7 @@ function tick(t) {
     if (state.y >= ground()) {
       state.y = ground();
       state.falling = false;
-      if (state.vy > 22) { charEl.classList.add('oops'); setFace('teary', 2200); say(pick(['Ouch!', 'Owie… >_<', 'That hurt!']), 2200); setTimeout(() => charEl.classList.remove('oops'), 1500); }
+      if (state.vy > 22) { charEl.classList.add('oops'); setFace(Math.random() < 0.5 ? 'cry' : 'teary', 2200); say(pick(['Ouch!', 'Owie… >_<', 'That hurt!']), 2200); setTimeout(() => charEl.classList.remove('oops'), 1500); }
       state.vy = state.vx = 0;
       flash('land', 350);
     }
@@ -388,7 +395,7 @@ hit.addEventListener('pointermove', (e) => {
     state.walkTarget = null;
     state.action = null;
     say(pick(['Waah!', 'Eek!', 'Wheee~', 'Where are we going?']), 1500);
-    setFace('surprised', 1200);
+    setFace(Math.random() < 0.3 ? 'shock' : 'surprised', 1200);
     drag.since = Date.now();
   }
   if (!drag.moved) return;
@@ -501,6 +508,7 @@ function pat() {
     doAction('hello', 1500);
     setFace('blush', 2600);
     say(pick(['…fine. Forgiven ♡', 'Mou… okay ♡', '…don\'t do it again ♡']), 2600);
+    setTimeout(() => { if (!charEl.classList.contains('has-face')) { setFace('cry', 2600); say('…but my laptop T_T', 2600); } }, 3200);
     for (let i = 0; i < 3; i++) setTimeout(spawnHeart, i * 120);
     return;
   }
@@ -514,7 +522,7 @@ function pat() {
   charEl.classList.add('patting');
   updatePat(patStart);
 
-  setFace('pat', 1800);
+  setFace(pats.length >= 6 ? 'heart' : pats.length >= 3 && Math.random() < 0.4 ? 'uwu' : 'pat', 1800);
   const n = pats.length >= 4 ? 3 : pats.length >= 2 ? 2 : 1;
   for (let i = 0; i < n; i++) setTimeout(spawnHeart, i * 120);
   if (pats.length >= 6) say(pick(['Purrr~ ♡', 'Nyaa~ ♡♡', '*melts*']), 1800);
@@ -580,6 +588,11 @@ function updateWorkHead(t, dt) {
   charEl.style.setProperty('--wr', ((1 - m) * 2 * nod - m * 3 * sway).toFixed(3) + 'deg');
   charEl.style.setProperty('--wy', ((1 - m) * nod - m * 1.5).toFixed(3) + 'px');
 }
+
+// while working her glasses catch the light now and then
+setInterval(() => {
+  if (charEl.classList.contains('work') && Math.random() < 0.08) flash('glint', 800);
+}, 1000);
 
 // while working she now and then glances up from the laptop
 setInterval(() => {
