@@ -958,3 +958,7 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 /* caught mid-air: a little squish in your hand */
 #char.caught #body { animation: caught 0.4s ease-out !important; }
 @keyframes caught { 0%, 100% { transform: none; } 35% { transform: scale(1.08, 0.9); } 70% { transform: scale(0.97, 1.04); } }
+
+/* looking down at the laptop: glasses slide down her nose so her eyes stay inside the lenses */
+#glasses-round, #glasses-half, #glasses-square, #glint { transition: transform 0.45s cubic-bezier(.45,.05,.35,1); }
+#char.work:not(.glance) #glasses-round, #char.work:not(.glance) #glasses-half, #char.work:not(.glance) #glasses-square, #char.work:not(.glance) #glint { transform: translateY(4px); }
