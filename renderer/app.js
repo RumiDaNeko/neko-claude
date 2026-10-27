@@ -316,23 +316,28 @@ const SPIN_STEPS = [
   ['', 1, 0], ['view-side', 1, -4], ['view-side', 0.5, -8], ['view-back', 1, -10],
   ['view-side', -0.5, -8], ['view-side', -1, -4], ['', 1, 0],
 ];
+// squeeze/lift the whole character around her feet (100, 240); an SVG attribute transform on an inner group,
+// because a CSS transform on the root <svg> made Chromium misdraw the blur-filtered views mid-spin
+const spinnerEl = document.getElementById('spinner');
+function squeeze(sx, dy = 0) {
+  if (sx === 1 && !dy) return spinnerEl.removeAttribute('transform');
+  spinnerEl.setAttribute('transform', `translate(100 ${240 + dy}) scale(${sx} 1) translate(-100 -240)`);
+}
+
 function spin(times = 1, stepMs = 85) {
   if (spinning) return;
   spinning = true;
-  const prevTransition = svgEl.style.transition;
-  svgEl.style.transition = 'transform 0.06s linear';
   let i = 0;
   const total = (SPIN_STEPS.length - 1) * times + 1;
   const tick = () => {
     const [view, sx, dy] = SPIN_STEPS[i % (SPIN_STEPS.length - 1)];
     charEl.classList.toggle('view-side', view === 'view-side');
     charEl.classList.toggle('view-back', view === 'view-back');
-    svgEl.style.transform = `translateY(${dy}px) scaleX(${sx})`;
+    squeeze(sx, dy);
     i++;
     if (i < total) return void setTimeout(tick, stepMs);
     charEl.classList.remove('view-side', 'view-back');
-    svgEl.style.transform = '';
-    svgEl.style.transition = prevTransition;
+    squeeze(1);
     spinning = false;
   };
   tick();
@@ -372,11 +377,11 @@ function setPose(pose, extra = []) {
   const wantWalk = pose === 'walk';
   if (!spinning && wantWalk !== shownWalk) {
     if (!turnTimer) {
-      svgEl.style.transform = 'scaleX(0.7)';
+      squeeze(0.7);
       turnTimer = setTimeout(() => {
         shownWalk = wantWalk;
         turnTimer = null;
-        svgEl.style.transform = '';
+        squeeze(1);
       }, 110);
     }
     pose = shownWalk ? 'walk' : (pose === 'walk' ? 'idle' : pose);

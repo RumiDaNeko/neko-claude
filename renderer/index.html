@@ -57,6 +57,8 @@
 
       <ellipse id="shadow" cx="100" cy="233" rx="30" ry="4.5" />
 
+      <!-- everything that turns during a spin / walk turn (transformed via its SVG attribute, never CSS on the root svg) -->
+      <g id="spinner">
       <!-- floor cushion: outside #body so it stays put when she moves -->
       <g id="cushion" filter="url(#soften)"><g transform="translate(0 16)">
         <ellipse cx="100" cy="214" rx="52" ry="10" class="cushion" />
@@ -579,6 +581,7 @@
         </g>
       </g>
 
+      </g>
       <!-- effects -->
       <g id="fx-bang" class="fx"><text x="160" y="40">!</text></g>
       <g id="fx-zzz" class="fx"><text x="150" y="44" class="z1">z</text><text x="162" y="30" class="z2">z</text><text x="174" y="16" class="z3">Z</text></g>
