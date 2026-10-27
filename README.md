@@ -78,7 +78,7 @@ Right-click her (or click the tray icon) for the menu.
 
 ## Achievements 🏆
 
-50 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in `achievements.json` in the app's user-data folder; the list lives in `ACHIEVEMENTS` in `main.js`.
+51 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in `achievements.json` in the app's user-data folder; the list lives in `ACHIEVEMENTS` in `main.js`.
 
 **Mood:** pats, treats, finding her, finished work and passing tests cheer her up; teasing, errors and being ignored wear her down. A happy clawde chan hums and dances more; a grumpy one mopes and has a shorter fuse. Her mood and the menu toggles are remembered across restarts.
 
@@ -89,7 +89,7 @@ Right-click her (or click the tray icon) for the menu.
 - Leave your cursor near her feet and she crouches, wiggles and pounces on it. Leave it still for a while and she may sit on it and ride along when you move it (your clicks go straight through her); flick it fast and she flies off.
 - A little grey kitty dashes past sometimes. She chases it. She never catches it.
 - After 5 idle minutes she sits and stares into space; after an hour she drags her cushion over and naps. Half an hour in she lies down on it, and half an hour after that she wakes up on her own with a big stretch.
-- After 23:00 she's in pajamas and a nightcap and gets sleepy sooner. At bedtime a little bed pops up and she sleeps in it, tucked under a starry blanket, until 8 am, then gets up with a stretch ("Ohayo~ ☀️"). Claude working doesn't wake her (she might mumble "…git push… zzz" in her sleep); only you can, and it takes five pokes in a row: the first four just make her stir and mumble ("…five more minutes… zzz"). Wake her and she's grumpy ("Five more minutes… 😾"), or between 6 and 8 am "Too early… the sun's barely up… 😾", and she goes straight back to bed.
+- After 23:00 she's in pajamas and a nightcap and gets sleepy sooner. At bedtime a little bed pops up and she sleeps in it, tucked under a starry blanket, until 8 am, then gets up with a stretch ("Ohayo~ ☀️"). Claude working doesn't wake her (she might mumble "…git push… zzz" in her sleep); only you can, and it takes five pokes in a row: the first four just make her stir and mumble ("…five more minutes… zzz"). Wake her and she's grumpy ("Five more minutes… 😾"), or between 6 and 8 am "Too early… the sun's barely up… 😾", and she goes straight back to bed. Or skip the pokes and just pick her up: she comes out of bed as a blanket burrito ("Nooo— my bed!! 😭"), shivers when you set her down ("…so cold out here 🥶") and shuffles back under the covers.
 - Seasonal hats: a witch hat around Halloween (Oct 20 – Nov 2), a Santa hat in December.
 
 ### Window climbing (Windows only)

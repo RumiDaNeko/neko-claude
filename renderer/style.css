@@ -1485,6 +1485,12 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 .blanket { fill: #93a3ea; stroke: #6d7cc6; stroke-width: 1.3; stroke-linejoin: round; }
 .blanket-fold { fill: none; stroke: #7c8bd6; stroke-width: 1.2; stroke-linecap: round; }
 .blanket-stars circle { fill: #fff3b8; }
+/* dragged out of bed: a blanket burrito, shivering once she's set down */
+#burrito { display: none; }
+#char.burrito #burrito { display: inline; }
+#char.burrito #armL, #char.burrito #armR, #char.burrito #hatArm, #char.burrito .held-ball, #char.burrito #apron, #char.burrito #belly { display: none !important; }
+#char.burrito:not(.drag) .burrito-wrap { animation: burShiver 0.11s linear infinite alternate; }
+@keyframes burShiver { from { transform: translateX(-0.7px); } to { transform: translateX(0.7px); } }
 
 /* ---------- achievement toast ---------- */
 #toast {

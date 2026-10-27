@@ -55,6 +55,7 @@ const ACHIEVEMENTS = [
   { id: 'bed', on: 'bed', icon: '🛏️', name: 'Lights Out', desc: 'She goes to bed at night' },
   { id: 'grumpy', on: 'grumpy', icon: '😾', name: 'Five More Minutes', desc: 'Wake her up in the middle of the night' },
   { id: 'earlybird', on: 'earlybird', icon: '🌅', name: 'Rise and Shine', desc: 'Wake her up between 6 and 8 am' },
+  { id: 'burrito', on: 'burrito', icon: '🌯', name: 'Blanket Burrito', desc: 'Pick her up straight out of bed' },
   { id: 'boop', on: 'boop', icon: '👃', name: 'Boop!', desc: 'Boop her nose' },
   { id: 'chin', on: 'chin', icon: '😽', name: 'Chin Scritches', desc: 'Scratch under her chin' },
   { id: 'ears', on: 'ears', icon: '👂', name: 'Weak Spot', desc: 'Rub her ears' },

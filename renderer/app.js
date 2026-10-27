@@ -1409,6 +1409,25 @@ function wake(fromClaude = false) {
   }
 }
 
+// ---------- picked up out of bed: she comes along wrapped in her blanket, protesting, then shuffles back to bed ----------
+function dragOutOfBed() {
+  state.burrito = true;
+  state.burritoUntil = 0;
+  achieve('burrito');
+  setFace(Math.random() < 0.5 ? 'teary' : 'pout', 3000);
+  say(pick(['Nooo— my bed!! 😭', '*clings to the blanket* …noooo…', 'Five more minuuutes~!! 😾', 'Put me back… it\'s warm in there… 😿', '*burrito noises* 🌯']), 2600);
+}
+function burritoLanded() {
+  state.burritoUntil = Date.now() + BACK_TO_BED_MS + 2000;
+  setFace('pout', 2600);
+  say(pick(['…so cold out here 🥶', '*shivers* …brrr…', 'Hmph. Going back to bed. 😾', '*waddles* …bed… 🛏️']), 2400);
+}
+function updateBurrito(now) {
+  if (!state.burrito) return;
+  // she unwraps once she's back under the covers (or after a while if she ends up staying up)
+  if (state.asleepSince || (state.burritoUntil && now > state.burritoUntil && !state.dragging && !state.falling)) state.burrito = false;
+}
+
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const POKE_LINES = ['Hehe~', 'That tickles!', 'I\'m clawde chan!', 'Need help with code?', '✨', 'Don\'t poke too hard!', 'Mou~', 'Hm? What is it?'];
 
@@ -1441,6 +1460,7 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('bflip', extra.includes('bflip'));
   charEl.classList.toggle('lie', extra.includes('lie'));     // asleep lying down (cushion, or bed)
   charEl.classList.toggle('inbed', extra.includes('inbed')); // night: the bed
+  charEl.classList.toggle('burrito', !!state.burrito); // dragged out of bed, still wrapped in the blanket
   charEl.classList.toggle('dizzy', Date.now() < state.dizzyUntil); // shaken or spun around: swirly stars, wobbly
   charEl.classList.toggle('mj', state.action === 'moonwalk' || state.action === 'toestand'); // fedora + glove
   charEl.classList.toggle('flip', state.dir < 0 && pose === 'walk');
@@ -1615,6 +1635,7 @@ function tick(t) {
   updateHighFive(now);
   updateDizzy(now);
   updateJuice(now);
+  updateBurrito(now);
 
   if (state.falling) {
     state.vy += 0.9 * dt;
@@ -1635,6 +1656,7 @@ function tick(t) {
       sfx('boing');
       if (state.pouncing) landPounce();
       if (state.hideAfterLanding) { state.hideAfterLanding = false; setTimeout(startHideSeek, 350); }
+      if (state.burrito) burritoLanded();
     }
     api.setPos(state.x, state.y);
   } else if (state.action === 'backflip' && !state.dragging) {
@@ -1702,6 +1724,7 @@ hit.addEventListener('pointermove', (e) => {
   if (drag.hand) { state.walkTarget = clampX(e.screenX - drag.ox); return; } // walking hand in hand
   if (!drag.moved && Math.hypot(e.screenX - drag.sx, e.screenY - drag.sy) > 5) {
     clearTimeout(drag.handTimer);
+    const outOfBed = drag.sleeping;
     if (drag.sleeping) { drag.sleeping = false; wake(); }
     drag.moved = true;
     state.dragging = true;
@@ -1712,8 +1735,11 @@ hit.addEventListener('pointermove', (e) => {
     showLedge(null);
     state.leap = null;
     state.pouncing = false;
-    say(pick(['Waah!', 'Eek!', 'Wheee~', 'Where are we going?']), 1500);
-    setFace(Math.random() < 0.3 ? 'shock' : 'surprised', 1200);
+    if (outOfBed) dragOutOfBed();
+    else {
+      say(pick(['Waah!', 'Eek!', 'Wheee~', 'Where are we going?']), 1500);
+      setFace(Math.random() < 0.3 ? 'shock' : 'surprised', 1200);
+    }
     drag.since = Date.now();
   }
   if (!drag.moved) return;
