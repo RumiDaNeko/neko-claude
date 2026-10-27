@@ -236,6 +236,14 @@ function snack(item = 'cookie', line) {
 const HIDE_GIVE_UP_MS = 90 * 1000;
 function startHideSeek() {
   if (state.leaving || state.dragging || state.hideSeek) return;
+  // up on a window or in the air: come down first, then play
+  if (state.perch || state.leap || state.falling) {
+    state.hideAfterLanding = true;
+    say('Hide and seek? Coming down!', 1500);
+    if (state.perch) hopDown();
+    return;
+  }
+  if (state.chase) { state.chase = null; kittyEl.classList.remove('on'); }
   state.action = null;
   const side = pick(['left', 'right', 'bottom']);
   state.hideSeek = { phase: 'going', side, since: Date.now(), hintAt: 0 };
@@ -435,6 +443,7 @@ function updateLeap(now) {
   if (t < 1) return;
   state.leap = null;
   sitOn(l.win);
+  if (state.hideAfterLanding) return void hopDown();
   flash('land', 350);
   setFace('cat', 1600);
   say('Nice view up here~ ✨', 2200);
@@ -568,6 +577,7 @@ async function hopDown() {
 }
 // falling past a window: a gentle drop lands her sitting on it; a fast one, she grabs the edge and climbs up
 function catchWindow() {
+  if (state.hideAfterLanding) return false; // on her way down to play hide and seek
   const mid = state.x + state.w / 2;
   const seatNow = state.y + seatOffset();
   const handNow = state.y + handOffset();
@@ -618,31 +628,49 @@ function startKitty(asked) {
   kittyEl.classList.add('on');
   kittyEl.classList.toggle('left', dir < 0);
 }
+const CHASE_MS = 4000;
 function updateChase(dt, now) {
   const c = state.chase;
-  c.kx += c.dir * 4.6 * dt;
   const mid = state.x + state.w / 2;
-  if (c.phase === 'pass' && (c.kx - mid) * c.dir > 10) {
-    c.phase = 'notice';
-    c.until = now + 550;
-    state.dir = c.dir;
-    setFace('surprised', 700);
-    say(pick(['!! A kitty!', 'Nya?! A cat!', 'Kitty!! 🐈']), 1200);
-  } else if (c.phase === 'notice' && now > c.until) {
-    c.phase = 'run';
-    c.until = now + 3200;
-    setFace('star', 3200);
-    say(pick(['Wait for meee~!', 'Come back, kitty!', 'Let me pet you!!']), 2400);
+  if (c.phase === 'pass') {
+    // dashes past her from behind
+    c.kx += c.dir * 4.6 * dt;
+    if ((c.kx - mid) * c.dir > 10) {
+      c.phase = 'notice';
+      c.until = now + 550;
+      state.dir = c.dir;
+      setFace('surprised', 700);
+      say(pick(['!! A kitty!', 'Nya?! A cat!', 'Kitty!! 🐈']), 1200);
+    }
+  } else if (c.phase === 'notice') {
+    c.kx += c.dir * 1.2 * dt; // slows down and looks back at her
+    if (now > c.until) {
+      c.phase = 'run';
+      c.t0 = now;
+      c.until = now + CHASE_MS;
+      setFace('star', CHASE_MS);
+      say(pick(['Wait for meee~!', 'Come back, kitty!', 'Let me pet you!!']), 2400);
+    }
   } else if (c.phase === 'run') {
     const x = clampX(state.x + c.dir * 3.4 * dt);
     const stuck = x === state.x;
     state.x = x;
     api.setPos(state.x, state.y);
+    // the kitty stays just out of reach (inside her window, so you can see it), teasing her
+    const lead = 76 + 16 * Math.sin((now - c.t0) / 1000 * 4.5);
+    c.kx += (state.x + state.w / 2 + c.dir * lead - c.kx) * Math.min(1, 0.18 * dt);
     if (now > c.until || stuck) {
+      // then it shoots off for real
+      c.phase = 'escape';
+      c.until = now + 900;
+      setFace('teary', 2400);
+      say(pick(['Haa… haa… it got away~', 'So fast…', 'Next time, kitty…']), 2600);
+    }
+  } else if (c.phase === 'escape') {
+    c.kx += c.dir * 9 * dt;
+    if (now > c.until) {
       state.chase = null;
       kittyEl.classList.remove('on');
-      setFace('teary', 2200);
-      say(pick(['Haa… haa… it got away~', 'So fast…', 'Next time, kitty…']), 2600);
       return;
     }
   }
@@ -887,7 +915,7 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('specs', state.alwaysGlasses || Date.now() < state.glassesUntil);
   charEl.classList.toggle('panic', Date.now() < state.panicUntil);
   charEl.classList.toggle('night', isNight());
-  charEl.classList.toggle('running', !!state.chase && state.chase.phase === 'run');
+  charEl.classList.toggle('running', (!!state.chase && state.chase.phase === 'run') || (!!state.hideSeek && state.hideSeek.phase === 'going' && state.walkTarget != null));
   updateTracking(pose);
   updateBadge(pose);
 }
@@ -1028,12 +1056,13 @@ function tick(t) {
       flash('land', 350);
       state.noCatchId = null;
       if (state.pouncing) landPounce();
+      if (state.hideAfterLanding) { state.hideAfterLanding = false; setTimeout(startHideSeek, 350); }
     }
     api.setPos(state.x, state.y);
   } else if (!state.dragging && state.walkTarget != null && !state.action && claudeStatus().status === 'idle') {
     const d = state.walkTarget - state.x;
     state.dir = Math.sign(d) || state.dir;
-    const step = 1.0 * dt;
+    const step = (state.hideSeek ? 3.4 : 1.0) * dt; // sprints off to hide
     if (Math.abs(d) <= step) { state.x = state.walkTarget; state.walkTarget = null; if (state.hideSeek && state.hideSeek.phase === 'going') beginHide(); }
     else state.x += state.dir * step;
     api.setPos(state.x, state.y);
