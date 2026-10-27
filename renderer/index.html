@@ -398,6 +398,15 @@
           <rect x="64" y="195" width="72" height="6" rx="3" class="base" />
         </g>
 
+        <!-- snack time -->
+        <g id="snack">
+          <g class="cookie">
+            <circle cx="100" cy="160" r="10" class="cookie-dough" />
+            <circle cx="96" cy="157" r="1.6" class="chip" /><circle cx="103" cy="156" r="1.4" class="chip" /><circle cx="101" cy="163" r="1.7" class="chip" /><circle cx="95" cy="164" r="1.2" class="chip" /><circle cx="106" cy="161" r="1.2" class="chip" />
+          </g>
+          <g class="crumbs"><circle cx="94" cy="138" r="1.3" /><circle cx="104" cy="139" r="1.1" /><circle cx="99" cy="141" r="1.4" /></g>
+        </g>
+
       </g>
       <!-- three-quarter view (walking), turned ~45° to the right; mirrored when walking left -->
       <g id="side" filter="url(#soften)">
@@ -490,6 +499,11 @@
             <path class="closedline side" d="M124,115.5 Q132,121 140,115.5" />
             <!-- expressions while walking: app.js clones the front face layer in here, squeezed onto the turned face -->
             <g id="sFace" transform="matrix(0.771 0 0 1 35.4 0)"></g>
+            <g id="sGlasses" class="glasses">
+              <circle cx="94" cy="113" r="15.5" class="lens" /><ellipse cx="131.5" cy="112.5" rx="10.5" ry="15.5" class="lens" />
+              <path class="frame" d="M109.5,110 Q115,106 121,110 M78.5,110 L62,104" />
+              <path class="glare" d="M85,105 L90,100 M126,104 L129,100" />
+            </g>
             <!-- bangs, compressed toward the front -->
             <path class="hair" d="M56,100 C50,56 78,36 104,36 C130,36 156,56 152,100 C150,93 147,87 143,83 C144,92 141,99 136,103 C134,96 131,90 127,86 C128,95 125,102 119,106 C116,98 113,91 109,86 C110,96 107,104 101,108 C98,100 95,92 92,87 C92,96 88,102 82,105 C79,98 76,92 73,88 C72,96 68,101 62,103 C60,104 58,104 56,100 Z" />
             <path class="hair-strand" d="M110,42 C116,60 122,80 127,96 M104,42 C104,62 102,84 101,104 M98,44 C90,62 84,82 82,102 M116,44 C130,58 140,76 145,94" />

@@ -5,7 +5,7 @@ const hit = document.getElementById('hit');
 const bubble = document.getElementById('bubble');
 const bubbleText = document.getElementById('bubble-text');
 
-const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk'];
+const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk', 'hop', 'snack', 'megane'];
 
 // Goofy tricks she does now and then: [pose, duration ms, lines]
 const TRICKS = [
@@ -31,6 +31,7 @@ const state = {
   napping: false,
   leaving: false,
   sulkUntil: 0, sulkPats: 0,
+  glassesUntil: 0, alwaysGlasses: false,
   asleepSince: 0,
   lastActivity: Date.now(),
   nextIdeaAt: Date.now() + 4000,
@@ -117,6 +118,22 @@ api.onClaude((ev) => {
   }
 });
 
+// a cookie from the menu: three bites, crumbs, heart eyes (and all is forgiven)
+function snack() {
+  if (state.leaving || state.dragging) return;
+  const forgiven = sulking();
+  state.sulkUntil = 0;
+  doAction('snack', 3200);
+  setFace('nom', 3200);
+  say(forgiven ? '…a cookie? …fine. Forgiven ♡' : pick(['A cookie! ✨', 'For me?!', 'Snack time~']), 1200);
+  setTimeout(() => say('Nom nom nom~', 1600), 1200);
+  setTimeout(() => {
+    setFace('heart', 1800);
+    say(pick(['Thanks for the snack! ♡', 'Delicious~ ♡', 'More? ♡']), 2000);
+    for (let i = 0; i < 2; i++) setTimeout(spawnHeart, i * 140);
+  }, 3200);
+}
+
 // Claude closed: a tiny EXIT door pops up, she waves and backs into it, then the app quits.
 // (the SessionStart hook brings her back next time)
 const LEAVE_MS = 6000;
@@ -144,6 +161,9 @@ api.onCommand((cmd) => {
   if (cmd === 'wander-off') { state.wander = false; state.walkTarget = null; }
   if (cmd === 'reset') { sessions.clear(); say('Status cleared!', 2000); }
   if (cmd === 'leave') leave();
+  if (cmd === 'snack') snack();
+  if (cmd === 'glasses-on') { state.alwaysGlasses = true; putOnGlasses(0); }
+  if (cmd === 'glasses-off') { state.alwaysGlasses = false; state.glassesUntil = 0; say('*takes off glasses*', 1500); }
 });
 
 // ---------- speech bubble ----------
@@ -161,8 +181,42 @@ function say(text, ms = 3000, sticky = false) {
 function hideBubble() { bubble.classList.add('hidden'); bubbleSticky = false; }
 
 // ---------- expressions ----------
-const FACES = ['star', 'wink', 'xx', 'teary', 'surprised', 'smug', 'pout', 'blush', 'think', 'yawn', 'cat', 'pat', 'heart', 'uwu', 'nervous', 'fired', 'cry', 'shock', 'drowsy'];
+const FACES = ['star', 'wink', 'xx', 'teary', 'surprised', 'smug', 'pout', 'blush', 'think', 'yawn', 'cat', 'pat', 'heart', 'uwu', 'nervous', 'fired', 'cry', 'shock', 'drowsy', 'laugh', 'nom'];
 let faceTimer;
+// ---------- glasses ----------
+function putOnGlasses(ms = 25000 + Math.random() * 20000) {
+  const already = charEl.classList.contains('specs');
+  state.glassesUntil = Math.max(state.glassesUntil, Date.now() + ms);
+  doAction('megane', 1000);
+  setTimeout(() => flash('glint', 800), 450);
+  say(already ? pick(['*pushes glasses up*', 'Fufu~ 🤓']) : pick(['*puts on glasses*', 'Smart mode: ON 🤓', 'Let me read up a bit~']), 2000);
+}
+
+// ---------- eyes follow the cursor ----------
+let cursor = { x: 0, y: 0, movedAt: 0 };
+api.onCursor((p) => {
+  if (p.x !== cursor.x || p.y !== cursor.y) cursor = { x: p.x, y: p.y, movedAt: Date.now() };
+});
+const TRACK_POSES = ['idle', 'lounge', 'hello', 'cheer', 'wait', 'dance', 'hop', 'megane'];
+function updateTracking(pose) {
+  const glancing = pose === 'work' && charEl.classList.contains('glance');
+  const on = (TRACK_POSES.includes(pose) || glancing)
+    && !charEl.classList.contains('has-face') && !charEl.classList.contains('view-side') && !charEl.classList.contains('view-back')
+    && Date.now() - cursor.movedAt < 5000;
+  charEl.classList.toggle('track', on);
+  if (!on) return;
+  // her eyes sit around (100, 116) in the SVG
+  const m = svgRoot.getScreenCTM();
+  const ex = state.x + m.a * 100 + m.e;
+  const ey = state.y + m.d * 116 + m.f;
+  const dx = cursor.x - ex;
+  const dy = cursor.y - ey;
+  charEl.style.setProperty('--gx', (6 * dx / (Math.abs(dx) + 160)).toFixed(2) + 'px');
+  // looking down travels further, and the upper lids follow the eyes down a little
+  charEl.style.setProperty('--gy', (dy > 0 ? 8 * dy / (dy + 140) : 5 * dy / (-dy + 140)).toFixed(2) + 'px');
+  charEl.style.setProperty('--ly', (dy > 0 ? 4 * dy / (dy + 140) : 0).toFixed(2) + 'px');
+}
+
 // copy every front expression part into the 3/4 head so faces stay on while she walks
 (function cloneFacesToSide() {
   const sFace = document.getElementById('sFace');
@@ -262,6 +316,8 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('happy', extra.includes('happy'));
   charEl.classList.toggle('flip', state.dir < 0 && pose === 'walk');
   if (!spinning) charEl.classList.toggle('view-back', pose === 'sulk');
+  charEl.classList.toggle('specs', state.alwaysGlasses || Date.now() < state.glassesUntil);
+  updateTracking(pose);
 }
 
 function flash(cls, ms) {
@@ -334,6 +390,8 @@ function think(now) {
     say(pick(lines), 2400);
   } else if (r < 0.8) {
     say(pick(['~♪', 'Hmm hmm~', 'What should we make?', 'Stretch break!', '☕?']), 2500);
+  } else if (r < 0.88) {
+    putOnGlasses();
   }
 }
 
@@ -380,6 +438,14 @@ let drag = null;
 hit.addEventListener('pointerenter', () => { hovering = true; api.ignoreMouse(false); });
 hit.addEventListener('pointerleave', () => { hovering = false; if (!drag) api.ignoreMouse(true); });
 
+hit.addEventListener('dblclick', () => {
+  pokes.splice(-2);
+  if (sulking() || state.leaving) return;
+  doAction('hop', 900);
+  setFace('cat', 1000);
+  say(pick(['Hop!', 'Boing~', 'Wheee!']), 1000);
+});
+
 hit.addEventListener('pointerdown', (e) => {
   if (e.button !== 0) return;
   hit.setPointerCapture(e.pointerId);
@@ -388,7 +454,7 @@ hit.addEventListener('pointerdown', (e) => {
 });
 
 hit.addEventListener('pointermove', (e) => {
-  if (!drag) return;
+  if (!drag) return wiggle(e);
   if (!drag.moved && Math.hypot(e.screenX - drag.sx, e.screenY - drag.sy) > 5) {
     drag.moved = true;
     state.dragging = true;
@@ -412,7 +478,7 @@ hit.addEventListener('pointerup', async (e) => {
   const d = drag;
   drag = null;
   if (!hovering) api.ignoreMouse(true);
-  if (!d.moved) return onHead(e) ? pat() : poke();
+  if (!d.moved) return onCheek(e) ? cheek() : onHead(e) ? pat() : poke();
 
   state.dragging = false;
   setFace(null);
@@ -444,6 +510,53 @@ const patFrames = Array.from({ length: PAT_FRAMES }, (_, i) => {
   new Image().src = src;
   return src;
 });
+
+function svgPoint(e) {
+  const pt = svgRoot.createSVGPoint();
+  pt.x = e.clientX;
+  pt.y = e.clientY;
+  return pt.matrixTransform(svgRoot.getScreenCTM().inverse());
+}
+
+// cheeks: either side of the face, below the eyes (front view only)
+function onCheek(e) {
+  if (['view-side', 'view-back', 'walk'].some((c) => charEl.classList.contains(c))) return false;
+  const p = svgPoint(e);
+  return p.y > 112 && p.y < 142 && (p.x < 80 || p.x > 120) && p.x > 44 && p.x < 156;
+}
+
+function cheek() {
+  if (sulking()) return poke();
+  wake();
+  flash('mochi', 450);
+  setFace('blush', 1600);
+  say(pick(['Mfu?!', 'Mochi mochi~', 'H-hey! ///', 'Not the cheeks~!']), 1600);
+}
+
+let lastWiggleX = null;
+let wiggleDir = 0;
+const wiggles = [];
+let tickleUntil = 0;
+function wiggle(e) {
+  const x = e.screenX;
+  if (lastWiggleX !== null && Math.abs(x - lastWiggleX) > 3) {
+    const dir = Math.sign(x - lastWiggleX);
+    if (dir !== wiggleDir) { wiggles.push(Date.now()); wiggleDir = dir; }
+    lastWiggleX = x;
+  } else if (lastWiggleX === null) lastWiggleX = x;
+  const now = Date.now();
+  while (wiggles.length && now - wiggles[0] > 1200) wiggles.shift();
+  if (wiggles.length >= 6 && now > tickleUntil) { wiggles.length = 0; tickle(); }
+}
+
+function tickle() {
+  tickleUntil = Date.now() + 3000;
+  if (sulking()) { say('…pff— no! Hmph!', 1500); flash('huff', 400); return; }
+  wake();
+  flash('giggle', 1500);
+  setFace('laugh', 1800);
+  say(pick(['Ahaha! S-stop~!', 'Kyahaha! That tickles!', 'Hehehe~ no fair!']), 1800);
+}
 
 function onHead(e) {
   const pt = svgRoot.createSVGPoint();
@@ -591,7 +704,7 @@ function updateWorkHead(t, dt) {
 
 // while working her glasses catch the light now and then
 setInterval(() => {
-  if (charEl.classList.contains('work') && Math.random() < 0.08) flash('glint', 800);
+  if ((charEl.classList.contains('work') || charEl.classList.contains('specs')) && Math.random() < 0.08) flash('glint', 800);
 }, 1000);
 
 // while working she now and then glances up from the laptop

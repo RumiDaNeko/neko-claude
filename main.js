@@ -14,6 +14,7 @@ let tray;
 let ready = false;
 let wander = true;
 let inTaskbar = false;
+let glasses = false;
 const pending = []; // events that arrive before the page has loaded
 
 function createWindow() {
@@ -81,6 +82,8 @@ function menuTemplate() {
     { label: 'Dance', click: () => send('command', 'dance') },
     { label: 'Do a trick', click: () => send('command', 'trick') },
     { label: 'Take a nap', click: () => send('command', 'sleep') },
+    { label: 'Give her a cookie 🍪', click: () => send('command', 'snack') },
+    { label: 'Wear glasses', type: 'checkbox', checked: glasses, click: (i) => { glasses = i.checked; send('command', glasses ? 'glasses-on' : 'glasses-off'); refreshTrayMenu(); } },
     { type: 'separator' },
     { label: 'Let her wander', type: 'checkbox', checked: wander, click: (i) => { wander = i.checked; send('command', wander ? 'wander-on' : 'wander-off'); refreshTrayMenu(); } },
     { label: 'Show in taskbar', type: 'checkbox', checked: inTaskbar, click: (i) => { inTaskbar = i.checked; win.setSkipTaskbar(!inTaskbar); refreshTrayMenu(); } },
@@ -130,6 +133,12 @@ if (!app.requestSingleInstanceLock()) {
     createWindow();
     startBridge();
     try { createTray(); } catch (e) { console.error('[claude-chan] tray:', e.message); }
+    let last = '';
+    setInterval(() => {
+      const p = screen.getCursorScreenPoint();
+      const key = p.x + ',' + p.y;
+      if (key !== last) { last = key; send('cursor', p); }
+    }, 50);
   });
   app.on('window-all-closed', () => app.quit());
 }

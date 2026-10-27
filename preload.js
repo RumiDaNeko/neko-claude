@@ -9,4 +9,5 @@ contextBridge.exposeInMainWorld('chan', {
   quit: () => ipcRenderer.send('quit'),
   onClaude: (fn) => ipcRenderer.on('claude', (_e, ev) => fn(ev)),
   onCommand: (fn) => ipcRenderer.on('command', (_e, cmd) => fn(cmd)),
+  onCursor: (fn) => ipcRenderer.on('cursor', (_e, p) => fn(p)),
 });
