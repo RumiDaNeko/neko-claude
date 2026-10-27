@@ -285,7 +285,7 @@ function snack(item = 'cookie', line) {
   state.sulkUntil = 0;
   for (const i of ITEMS) charEl.classList.toggle('item-' + i, i === item);
   charEl.classList.remove('offering');
-  charEl.classList.toggle('drinking', item !== 'cookie');
+  charEl.classList.toggle('drinking', item !== 'cookie' && item !== 'fish'); // food is held and bitten, drinks are lifted and sipped
   charEl.classList.toggle('sipstraw', item === 'boba');
   doAction('snack', 3200);
   setFace(t.face, 3200);
