@@ -224,6 +224,12 @@ const ITEMS = Object.keys(TREATS);
 
 function snack(item = 'cookie', line) {
   if (state.leaving || state.dragging) return;
+  // busy walking (or mid-air, or chasing the kitty): she finishes that first, then eats
+  if (state.walkTarget != null || state.chase || state.leap || state.falling) {
+    if (!state.pendingTreat) say(pick(['Ooh, for me? One sec~', 'Coming~! 🏃‍♀️', 'Wait wait, let me stop first!']), 1800);
+    state.pendingTreat = [item, line];
+    return;
+  }
   const t = TREATS[item] || TREATS.cookie;
   const now = Date.now();
   if (item !== 'water') {
@@ -1124,7 +1130,7 @@ function setPose(pose, extra = []) {
   const onCur = !!state.perch && state.perch.id === 'cursor';
   if (onCur && !charEl.classList.contains('oncursor')) setIgnore(true);
   charEl.classList.toggle('oncursor', onCur);
-  charEl.classList.toggle('running', (!!state.chase && state.chase.phase === 'run') || (!!state.hideSeek && state.hideSeek.phase === 'going' && state.walkTarget != null));
+  charEl.classList.toggle('running', (!!state.chase && state.chase.phase === 'run') || (!!state.hideSeek && state.hideSeek.phase === 'going' && state.walkTarget != null) || (!!state.pendingTreat && state.walkTarget != null));
   updateTracking(pose);
   updateBadge(pose);
 }
@@ -1281,12 +1287,18 @@ function tick(t) {
   } else if (!state.dragging && state.walkTarget != null && !state.action && claudeStatus().status === 'idle') {
     const d = state.walkTarget - state.x;
     state.dir = Math.sign(d) || state.dir;
-    const step = (state.hideSeek ? 3.4 : 1.0) * dt; // sprints off to hide
+    const step = (state.hideSeek ? 3.4 : state.pendingTreat ? 2.2 : 1.0) * dt; // sprints off to hide, hurries for a treat
     if (Math.abs(d) <= step) { state.x = state.walkTarget; state.walkTarget = null; if (state.hideSeek && state.hideSeek.phase === 'going') beginHide(); }
     else state.x += state.dir * step;
     api.setPos(state.x, state.y);
   }
 
+  // a treat was waiting for her to finish walking
+  if (state.pendingTreat && state.walkTarget == null && !state.chase && !state.leap && !state.falling && !state.dragging && !state.action && !state.hideSeek) {
+    const [item, line] = state.pendingTreat;
+    state.pendingTreat = null;
+    snack(item, line);
+  }
   const [pose, extra = []] = choosePose(now);
   setPose(pose, extra);
   requestAnimationFrame(tick);
