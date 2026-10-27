@@ -1075,3 +1075,30 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 /* done: a happy kick */
 #char.drag.airjoy #body { animation: airJoy 0.9s ease-out; }
 @keyframes airJoy { 0%, 100% { transform: none; } 30% { transform: translateY(-6px) scale(1.04, 0.96); } 60% { transform: translateY(2px); } }
+
+/* ---------- drinking is not eating ---------- */
+/* cups: lifted to her lips and tipped, chin up; a short sip, then a long gulp */
+#char.snack.drinking:not(.sipstraw) #snArmL .fore { animation: drinkForeL 3.2s ease-in-out both; }
+#char.snack.drinking:not(.sipstraw) #snArmR .fore { animation: drinkForeR 3.2s ease-in-out both; }
+@keyframes drinkForeL { 0% { transform: rotate(0deg) scaleY(0.71); } 10%, 18%, 44%, 72%, 76% { transform: rotate(-160deg) scaleY(0.73); } 26%, 38%, 52%, 66% { transform: rotate(-172deg) scaleY(1); } 90%, 100% { transform: rotate(0deg) scaleY(0.71); } }
+@keyframes drinkForeR { 0% { transform: rotate(0deg) scaleY(0.71); } 10%, 18%, 44%, 72%, 76% { transform: rotate(160deg) scaleY(0.73); } 26%, 38%, 52%, 66% { transform: rotate(172deg) scaleY(1); } 90%, 100% { transform: rotate(0deg) scaleY(0.71); } }
+#char.snack.drinking:not(.sipstraw) .item { animation: drinkLift 3.2s ease-in-out both !important; }
+@keyframes drinkLift {
+  0% { transform: scale(0); }
+  9%, 18%, 44%, 72%, 74% { transform: scale(1); }
+  26%, 38% { transform: translateY(-8px) rotate(-8deg); }
+  52%, 66% { transform: translateY(-9px) rotate(-14deg); }
+  80%, 100% { transform: scale(0); }
+}
+#char.snack.drinking:not(.sipstraw) #head, #char.snack.drinking:not(.sipstraw) #puffs { animation: chinUp 3.2s ease-in-out both !important; }
+@keyframes chinUp { 0%, 18%, 44%, 72%, 100% { transform: none; } 26%, 38% { transform: translateY(-1.5px); } 52%, 60% { transform: translateY(-2.5px); } 56%, 64% { transform: translateY(-1.6px); } 66% { transform: translateY(-2.5px); } }
+/* level drops smoothly while she sips (not in bite-sized steps) */
+#char.snack.drinking .liquid-wrap { animation: sipDrain 3.2s ease-in-out both !important; }
+@keyframes sipDrain { 0%, 24% { transform: scaleY(1); } 38%, 50% { transform: scaleY(0.72); } 66%, 100% { transform: scaleY(0.12); } }
+
+/* boba: cup stays put, she leans into the straw and the pearls travel up */
+#char.snack.sipstraw #head, #char.snack.sipstraw #puffs { animation: strawLean 3.2s ease-in-out both !important; }
+@keyframes strawLean { 0%, 16%, 42%, 48%, 70%, 100% { transform: none; } 22%, 38% { transform: translateY(1.5px); } 54%, 66% { transform: translateY(1.8px); } }
+.straw-pearl { fill: #3a2620; opacity: 0; }
+#char.snack.sipstraw .straw-pearl { animation: pearlUp 0.55s ease-in 0.7s 7; }
+@keyframes pearlUp { 0% { opacity: 1; transform: translate(0, 0); } 90% { opacity: 1; } 100% { opacity: 0; transform: translate(-1.6px, -8.4px); } }

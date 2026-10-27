@@ -174,6 +174,8 @@ function snack(item = 'cookie', line) {
   const forgiven = sulking();
   state.sulkUntil = 0;
   for (const i of ITEMS) charEl.classList.toggle('item-' + i, i === item);
+  charEl.classList.toggle('drinking', item !== 'cookie');
+  charEl.classList.toggle('sipstraw', item === 'boba');
   doAction('snack', 3200);
   setFace(t.face, 3200);
   say(line || (forgiven ? '…for me? …fine. Forgiven ♡' : pick(t.hello)), 1200);
