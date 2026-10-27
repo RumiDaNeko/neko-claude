@@ -206,6 +206,7 @@ function beginHide() {
   h.hintAt = Date.now() + 12000 + Math.random() * 8000;
   hideBubble();
   charEl.classList.add('hiding', 'hide-' + h.side);
+  document.body.classList.add('grip-' + h.side);
 }
 function updateHideSeek(now) {
   const h = state.hideSeek;
@@ -232,6 +233,7 @@ function endHideSeek() {
   const h = state.hideSeek;
   state.hideSeek = null;
   if (h) charEl.classList.remove('hide-' + h.side);
+  document.body.classList.remove('grip-left', 'grip-right', 'grip-bottom');
   if (h && h.phase === 'going') state.walkTarget = null;
   setTimeout(() => { if (!state.hideSeek) charEl.classList.remove('hiding'); }, 800);
 }

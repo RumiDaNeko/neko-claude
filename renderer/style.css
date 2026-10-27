@@ -1131,3 +1131,14 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 @keyframes peekRight { 0%, 40%, 100% { transform: rotate(-6deg); } 55%, 75% { transform: rotate(-17deg); } }
 @keyframes peekLeft { 0%, 40%, 100% { transform: rotate(6deg); } 55%, 75% { transform: rotate(17deg); } }
 @keyframes peekUp { 0%, 55%, 100% { transform: none; } 65%, 82% { transform: translateY(-34px); } }
+
+/* hide and seek: fingers gripping the screen edge / the top of the taskbar */
+#grip { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 2; }
+#grip > g { opacity: 0; transition: opacity 0.25s; }
+body.grip-right #grip-right, body.grip-left #grip-left, body.grip-bottom #grip-bottom { opacity: 1; transition-delay: 0.6s; }
+.finger { fill: #ffe9df; stroke: #c98e7a; stroke-width: 1.1; }
+/* a little squeeze as she leans out to peek */
+body.grip-right #grip-right, body.grip-left #grip-left { animation: gripSqueeze 7s ease-in-out infinite; }
+body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite; }
+@keyframes gripSqueeze { 0%, 40%, 100% { transform: none; } 55%, 75% { transform: translateY(-1px); } }
+@keyframes gripSqueezeUp { 0%, 55%, 100% { transform: none; } 65%, 82% { transform: translateY(1px); } }
