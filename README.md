@@ -45,7 +45,7 @@ When Claude is idle:
 
 **Expressions:** sparkly star eyes when Claude finishes, a wink when you poke her, flustered >///< then a 💢 pout if you keep poking, and if you still don't stop she hurls her laptop at you, surprised when picked up, xx eyes if you hold her up too long, teary >_< after a hard landing, a thinking look when you send a prompt, plus a smug grin, a cat smile and yawns while idle.
 
-Drag her anywhere and let go to toss her (she falls with gravity). Click her body to poke her. Right-click her, or click her tray icon, for the menu (dance, do a trick, nap, toggle wandering, show in taskbar, quit). In the tray and taskbar she goes by **clawde~**. On Windows 11 the tray icon starts in the hidden-icons overflow (^); drag it onto the taskbar to keep it visible.
+Drag her anywhere and let go to toss her (she falls with gravity). Click her body to poke her. Right-click her, or click her tray icon, for the menu (dance, do a trick, nap, toggle wandering, show in taskbar, quit). In the tray and taskbar she goes by **clawde chan**. On Windows 11 the tray icon starts in the hidden-icons overflow (^); drag it onto the taskbar to keep it visible.
 
 The icon lives in `assets/icon.svg`; `npm run build:icon` regenerates `icon.png`, `tray.png` and the multi-size `icon.ico`.
 

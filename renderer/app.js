@@ -542,6 +542,6 @@ charEl.classList.add('g-' + GLASSES);
   state.y = ground();
   api.setPos(state.x, state.y);
   doAction('hello', 2500);
-  say('claude-chan is here! ✨', 3000);
+  say('clawde chan is here! ✨', 3000);
   requestAnimationFrame(tick);
 })();

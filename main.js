@@ -31,7 +31,7 @@ function createWindow() {
     alwaysOnTop: true,
     focusable: true,
     icon: ICON,
-    title: 'clawde~',
+    title: 'clawde chan',
     backgroundColor: '#00000000',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -85,7 +85,7 @@ function menuTemplate() {
     { label: 'Show in taskbar', type: 'checkbox', checked: inTaskbar, click: (i) => { inTaskbar = i.checked; win.setSkipTaskbar(!inTaskbar); refreshTrayMenu(); } },
     { label: 'Reset Claude status', click: () => send('command', 'reset') },
     { type: 'separator' },
-    { label: 'Quit clawde~', click: () => app.quit() },
+    { label: 'Quit clawde chan', click: () => app.quit() },
   ];
 }
 
@@ -110,7 +110,7 @@ function startBridge() {
 
 function createTray() {
   tray = new Tray(nativeImage.createFromPath(ICON));
-  tray.setToolTip('clawde~');
+  tray.setToolTip('clawde chan');
   refreshTrayMenu();
   tray.on('click', () => tray.popUpContextMenu());
 }
