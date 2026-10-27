@@ -1116,3 +1116,18 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 /* continuous tickle: giggles for as long as the cursor keeps wiggling */
 #char.giggling #body { animation: giggle 0.16s linear infinite !important; }
 #char.work.giggling #body, #char.lounge.giggling #body { animation: giggleSeated 0.16s linear infinite !important; }
+
+/* ---------- hide and seek ---------- */
+/* the window sits at the screen edge; she slides mostly out of it, so the edge hides her */
+#stage { overflow: hidden; }
+#char.hiding { transition: transform 0.7s ease-in-out; }
+#char.hide-right { transform: translateX(118px); }
+#char.hide-left { transform: translateX(-118px); }
+#char.hide-bottom { transform: translateY(186px); }
+/* peeking: lean out from behind the edge now and then */
+#char.peek.hide-right #body { transform-origin: 50% 100%; animation: peekRight 7s ease-in-out infinite; }
+#char.peek.hide-left #body { transform-origin: 50% 100%; animation: peekLeft 7s ease-in-out infinite; }
+#char.peek.hide-bottom #body { animation: peekUp 8s ease-in-out infinite; }
+@keyframes peekRight { 0%, 40%, 100% { transform: rotate(-6deg); } 55%, 75% { transform: rotate(-17deg); } }
+@keyframes peekLeft { 0%, 40%, 100% { transform: rotate(6deg); } 55%, 75% { transform: rotate(17deg); } }
+@keyframes peekUp { 0%, 55%, 100% { transform: none; } 65%, 82% { transform: translateY(-34px); } }

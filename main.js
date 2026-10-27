@@ -82,6 +82,7 @@ function menuTemplate() {
     { label: 'Dance', click: () => send('command', 'dance') },
     { label: 'Do a trick', click: () => send('command', 'trick') },
     { label: 'Take a nap', click: () => send('command', 'sleep') },
+    { label: 'Play hide and seek 🙈', click: () => send('command', 'hide') },
     { label: 'Give her…', submenu: [
       { label: 'Cookie 🍪', click: () => send('command', 'treat:cookie') },
       { label: 'Coffee ☕', click: () => send('command', 'treat:coffee') },

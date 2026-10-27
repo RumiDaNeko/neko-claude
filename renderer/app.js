@@ -5,7 +5,7 @@ const hit = document.getElementById('hit');
 const bubble = document.getElementById('bubble');
 const bubbleText = document.getElementById('bubble-text');
 
-const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk', 'hop', 'snack', 'megane'];
+const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk', 'hop', 'snack', 'megane', 'peek'];
 
 // Goofy tricks she does now and then: [pose, duration ms, lines]
 const TRICKS = [
@@ -31,6 +31,7 @@ const state = {
   napping: false,
   leaving: false,
   sulkUntil: 0, sulkPats: 0,
+  hideSeek: null, // { phase: "going" | "hidden", side, since, hintAt }
   glassesUntil: 0, alwaysGlasses: false,
   asleepSince: 0,
   lastActivity: Date.now(),
@@ -88,6 +89,7 @@ function airReact(event) {
 
 api.onClaude((ev) => {
   const id = ev.session || 'default';
+  if (state.hideSeek && /UserPromptSubmit|Notification/.test(ev.event)) endHideSeek();
   if (state.dragging) queueMicrotask(() => airReact(ev.event));
   const prev = sessions.get(id);
   wake();
@@ -183,6 +185,57 @@ function snack(item = 'cookie', line) {
   setTimeout(t.after, 3200);
 }
 
+// ---------- hide and seek ----------
+const HIDE_GIVE_UP_MS = 90 * 1000;
+function startHideSeek() {
+  if (state.leaving || state.dragging || state.hideSeek) return;
+  state.action = null;
+  const side = pick(['left', 'right', 'bottom']);
+  state.hideSeek = { phase: 'going', side, since: Date.now(), hintAt: 0 };
+  say(pick(['Count to 10! No peeking~ 🙈', 'Hide and seek! Close your eyes~', 'Ready or not… I\'m hiding! 🙈']), 2500);
+  if (side === 'bottom') return void setTimeout(beginHide, 1200);
+  // run to the edge of the screen first
+  const a = state.area;
+  state.walkTarget = side === 'right' ? a.x + a.width - state.w : a.x;
+}
+function beginHide() {
+  const h = state.hideSeek;
+  if (!h) return;
+  h.phase = 'hidden';
+  h.since = Date.now();
+  h.hintAt = Date.now() + 12000 + Math.random() * 8000;
+  hideBubble();
+  charEl.classList.add('hiding', 'hide-' + h.side);
+}
+function updateHideSeek(now) {
+  const h = state.hideSeek;
+  if (h.phase !== 'hidden') return;
+  if (now - h.since > HIDE_GIVE_UP_MS) {
+    endHideSeek();
+    setFace('smug', 2400);
+    say(pick(['You\'re bad at this~ 😝', 'I was right here the whole time!', 'Giving up? Fufu~']), 3000);
+    return;
+  }
+  if (now > h.hintAt) {
+    h.hintAt = now + 15000 + Math.random() * 10000;
+    say(pick(['*giggle*', 'hehe…', '…', '*tries not to laugh*']), 1500);
+  }
+}
+function found() {
+  const secs = Math.round((Date.now() - state.hideSeek.since) / 1000);
+  endHideSeek();
+  doAction('cheer', 1600);
+  setFace('star', 2000);
+  say(secs <= 3 ? 'Eh?! Already?! 😳' : `You found me! ✨ (${secs}s)`, 2600);
+}
+function endHideSeek() {
+  const h = state.hideSeek;
+  state.hideSeek = null;
+  if (h) charEl.classList.remove('hide-' + h.side);
+  if (h && h.phase === 'going') state.walkTarget = null;
+  setTimeout(() => { if (!state.hideSeek) charEl.classList.remove('hiding'); }, 800);
+}
+
 // Claude closed: a tiny EXIT door pops up, she waves and backs into it, then the app quits.
 // (the SessionStart hook brings her back next time)
 const LEAVE_MS = 6000;
@@ -211,6 +264,7 @@ api.onCommand((cmd) => {
   if (cmd === 'reset') { sessions.clear(); say('Status cleared!', 2000); }
   if (cmd === 'leave') leave();
   if (cmd === 'snack') snack();
+  if (cmd === 'hide') startHideSeek();
   if (cmd.startsWith('treat:')) snack(cmd.slice(6));
   if (cmd === 'glasses-on') { state.alwaysGlasses = true; putOnGlasses(0); }
   if (cmd === 'glasses-off') { state.alwaysGlasses = false; state.glassesUntil = 0; say('*takes off glasses*', 1500); }
@@ -423,6 +477,7 @@ function choosePose(now) {
   }
   if (bubbleSticky) hideBubble();
   if (now < state.sulkUntil) return ['sulk'];
+  if (state.hideSeek && state.hideSeek.phase === 'hidden') return ['peek'];
 
   if (state.napping || now - state.lastActivity > SLEEP_AFTER_MS) {
     if (!state.asleepSince) state.asleepSince = now;
@@ -445,6 +500,7 @@ function clampX(x) { return Math.min(Math.max(x, state.area.x - 20), state.area.
 function think(now) {
   if (now < state.nextIdeaAt) return;
   state.nextIdeaAt = now + 5000 + Math.random() * 9000;
+  if (state.hideSeek) return updateHideSeek(now);
   if (!state.wander || state.dragging || state.falling || state.action || state.napping || now < state.sulkUntil) return;
   if (claudeStatus().status !== 'idle') return;
   if (now - state.lastActivity > LOUNGE_AFTER_MS) {
@@ -504,7 +560,7 @@ function tick(t) {
     const d = state.walkTarget - state.x;
     state.dir = Math.sign(d) || state.dir;
     const step = 1.0 * dt;
-    if (Math.abs(d) <= step) { state.x = state.walkTarget; state.walkTarget = null; }
+    if (Math.abs(d) <= step) { state.x = state.walkTarget; state.walkTarget = null; if (state.hideSeek && state.hideSeek.phase === 'going') beginHide(); }
     else state.x += state.dir * step;
     api.setPos(state.x, state.y);
   }
@@ -545,6 +601,7 @@ hit.addEventListener('pointermove', (e) => {
     state.dragging = true;
     state.walkTarget = null;
     state.action = null;
+    if (state.hideSeek) endHideSeek();
     say(pick(['Waah!', 'Eek!', 'Wheee~', 'Where are we going?']), 1500);
     setFace(Math.random() < 0.3 ? 'shock' : 'surprised', 1200);
     drag.since = Date.now();
@@ -563,6 +620,7 @@ hit.addEventListener('pointerup', async (e) => {
   const d = drag;
   drag = null;
   if (!hovering) api.ignoreMouse(true);
+  if (!d.moved && state.hideSeek) return found();
   if (!d.moved) return onCheek(e) ? cheek() : onHead(e) ? pat() : poke();
 
   state.dragging = false;
