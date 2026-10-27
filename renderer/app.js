@@ -821,6 +821,21 @@ document.addEventListener('drop', async (e) => {
   say(`${kind} ${f.name}: ${info}`, 5000);
 });
 
+// ---------- a real backflip: side-on, crouch, jump, tuck, land ----------
+const FLIP_MS = 1500;     // keep in step with the bflip keyframes in style.css
+const FLIP_HEIGHT = 90;   // px her window rises at the top of the jump
+function backflip(lines) {
+  if (state.leaving || state.dragging || state.falling || state.perch || state.leap) return;
+  state.flipAt = Date.now();
+  doAction('backflip', FLIP_MS);
+  say(pick(lines), 900);
+  setTimeout(() => {
+    api.setPos(state.x, state.y);
+    setFace('wink', 1500);
+    say(pick(['Stuck the landing! ✨', '10 out of 10! ✨', 'Ta-da~!', 'Nailed it! 💪']), 1600);
+  }, FLIP_MS + 50);
+}
+
 // ---------- michael clawdeson: the moonwalk ----------
 // what she says while gliding (song titles only; add your own lines here)
 const MOONWALK_LINES = ['Shamone~! 🕺', '*Smooth Criminal mode* 🎶', 'Billie Jean~ ♪', 'Beat it! 🕺', '*adjusts fedora*', '♪ dun dun dun dun ♪'];
@@ -955,6 +970,7 @@ api.onCommand((cmd) => {
   if (cmd === 'dance') { doAction('dance', 6000); }
   if (cmd === 'trick') doTrick();
   if (cmd === 'moonwalk') moonwalk();
+  if (cmd === 'backflip') backflip(['Hup!', 'Backflip!', 'Watch this!']);
   if (cmd === 'sleep') { state.napping = true; say('Good night…', 2000); }
   if (cmd === 'wander-on') state.wander = true;
   if (cmd === 'wander-off') { state.wander = false; state.walkTarget = null; }
@@ -1087,6 +1103,7 @@ const TRIP_PROPS = ['banana', 'pebble', 'cable'];
 function doTrick() {
   const [pose, ms, lines] = pick(TRICKS);
   if (pose === 'moonwalk') return moonwalk();
+  if (pose === 'backflip') return backflip(lines);
   doAction(pose, ms);
   if (pose === 'flop') {
     const cause = pick(['banana', 'pebble', 'cable', 'tail', 'nothing']);
@@ -1181,6 +1198,7 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('airwait', extra.includes('airwait'));
   charEl.classList.toggle('quake', extra.includes('quake'));
   charEl.classList.toggle('moonwalk', extra.includes('moonwalk'));
+  charEl.classList.toggle('bflip', extra.includes('bflip'));
   charEl.classList.toggle('mj', state.action === 'moonwalk' || state.action === 'toestand'); // fedora + glove
   charEl.classList.toggle('flip', state.dir < 0 && pose === 'walk');
   if (!spinning) charEl.classList.toggle('view-back', pose === 'sulk' || (pose === 'exit' && !!state.exitBack));
@@ -1218,6 +1236,7 @@ function choosePose(now) {
   if (state.falling) return ['fall'];
   if (state.chase) return [state.chase.phase === 'run' ? 'walk' : 'idle'];
   if (state.action === 'moonwalk' && now < state.actionUntil) return ['walk', ['moonwalk']];
+  if (state.action === 'backflip' && now < state.actionUntil) return ['walk', ['bflip']];
   if (state.action && now < state.actionUntil) return [state.action, now < state.happyUntil ? ['happy'] : []];
   state.action = null;
 
@@ -1351,6 +1370,10 @@ function tick(t) {
       if (state.hideAfterLanding) { state.hideAfterLanding = false; setTimeout(startHideSeek, 350); }
     }
     api.setPos(state.x, state.y);
+  } else if (state.action === 'backflip' && !state.dragging) {
+    // the jump itself: her whole window arcs up and back down while the CSS does the crouch, tuck and rotation
+    const u = (now - state.flipAt - FLIP_MS * 0.3) / (FLIP_MS * 0.48);
+    api.setPos(state.x, state.y - (u > 0 && u < 1 ? FLIP_HEIGHT * 4 * u * (1 - u) : 0));
   } else if (state.action === 'moonwalk' && !state.dragging) {
     // facing one way, gliding the other
     const x = clampX(state.x - state.dir * 1.5 * dt);

@@ -300,12 +300,6 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 #char.twirl .tailR { animation: none; transform: rotate(-35deg); }
 #char.twirl #eyes-open { display: none; }
 #char.twirl #eyes-happy { display: inline; }
-/* backflip */
-#char.backflip #body { transform-origin: 50% 55%; animation: backflip 1.3s cubic-bezier(.4,.1,.4,1) forwards; }
-#char.backflip #armL { transform: rotate(128deg); }
-#char.backflip #armR { transform: rotate(-128deg); }
-#char.backflip #eyes-open { display: none; }
-#char.backflip #eyes-closed { display: inline; }
 /* sneeze */
 #char.achoo #head, #char.achoo #puffs { animation: achoo 1.8s ease-in-out forwards; }
 #char.achoo #eyes-open { display: none; }
@@ -325,14 +319,6 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
   100% { transform: none; }
 }
 @keyframes twirl { 0% { transform: scaleX(1) translateY(0); } 25% { transform: scaleX(0.1) translateY(-8px); } 50% { transform: scaleX(-1) translateY(-12px); } 75% { transform: scaleX(0.1) translateY(-8px); } 100% { transform: scaleX(1) translateY(0); } }
-@keyframes backflip {
-  0% { transform: none; }
-  18% { transform: translateY(6px) scale(1.06, 0.9); }
-  55% { transform: translateY(-60px) rotate(-200deg); }
-  82% { transform: translateY(0) rotate(-360deg); }
-  90% { transform: translateY(0) rotate(-360deg) scale(1.06, 0.92); }
-  100% { transform: rotate(-360deg); }
-}
 @keyframes achoo {
   0% { transform: none; }
   45% { transform: rotate(-9deg) translateY(-3px); }
@@ -1438,3 +1424,37 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 /* toe-stand: chin tucked down and to the side (the hat arm goes with the head) */
 #char.toestand #head, #char.toestand #hatArm { transform-box: view-box; transform-origin: 100px 140px; animation: chinDown 1.5s ease-out both; }
 @keyframes chinDown { 0% { transform: none; } 20%, 85% { transform: translateY(3px) rotate(7deg); } 100% { transform: none; } }
+
+/* ---------- a real backflip (side view; app.js moves the window for the jump arc) ----------
+   0-10% turn sideways, 24% crouch with arms swung back, 30% take off arms overhead,
+   38-70% tucked and rotating backwards, 78% feet down, 84% landing squat, arms up */
+#char.bflip #sideBody { transform-box: view-box; transform-origin: 100px 150px; animation: bflipBody 1.5s ease-in-out both !important; }
+@keyframes bflipBody {
+  0%, 10% { transform: none; }
+  24% { transform: translateY(10px) scale(1.05, 0.88); }
+  30% { transform: translateY(-4px) scale(0.96, 1.06); }
+  38% { transform: rotate(-70deg) scale(0.86); }
+  55% { transform: translateY(-16px) rotate(-200deg) scale(0.78); }
+  70% { transform: rotate(-320deg) scale(0.86); }
+  78% { transform: rotate(-360deg); }
+  84% { transform: rotate(-360deg) translateY(10px) scale(1.06, 0.88); }
+  100% { transform: rotate(-360deg); }
+}
+#char.bflip #sLegF, #char.bflip #sLegB { animation: bflipLeg 1.5s ease-in-out both !important; }
+@keyframes bflipLeg { 0%, 32% { transform: none; } 42%, 64% { transform: translateY(-8px) rotate(-78deg); } 76%, 100% { transform: none; } }
+#char.bflip #sArmF, #char.bflip #sArmB { transform-origin: 50% 8%; animation: bflipArm 1.5s ease-in-out both !important; }
+@keyframes bflipArm {
+  0%, 10% { transform: none; }
+  24% { transform: rotate(45deg); }
+  32% { transform: rotate(-170deg); }
+  44%, 64% { transform: rotate(-60deg); }
+  78% { transform: rotate(-100deg); }
+  88% { transform: rotate(-140deg); }
+  100% { transform: none; }
+}
+#char.bflip #sHead { animation: bflipHead 1.5s ease-in-out both !important; }
+@keyframes bflipHead { 0%, 34% { transform: none; } 44%, 64% { transform: rotate(14deg); } 76%, 100% { transform: none; } }
+#char.bflip #sHairBack, #char.bflip #sTail { animation: none !important; }
+#char.bflip #shadow { animation: bflipShadow 1.5s linear both; }
+/* the shadow rides up with her window, so it is hidden while she is in the air */
+@keyframes bflipShadow { 0%, 29% { opacity: 1; } 32%, 75% { opacity: 0; } 78%, 100% { opacity: 1; } }
