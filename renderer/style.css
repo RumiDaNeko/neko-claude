@@ -634,3 +634,107 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 #char.walk #sHairFar { animation: hairFlow 0.5s ease-in-out -0.25s infinite; }
 #side .hair-strand.far { stroke: #a95e43; }
 #side .far-bow .ribbon-bow { fill: #5a332c; }
+
+/* ---------- expressions (face layer) ---------- */
+.star-eye { fill: url(#starGrad); stroke: #b5603f; stroke-width: 1; }
+#eyes-star .star { transform-box: fill-box; transform-origin: center; }
+#char.face-star #eyes-star .star { animation: starSpin 1.6s ease-in-out infinite; }
+.mouth-fill { fill: #b5473f; stroke: #6a352a; stroke-width: 1; }
+.tongue { fill: #f08a8a; }
+#mouth-tongue .line-path { fill: none; stroke: #6a352a; stroke-width: 2; stroke-linecap: round; }
+#tears, #fx-anger, #blush-hatch-heavy { display: none; }
+.tear { fill: #9fd4f5; stroke: #ffffff; stroke-width: 0.8; opacity: 0.9; transform-box: fill-box; transform-origin: top; animation: tearDrop 1s ease-in infinite; }
+.tear.t2 { animation-delay: 0.45s; }
+#fx-anger path { fill: none; stroke: #e2553a; stroke-width: 2.4; stroke-linecap: round; }
+#fx-anger { transform-box: view-box; }
+.rig .pupil, .rig .iris { transform-box: fill-box; transform-origin: center; transition: transform 0.2s ease; }
+.blush { transition: transform 0.3s ease, opacity 0.3s ease; transform-box: fill-box; transform-origin: center; }
+
+#char.has-face .face-part { display: none !important; }
+
+/* ✦ sparkly */
+#char.face-star #eyes-star, #char.face-star #mouth-open { display: inline !important; }
+/* 😜 wink + tongue */
+#char.face-wink #eyes-open, #char.face-wink #eye-wink, #char.face-wink #mouth-tongue { display: inline !important; }
+#char.face-wink #eyes-open .eye.rig:nth-child(2) { display: none !important; }
+/* >_< squeezed (held too long) */
+#char.face-xx #eyes-xx, #char.face-xx #mouth-wavy { display: inline !important; }
+/* teary after a hard landing */
+#char.face-teary #eyes-xx, #char.face-teary #mouth-wavy, #char.face-teary #tears { display: inline !important; }
+/* ⊙ surprised: wide eyes, tiny pupils */
+#char.face-surprised #eyes-open, #char.face-surprised #mouth-open { display: inline !important; }
+#char.face-surprised .rig .pupil { transform: scale(0.5) !important; }
+#char.face-surprised .rig .iris { transform: scale(0.86) !important; }
+#char.face-surprised .rig .lidpos { transform: translateY(-2px) !important; }
+/* 😏 smug */
+#char.face-smug #eyes-open, #char.face-smug #mouth-cat { display: inline !important; }
+#char.face-smug .rig .lidpos { transform: translateY(8px) !important; }
+#char.face-smug .rig .gaze { transform: translate(4px, 1px) !important; }
+/* 💢 pout */
+#char.face-pout #eyes-open, #char.face-pout #mouth-pout, #char.face-pout #fx-anger { display: inline !important; }
+#char.face-pout .rig .lidpos { transform: translateY(6px) !important; }
+#char.face-pout .rig .gaze { transform: translate(-3px, 1px) !important; }
+#char.face-pout .blush { transform: scale(1.25); }
+#char.face-pout #fx-anger { animation: angerPulse 0.5s ease-in-out infinite alternate; }
+/* >///< flustered */
+#char.face-blush #eyes-open, #char.face-blush #mouth-wavy, #char.face-blush #blush-hatch-heavy { display: inline !important; }
+#char.face-blush .rig .gaze { transform: translate(5px, 4px) !important; }
+#char.face-blush .rig .lidpos { transform: translateY(4px) !important; }
+#char.face-blush .blush { transform: scale(1.4); }
+/* 🤔 thinking: eyes up to the side */
+#char.face-think #eyes-open, #char.face-think #mouth-flat { display: inline !important; }
+#char.face-think .rig .gaze { transform: translate(-4px, -5px) !important; }
+#char.face-think .rig .lidpos { transform: translateY(3px) !important; }
+/* 🥱 yawn */
+#char.face-yawn #eyes-closed, #char.face-yawn #mouth-big { display: inline !important; }
+#char.face-yawn #head, #char.face-yawn #puffs { animation: yawnTilt 2.2s ease-in-out; }
+/* ^ω^ cat smile */
+#char.face-cat #eyes-happy, #char.face-cat #mouth-cat { display: inline !important; }
+
+@keyframes starSpin { 0%, 100% { transform: rotate(0) scale(1); } 50% { transform: rotate(15deg) scale(1.12); } }
+@keyframes tearDrop { 0% { transform: translateY(0) scaleY(0.6); opacity: 0; } 25% { opacity: 0.95; } 100% { transform: translateY(9px) scaleY(1.1); opacity: 0; } }
+@keyframes angerPulse { from { transform: translate(156px, 72px) scale(0.9); } to { transform: translate(156px, 72px) scale(1.15); } }
+@keyframes yawnTilt { 0%, 100% { transform: rotate(0); } 40%, 70% { transform: rotate(-6deg) translateY(-2px); } }
+
+/* star eyes: their highlight is white too */
+#eyes-star .hl { fill: #ffffff; }
+
+/* ---------- Pat Pat ---------- */
+#pat-hand { display: none; }
+.pat-palm { fill: #fbeee6; stroke: #c98e7a; stroke-width: 1.1; }
+.pat-cuff { fill: #e48e6c; stroke: #b7806c; stroke-width: 1; }
+.pat-line { stroke: #d9a493; stroke-width: 1; stroke-linecap: round; fill: none; }
+#char.patting #pat-hand { display: inline; }
+#char.patting .hand-inner { animation: patPress 0.42s ease-out; }
+#char.patting #head, #char.patting #puffs { animation: patSquash 0.42s ease-out !important; }
+#char.patting #sHead { animation: patSquashSide 0.42s ease-out !important; }
+@keyframes patPress { 0% { transform: translateY(-4px); opacity: 0; } 30% { transform: translateY(14px); opacity: 1; } 60% { transform: translateY(9px); } 100% { transform: translateY(3px); opacity: 1; } }
+@keyframes patSquash { 0%, 100% { transform: scale(1, 1); } 30% { transform: scale(1.06, 0.88); } 60% { transform: scale(0.98, 1.03); } }
+@keyframes patSquashSide { 0%, 100% { transform: scale(1, 1); } 30% { transform: scale(1.05, 0.9); } }
+
+/* happy-pat face: ^ω^ with a heavy blush */
+#char.face-pat #eyes-happy, #char.face-pat #mouth-cat, #char.face-pat #blush-hatch-heavy { display: inline !important; }
+#char.face-pat .blush { transform: scale(1.3); }
+
+.heart { fill: #ff7d9a; stroke: #ffffff; stroke-width: 0.8; transform-box: fill-box; transform-origin: center; animation: heartUp 1.3s ease-out forwards; }
+@keyframes heartUp { 0% { transform: translateY(0) scale(0.4); opacity: 0; } 20% { transform: translateY(-6px) scale(1.15); opacity: 1; } 100% { transform: translateY(-34px) scale(0.9); opacity: 0; } }
+
+/* petpet-style: choppy GIF-like steps, hand presses, head squashes wide; two cycles per pat */
+#char.patting .hand-inner { animation: petHand 0.36s steps(1, end) 2; transform-origin: 50% 100%; }
+#char.patting #head, #char.patting #puffs { animation: petSquash 0.36s steps(1, end) 2 !important; }
+#char.patting #sHead { animation: petSquash 0.36s steps(1, end) 2 !important; }
+@keyframes petHand {
+  0% { transform: translateY(6px) scale(1, 1); }
+  20% { transform: translateY(11px) scale(1.05, 0.94); }
+  40% { transform: translateY(16px) scale(1.1, 0.88); }
+  60% { transform: translateY(11px) scale(1.05, 0.94); }
+  80% { transform: translateY(5px) scale(0.98, 1.03); }
+}
+@keyframes petSquash {
+  0% { transform: scale(1, 1); }
+  20% { transform: scale(1.07, 0.91); }
+  40% { transform: scale(1.14, 0.83); }
+  60% { transform: scale(1.07, 0.91); }
+  80% { transform: scale(0.98, 1.04); }
+}
+.heart { animation: none; }

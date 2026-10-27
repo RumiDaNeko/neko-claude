@@ -73,6 +73,7 @@ api.onClaude((ev) => {
     case 'UserPromptSubmit':
       sessions.set(id, { status: 'working', tool: null, at: Date.now() });
       say(pick(['On it!', 'Leave it to me!', 'Okay~ thinking…', 'Let\'s go!']), 2500);
+      setFace('think', 1800);
       break;
     case 'PreToolUse':
       sessions.set(id, { status: 'working', tool: ev.tool, at: Date.now() });
@@ -85,12 +86,14 @@ api.onClaude((ev) => {
         : /waiting|idle/i.test(msg) ? 'Psst… your turn~'
         : msg.slice(0, 60) || 'Hey! I need you 👋';
       say(line, 0, true);
+      setFace('surprised', 1000);
       break;
     }
     case 'Stop':
       sessions.set(id, { status: 'idle', at: Date.now() });
       if (claudeStatus().status === 'idle') {
         doAction('cheer', 2200);
+        if (Math.random() < 0.5) setFace('star', 2200);
         say(pick(['Done! ✨', 'All finished!', 'Ta-da~!', 'Your turn!']), 5000);
       }
       break;
@@ -126,6 +129,18 @@ function say(text, ms = 3000, sticky = false) {
   if (!sticky && ms > 0) bubbleTimer = setTimeout(hideBubble, ms);
 }
 function hideBubble() { bubble.classList.add('hidden'); bubbleSticky = false; }
+
+// ---------- expressions ----------
+const FACES = ['star', 'wink', 'xx', 'teary', 'surprised', 'smug', 'pout', 'blush', 'think', 'yawn', 'cat', 'pat'];
+let faceTimer;
+function setFace(name, ms = 0) {
+  clearTimeout(faceTimer);
+  charEl.classList.remove('has-face', ...FACES.map((f) => 'face-' + f));
+  if (!name) return;
+  charEl.classList.add('has-face', 'face-' + name);
+  if (ms) faceTimer = setTimeout(() => setFace(null), ms);
+}
+const pokes = [];
 
 // ---------- actions & poses ----------
 function doTrick() {
@@ -239,6 +254,7 @@ function think(now) {
   if (claudeStatus().status !== 'idle') return;
   if (now - state.lastActivity > LOUNGE_AFTER_MS) {
     if (Math.random() < 0.15) say(pick(['…', 'Hmm…', '*stares at the ceiling*', 'Bored~', 'Still there?']), 2500);
+    else if (Math.random() < 0.08) { setFace('yawn', 2200); say('Fuaah~', 2200); }
     return;
   }
 
@@ -250,7 +266,14 @@ function think(now) {
     doAction('dance', 3000);
   } else if (r < 0.7) {
     doTrick();
-  } else if (r < 0.78) {
+  } else if (r < 0.74) {
+    const idleFor = now - state.lastActivity;
+    const [face, lines] = idleFor > 2 * 60 * 1000 && Math.random() < 0.6
+      ? ['yawn', ['*yawn*', 'Fuaah~', 'Sleepy…']]
+      : pick([['smug', ['Heh~', 'Fufu~', 'I know something you don\'t~']], ['cat', ['Nya~', '♪', 'Hehe~']]]);
+    setFace(face, 2400);
+    say(pick(lines), 2400);
+  } else if (r < 0.8) {
     say(pick(['~♪', 'Hmm hmm~', 'What should we make?', 'Stretch break!', '☕?']), 2500);
   }
 }
@@ -261,6 +284,7 @@ function tick(t) {
   last = t;
   const now = Date.now();
   think(now);
+  updateHearts(t);
 
   if (state.falling) {
     state.vy += 0.9 * dt;
@@ -270,7 +294,7 @@ function tick(t) {
     if (state.y >= ground()) {
       state.y = ground();
       state.falling = false;
-      if (state.vy > 22) { charEl.classList.add('oops'); say('Ouch!', 1500); setTimeout(() => charEl.classList.remove('oops'), 1500); }
+      if (state.vy > 22) { charEl.classList.add('oops'); setFace('teary', 2200); say(pick(['Ouch!', 'Owie… >_<', 'That hurt!']), 2200); setTimeout(() => charEl.classList.remove('oops'), 1500); }
       state.vy = state.vx = 0;
       flash('land', 350);
     }
@@ -310,8 +334,11 @@ hit.addEventListener('pointermove', (e) => {
     state.walkTarget = null;
     state.action = null;
     say(pick(['Waah!', 'Eek!', 'Wheee~', 'Where are we going?']), 1500);
+    setFace('surprised', 1200);
+    drag.since = Date.now();
   }
   if (!drag.moved) return;
+  if (drag.since && Date.now() - drag.since > 3000 && !charEl.classList.contains('face-xx')) { setFace('xx'); say('Put me dooown~', 2000); }
   state.x = e.screenX - drag.ox;
   state.y = e.screenY - drag.oy;
   drag.hist.push({ x: e.screenX, y: e.screenY, t: performance.now() });
@@ -324,9 +351,10 @@ hit.addEventListener('pointerup', async (e) => {
   const d = drag;
   drag = null;
   if (!hovering) api.ignoreMouse(true);
-  if (!d.moved) return poke();
+  if (!d.moved) return onHead(e) ? pat() : poke();
 
   state.dragging = false;
+  setFace(null);
   state.area = await api.workAreaAt(e.screenX, e.screenY);
   const h = d.hist;
   if (h.length >= 2) {
@@ -340,14 +368,86 @@ hit.addEventListener('pointerup', async (e) => {
 
 hit.addEventListener('contextmenu', (e) => { e.preventDefault(); api.openMenu(); });
 
+// ---------- Pat Pat ----------
+const svgRoot = document.getElementById('svg');
+const heartsEl = document.getElementById('fx-hearts');
+const pats = [];
+let patClassTimer;
+
+function onHead(e) {
+  const pt = svgRoot.createSVGPoint();
+  pt.x = e.clientX;
+  pt.y = e.clientY;
+  const p = pt.matrixTransform(svgRoot.getScreenCTM().inverse());
+  return p.y < 132;
+}
+
+const hearts = [];
+function spawnHeart() {
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  p.setAttribute('class', 'heart');
+  p.setAttribute('d', 'M0,3 C-6,-3 -3,-8 0,-4 C3,-8 6,-3 0,3 Z');
+  g.appendChild(p);
+  heartsEl.appendChild(g);
+  hearts.push({ g, born: performance.now(), x: 70 + Math.random() * 60, y: 30 + Math.random() * 16, s: 1.2 + Math.random() * 0.8, drift: (Math.random() - 0.5) * 10 });
+  updateHearts(performance.now());
+}
+// called every frame from tick()
+function updateHearts(now) {
+  for (let i = hearts.length - 1; i >= 0; i--) {
+    const h = hearts[i];
+    const t = (now - h.born) / 1300;
+    if (t >= 1) { h.g.remove(); hearts.splice(i, 1); continue; }
+    const rise = 1 - Math.pow(1 - t, 2);
+    const pop = t < 0.2 ? 0.4 + (t / 0.2) * 0.75 : 1.15 - (t - 0.2) * 0.3;
+    h.g.setAttribute('transform', `translate(${h.x + h.drift * rise} ${h.y - 34 * rise}) scale(${h.s * pop})`);
+    h.g.setAttribute('opacity', t < 0.2 ? t / 0.2 : 1 - (t - 0.2) / 0.8);
+  }
+}
+
+function pat() {
+  wake();
+  const now = Date.now();
+  pats.push(now);
+  while (pats.length && now - pats[0] > 4000) pats.shift();
+
+  // restart the hand + squish
+  clearTimeout(patClassTimer);
+  charEl.classList.remove('patting');
+  void charEl.getBoundingClientRect();
+  charEl.classList.add('patting');
+  patClassTimer = setTimeout(() => charEl.classList.remove('patting'), 740);
+
+  setFace('pat', 1800);
+  const n = pats.length >= 4 ? 3 : pats.length >= 2 ? 2 : 1;
+  for (let i = 0; i < n; i++) setTimeout(spawnHeart, i * 120);
+  if (pats.length >= 6) say(pick(['Purrr~ ♡', 'Nyaa~ ♡♡', '*melts*']), 1800);
+  else if (pats.length >= 3) say(pick(['Ehehe~ ♡', 'More~ ♡', 'Mmm~']), 1600);
+  else say(pick(['♡', 'Hehe~', 'Pat pat~']), 1400);
+}
+
 function poke() {
   if (claudeStatus().status === 'waiting') {
     say('Go check the terminal! 👉', 2500);
     return;
   }
   flash('poke', 350);
+  const now = Date.now();
+  pokes.push(now);
+  while (pokes.length && now - pokes[0] > 6000) pokes.shift();
+  if (pokes.length >= 5) {
+    setFace('pout', 2600);
+    say(pick(['Mou! Stop it! 💢', 'Hmph!', 'I\'m not a button!']), 2600);
+    return;
+  }
+  if (pokes.length >= 3) {
+    setFace('blush', 2000);
+    say(pick(['E-eh?!', 'S-stop that~', 'Th-that tickles…']), 2000);
+    return;
+  }
   doAction('hello', 900);
-  state.happyUntil = Date.now() + 900;
+  if (Math.random() < 0.5) setFace('wink', 1200); else state.happyUntil = now + 900;
   say(pick(POKE_LINES), 2000);
 }
 

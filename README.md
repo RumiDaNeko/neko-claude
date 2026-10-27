@@ -40,7 +40,11 @@ When Claude is idle:
 - she dances, and every so often does something goofy: trips and faceplants, does a full 360° twirl, backflips, or sneezes her hairclip off
 - after 5 idle minutes she sits on the floor and stares into space; after an hour she falls asleep
 
-Drag her anywhere and let go to toss her (she falls with gravity). Click to poke her. Right-click her, or click her tray icon, for the menu (dance, do a trick, nap, toggle wandering, show in taskbar, quit). On Windows 11 the tray icon starts in the hidden-icons overflow (^); drag it onto the taskbar to keep it visible.
+**Pat pat:** click her head and a hand pats it, her head squishes and hearts pop out; keep patting and she starts purring.
+
+**Expressions:** sparkly star eyes when Claude finishes, a wink when you poke her, flustered >///< then a 💢 pout if you keep poking, surprised when picked up, xx eyes if you hold her up too long, teary >_< after a hard landing, a thinking look when you send a prompt, plus a smug grin, a cat smile and yawns while idle.
+
+Drag her anywhere and let go to toss her (she falls with gravity). Click her body to poke her. Right-click her, or click her tray icon, for the menu (dance, do a trick, nap, toggle wandering, show in taskbar, quit). On Windows 11 the tray icon starts in the hidden-icons overflow (^); drag it onto the taskbar to keep it visible.
 
 The icon lives in `assets/icon.svg`; `npm run build:icon` regenerates `icon.png`, `tray.png` and the multi-size `icon.ico`.
 
