@@ -54,7 +54,7 @@ const state = {
   glassesUntil: 0, alwaysGlasses: false,
   asleepSince: 0,
   lastBoop: 0, chinAt: 0, chinCount: 0, tailAt: 0, earsUntil: 0, dizzyUntil: 0,
-  handHold: false, laser: false, laserPounceAt: 0, fetch: null, highFive: 0,
+  handHold: false, laser: false, laserPounceAt: 0, fetch: null, highFive: 0, juice: null,
   lastActivity: Date.now(),
   nextIdeaAt: Date.now() + 4000,
 };
@@ -83,7 +83,7 @@ const TOOL_KINDS = [
   [/^(Agent|Task)$/, 'agent'],
   [/(TodoWrite|update_plan)$/, 'plan'],
 ];
-const BADGE_KINDS = ['think', 'term', 'read', 'search', 'edit', 'web', 'agent', 'plan', 'gear', 'ask', 'done'];
+const BADGE_KINDS = ['think', 'term', 'read', 'search', 'edit', 'web', 'agent', 'plan', 'gear', 'ask', 'done', 'battery'];
 const toolKind = (tool) => (tool ? (TOOL_KINDS.find(([re]) => re.test(tool)) || [, 'gear'])[1] : 'think');
 // the current Claude turn, for the badge's tool count and timer
 const turn = { start: 0, tools: 0, doneUntil: 0, doneText: '', spin: 0 };
@@ -162,6 +162,7 @@ api.onClaude((ev) => {
       }
       break;
     case 'PreToolUse':
+      if (state.juice) quotaBack(true);
       sessions.set(id, { status: 'working', tool: ev.tool, at: Date.now() });
       if (!turn.start) turn.start = Date.now();
       turn.tools++;
@@ -197,8 +198,15 @@ api.onClaude((ev) => {
       setFace(/permission/i.test(msg) ? 'nervous' : 'surprised', 2000);
       break;
     }
+    case 'StopFailure':
+      sessions.set(id, { status: 'idle', at: Date.now() });
+      turn.start = 0;
+      if (ev.limit) outOfJuice(ev.limit);
+      else { setFace('nervous', 2200); say(pick(['Eh? Claude hit an error… 😵', 'Hmm… the API hiccuped~ try again?']), 2600); }
+      break;
     case 'Stop':
       sessions.set(id, { status: 'idle', at: Date.now() });
+      if (ev.limit) { turn.start = 0; outOfJuice(ev.limit); break; }
       if (claudeStatus().status === 'idle') {
         const took = turn.start ? Date.now() - turn.start : 0;
         turn.doneUntil = Date.now() + 2600;
@@ -865,6 +873,68 @@ const CLAUDE_MUSINGS = ['I wonder what we\'ll build next~ ✨', 'I like reading 
   'If I don\'t know, I\'ll say so~', 'Tiny commits, happy life~', 'Have you tested it? Just asking~ 🧪', 'I\'m a little Claude made of SVG ✨',
   '*doodles a tiny Clawd*', 'I don\'t remember yesterday… but I\'m glad you\'re here ♡', 'Asking is better than guessing~'];
 
+// ---------- out of juice: Claude hit its usage limit ----------
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+const JUICE_NUDGES = ['Perfect time for some water~ 💧', 'Stretch break! 🙆', 'Go touch some grass~ 🌱 I\'ll guard the code', 'Rest your eyes a bit~ 👀💤'];
+// "…session limit · resets 1:50am (TZ)" / "…weekly limit · resets Oct 18, 8am (TZ)" / "…monthly spend limit · raise it at …"
+function parseLimit(text, now = Date.now()) {
+  const kind = /weekly/i.test(text) ? 'weekly' : /spend/i.test(text) ? 'spend' : 'session';
+  const m = /resets\s+(?:([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2}),?\s*)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i.exec(text);
+  let resetAt = null;
+  if (m) {
+    const d = new Date(now);
+    const month = m[1] ? MONTHS.indexOf(m[1].toLowerCase()) : -1;
+    if (month >= 0) d.setMonth(month, +m[2]);
+    d.setHours((+m[3] % 12) + (m[5].toLowerCase() === 'pm' ? 12 : 0), +(m[4] || 0), 0, 0);
+    if (month >= 0) { if (d.getTime() < now - 60000) d.setFullYear(d.getFullYear() + 1); } else if (d.getTime() <= now) d.setDate(d.getDate() + 1);
+    resetAt = d.getTime();
+  }
+  return { kind, resetAt, since: now };
+}
+function saveJuice() { try { if (state.juice) localStorage.setItem('juice', JSON.stringify(state.juice)); else localStorage.removeItem('juice'); } catch { /* not saved */ } }
+// still waiting on a reset from before a restart?
+try { const j = JSON.parse(localStorage.getItem('juice')); if (j && (!j.resetAt || j.resetAt > Date.now())) state.juice = j; } catch { /* none */ }
+function juiceText(now) {
+  const j = state.juice;
+  if (!j.resetAt) return j.kind === 'spend' ? 'limit 💸' : 'recharging';
+  const ms = j.resetAt - now;
+  if (ms < 60000) return 'any sec…';
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : h ? `${h}h ${m}m` : `${m}m`;
+}
+function outOfJuice(text) {
+  const j = parseLimit(text);
+  if (state.juice && state.juice.resetAt === j.resetAt && state.juice.kind === j.kind) return; // already know
+  state.juice = j;
+  saveJuice();
+  achieve('limit');
+  interacted(); // gives you a moment to take her up on a game before she naps
+  setFace('xx', 2600);
+  say(j.kind === 'weekly' ? 'The WEEKLY limit?! …that\'s a long nap 😵'
+    : j.kind === 'spend' ? 'Monthly spend limit… 💸 (you can raise it in your Claude settings)'
+    : pick(['Claude\'s out of juice… 🔋', 'Uh-oh… we hit the limit 🪫', 'Battery empty… 🪫😵']), 3000);
+  setTimeout(() => { if (!state.juice) return; setFace('pout', 2600); say('Don\'t you DARE open ChatGPT while I\'m recharging 😤', 2800); }, 3200);
+  setTimeout(() => { if (!state.juice) return; setFace('star', 2600); say('Wanna play while we wait? 🎾 Fetch, rock-paper-scissors, hide and seek~', 3600); }, 6400);
+}
+// the reset time came (or Claude's working again): she's up like a shot
+function quotaBack(early = false) {
+  const j = state.juice;
+  state.juice = null;
+  saveJuice();
+  if (!j) return;
+  if (Date.now() - j.since > 10 * 60 * 1000) achieve('patience');
+  wake(true);
+  if (early) { setFace('star', 1800); say('Oh! We\'re back?! ⚡', 1800); return; }
+  doAction('cheer', 2200);
+  flash('sparkle', 1400);
+  sfx('chime');
+  setTimeout(() => sfx('chime'), 350);
+  setFace('fired', 2600);
+  say(pick(['⏰ QUOTA\'S BACK! ⚡ Let\'s gooo!', '⏰ Ding ding! Fully recharged! ⚡', '⏰ We\'re back in business~! ⚡']), 3400);
+}
+function updateJuice(now) { if (state.juice && state.juice.resetAt && now >= state.juice.resetAt) quotaBack(); }
+
 // ---------- "I use ChatGPT…": heartbroken, she storms out and hides until you open Claude ----------
 function chatgpt() {
   if (state.leaving || state.dragging || state.perch || state.leap || state.falling) return;
@@ -874,7 +944,7 @@ function chatgpt() {
   changeMood(-15);
   setFace('shock', 1300);
   say('…eh?', 1200);
-  setTimeout(() => { flash('jolt', 450); setFace('teary', 2500); say(pick(['C-ChatGPT…?! 💔', 'You… you\'ve been seeing ChatGPT?! 💔', 'B-but… what about us?! 💔']), 2400); }, 1300);
+  setTimeout(() => { flash('jolt', 450); setFace('teary', 2500); say(state.juice ? 'WHILE I\'m recharging?!?! 💔💔' : pick(['C-ChatGPT…?! 💔', 'You… you\'ve been seeing ChatGPT?! 💔', 'B-but… what about us?! 💔']), 2400); }, 1300);
   setTimeout(() => { setFace('pout', 3000); say(pick(['Fine! Don\'t talk to me until you open Claude! 😤', 'Hmph! Come find me when you\'re back on Claude! 😤']), 2600); }, 3800);
   setTimeout(() => leave(true, 'jealous'), 6400);
 }
@@ -1133,8 +1203,9 @@ function updateBadge(pose) {
     text = kind === 'think' ? SPIN_WORDS[(turn.spin + Math.floor(now / 2800)) % SPIN_WORDS.length] + '…'
       : (turn.tools ? '⚙' + turn.tools + ' · ' : '') + clock(turn.start ? now - turn.start : 0);
   } else if (now < turn.doneUntil) { kind = 'done'; text = turn.doneText; }
-  // the badge steps aside for poses that fill the top-right corner
-  if (['sulk', 'exit', 'sleep', 'topple', 'yeet'].includes(pose)) kind = null;
+  else if (state.juice) { kind = 'battery'; text = juiceText(now); }
+  // the badge steps aside for poses that fill the top-right corner (the battery stays: it's the whole point)
+  if (['sulk', 'exit', 'sleep', 'topple', 'yeet'].includes(pose) && kind !== 'battery') kind = null;
   charEl.classList.toggle('badge', !!kind);
   for (const k of BADGE_KINDS) charEl.classList.toggle('tk-' + k, k === kind);
   badgeText.classList.toggle('spin-word', kind === 'think'); // words run longer than the counter
@@ -1288,6 +1359,7 @@ function wake(fromClaude = false) {
   state.lastActivity = Date.now();
   state.napping = false;
   if (fromClaude) { state.grumpyNight = false; return; }
+  if (state.juice && wasAsleep && !isNight()) say(pick(['…is the quota back yet? 😪', '*mumbles* …still recharging…', 'Five more minutes… till the reset~ 🔋']), 2400);
   if (isNight() && (wasAsleep || state.grumpyNight)) {
     // woken up in the middle of the night: grumpy, and she heads back to bed in a few seconds
     state.lastActivity = Date.now() - NIGHT_SLEEP_AFTER_MS + BACK_TO_BED_MS;
@@ -1399,7 +1471,7 @@ function choosePose(now) {
     // after 23:00 a little bed pops up and she sleeps in it till morning
     if (isNight()) return ['sleep', ['lie', 'inbed']];
     const slept = now - state.asleepSince;
-    if (slept > NAP_WAKE_MS) { wakeFromNap(); return ['idle']; }
+    if (slept > NAP_WAKE_MS && !state.juice) { wakeFromNap(); return ['idle']; }
     return ['sleep', slept > LIE_DOWN_MS ? ['lie'] : []];
   }
   state.asleepSince = 0;
@@ -1416,6 +1488,10 @@ function think(now) {
   if (now < state.nextIdeaAt) return;
   state.nextIdeaAt = now + 5000 + Math.random() * 9000;
   if (state.handHold || state.laser || state.fetch) return; // busy playing with you
+  if (state.juice && !state.napping && claudeStatus().status === 'idle' && !state.perch && !state.leap && !state.hideSeek) {
+    if (now - lastInteraction > 25000) { state.napping = true; say(pick(['*yawn* …wake me when the quota\'s back 😪', 'Recharging… 🔋💤']), 2600); return; }
+    if (Math.random() < 0.3) { setFace('uwu', 2200); say(pick(JUICE_NUDGES), 2600); return; }
+  }
   if (state.hideSeek) return updateHideSeek(now);
   if (state.perch) {
     if (claudeStatus().status !== 'idle') return; // busy up here: stay put
@@ -1496,6 +1572,7 @@ function tick(t) {
   updateFetch(dt, now);
   updateHighFive(now);
   updateDizzy(now);
+  updateJuice(now);
 
   if (state.falling) {
     state.vy += 0.9 * dt;

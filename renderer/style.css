@@ -1560,3 +1560,14 @@ body.toasting #bubble { top: 48px; }
 #ball.on { display: block; }
 .ball-fur { fill: #d8f35a; stroke: #93a82a; stroke-width: 1; }
 .ball-seam { fill: none; stroke: #ffffff; stroke-width: 1.2; stroke-linecap: round; }
+
+/* ---------- out of juice: a nearly empty battery with a countdown to the reset ---------- */
+#char.tk-battery .tk-battery { display: inline; }
+.ic-batt { fill: #ffffff; stroke: #6b6b6b; stroke-width: 1.4; }
+.ic-batt-cap { fill: #6b6b6b; }
+.ic-batt-low { fill: #e2553a; animation: battBlink 1.2s steps(2) infinite; }
+@keyframes battBlink { 50% { opacity: 0.25; } }
+.ic-bolt { fill: #f5c542; stroke: #c9962a; stroke-width: 0.6; stroke-linejoin: round; transform-box: fill-box; transform-origin: center; animation: boltPulse 1.6s ease-in-out infinite; }
+@keyframes boltPulse { 0%, 100% { scale: 0.85; opacity: 0.6; } 50% { scale: 1.1; opacity: 1; } }
+/* the battery takes the corner the zzz's normally use */
+#char.tk-battery #fx-zzz { display: none !important; }

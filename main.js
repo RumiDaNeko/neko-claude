@@ -67,6 +67,8 @@ const ACHIEVEMENTS = [
   { id: 'rpscheat', on: 'rps-cheat', icon: '😏', name: 'Caught Red-Handed', desc: 'Catch her changing her throw' },
   { id: 'chatgpt', on: 'chatgpt', icon: '💔', name: 'Et Tu, User?', desc: 'Tell her you use ChatGPT' },
   { id: 'forgiven', on: 'forgiven', icon: '💞', name: 'Back to Claude', desc: 'Win her back by opening Claude' },
+  { id: 'limit', on: 'limit', icon: '🪫', name: 'Out of Juice', desc: 'Hit the usage limit with her' },
+  { id: 'patience', on: 'patience', icon: '⏳', name: 'Patience', desc: 'Wait out a reset with her' },
 ];
 let ach = { got: {}, counts: {}, kinds: {} };
 const achFile = () => path.join(app.getPath('userData'), 'achievements.json');

@@ -2,6 +2,7 @@
 // Claude Code hook -> claude-chan bridge. Reads the hook JSON on stdin and forwards
 // a trimmed event to the companion. Never blocks or fails Claude Code.
 import { spawn } from 'node:child_process';
+import { closeSync, fstatSync, openSync, readSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +19,32 @@ function launch() {
     delete env.ELECTRON_RUN_AS_NODE;
     spawn(electron, ['.'], { cwd: HERE, env, detached: true, stdio: 'ignore', windowsHide: true }).unref();
   } catch { /* electron not installed: nothing to do */ }
+}
+
+// "You've hit your session limit · resets 1:50am (Asia/Ho_Chi_Minh)", "...weekly limit · resets Oct 18, 8am (...)",
+// "...monthly spend limit · raise it at ...". Claude Code ends the turn with that as a synthetic assistant message.
+const LIMIT_RE = /You['’]ve hit your [^\n"]*?limit[^\n"]*/;
+function findLimit(input) {
+  for (const s of [input.last_assistant_message, input.error_details, input.error]) {
+    const m = typeof s === 'string' && LIMIT_RE.exec(s);
+    if (m) return m[0];
+  }
+  // otherwise: is the newest assistant entry in the transcript the limit message?
+  try {
+    const fd = openSync(input.transcript_path, 'r');
+    const size = fstatSync(fd).size;
+    const buf = Buffer.alloc(Math.min(size, 65536));
+    readSync(fd, buf, 0, buf.length, size - buf.length);
+    closeSync(fd);
+    const lines = buf.toString('utf8').split('\n').reverse();
+    for (const line of lines) {
+      if (!line.includes('"type":"assistant"')) continue;
+      const m = LIMIT_RE.exec(line);
+      return m ? m[0] : null;
+    }
+  } catch { /* no transcript: nothing to find */ }
+  // a turn that died of a rate limit, without the friendly message
+  return input.error === 'rate_limit' ? 'rate limit' : null;
 }
 
 let raw = '';
@@ -37,6 +64,8 @@ process.stdin.on('end', async () => {
     cwd: input.cwd,
     at: Date.now(),
   };
+  // the turn ended: was it because Claude ran out of quota?
+  if (event.event === 'Stop' || event.event === 'StopFailure') event.limit = findLimit(input) || undefined;
   try {
     await fetch(`http://127.0.0.1:${PORT}/event`, {
       method: 'POST',

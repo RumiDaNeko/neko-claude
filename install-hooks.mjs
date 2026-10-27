@@ -16,7 +16,7 @@ const target = global
 
 const hookPath = path.join(here, 'hook.mjs').replace(/\\/g, '/');
 const command = `node "${hookPath}"`;
-const EVENTS = ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'PostToolUseFailure', 'Notification', 'Stop', 'SessionEnd'];
+const EVENTS = ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'PostToolUseFailure', 'Notification', 'Stop', 'StopFailure', 'SessionEnd'];
 
 let settings = {};
 if (fs.existsSync(target)) settings = JSON.parse(fs.readFileSync(target, 'utf8'));

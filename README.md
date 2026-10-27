@@ -48,6 +48,7 @@ A thought bubble beside her shows what Claude is up to, with a little animated i
 **She's a little Claude.** Now and then she thinks out loud the way Claude works: reading before touching anything, making small careful changes, running things to check they really work, looking things up instead of guessing. She'd rather ask than guess when Claude needs permission, and she's honest at the finish: if something still failed, she says so instead of just cheering. In quiet moments she muses a bit too ("If I don't know, I'll say so~").
 
 - **Long runs:** after 3 minutes she takes a coffee break; after an hour of coding she holds out a glass of water and tells you to take a break (click her to take it, or she drinks it herself).
+- **Out of juice 🪫:** when Claude hits its usage limit she notices (via the `StopFailure` hook and the limit message) and her badge turns into a blinking battery with a countdown to the reset ("2h 14m"). She offers a game while you wait, nudges you to drink water or stretch, warns you not to even *think* about ChatGPT, then naps until the reset (wake her and she mumbles "…is the quota back yet?"). At the reset time she jumps up: "⏰ QUOTA'S BACK! ⚡ Let's gooo!". The countdown survives restarts. Re-run `npm run install-hooks:global` after updating to get the new hook.
 - **Mid-air:** if you're holding her when Claude changes status she reacts anyway: typing while dangling, wriggling to be put down when Claude needs you, cheering when it's done.
 - **Her little sister:** open a second Claude session while the first is still going and her little sister (blue hair) walks in for it, reacts to that session only, and waves at her big sister now and then. Only one sister at a time. When the sister's session ends she heads home; if clawde chan's session ends first, she takes over her sister's.
 
@@ -77,7 +78,7 @@ Right-click her (or click the tray icon) for the menu.
 
 ## Achievements 🏆
 
-47 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in `achievements.json` in the app's user-data folder; the list lives in `ACHIEVEMENTS` in `main.js`.
+49 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in `achievements.json` in the app's user-data folder; the list lives in `ACHIEVEMENTS` in `main.js`.
 
 **Mood:** pats, treats, finding her, finished work and passing tests cheer her up; teasing, errors and being ignored wear her down. A happy clawde chan hums and dances more; a grumpy one mopes and has a shorter fuse. Her mood and the menu toggles are remembered across restarts.
 
