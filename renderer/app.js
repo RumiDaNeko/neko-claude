@@ -1077,6 +1077,19 @@ let faceTimer;
 // ---------- Claude status badge ----------
 const badgeText = document.getElementById('badge-text');
 const clock = (ms) => { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+// spinner words: size the box to ✻ + word (its right edge stays put) and centre the dots in it
+const badgeEl = document.getElementById('status-badge');
+function fitBadge() {
+  const left = 8.5, right = 6, star = 7, gap = 2; // a bit more on the left: the rounded corner is right by the ✻
+  const tw = badgeText.getComputedTextLength();
+  const w = Math.max(46, left + star + gap + tw + right);
+  const x = 196 - w;
+  badgeEl.style.setProperty('--bx', x + 'px');
+  badgeEl.style.setProperty('--bw', w + 'px');
+  badgeEl.style.setProperty('--sx', (x + left + star / 2) + 'px');
+  badgeEl.style.setProperty('--wx', (x + left + star + gap + tw / 2 - 173) + 'px');
+  badgeEl.style.setProperty('--dx', (x + w / 2 - 172) + 'px');
+}
 function updateBadge(pose) {
   const now = Date.now();
   const claude = claudeStatus();
@@ -1092,12 +1105,12 @@ function updateBadge(pose) {
   if (['sulk', 'exit', 'sleep', 'topple', 'yeet'].includes(pose)) kind = null;
   charEl.classList.toggle('badge', !!kind);
   for (const k of BADGE_KINDS) charEl.classList.toggle('tk-' + k, k === kind);
+  badgeText.classList.toggle('spin-word', kind === 'think'); // words run longer than the counter
   if (kind && badgeText.textContent !== text) {
     badgeText.textContent = text;
-    // each new spinner word hops in
-    if (kind === 'think') { badgeText.classList.remove('word-in'); void badgeText.getBBox(); badgeText.classList.add('word-in'); }
+    // each new spinner word hops in, and the box hugs it
+    if (kind === 'think') { badgeText.classList.remove('word-in'); void badgeText.getBBox(); badgeText.classList.add('word-in'); fitBadge(); }
   }
-  badgeText.classList.toggle('spin-word', kind === 'think'); // words run longer than the counter
 }
 
 // ---------- glasses ----------
