@@ -1,0 +1,53 @@
+# neko-claude
+
+claude-chan, a 2D chibi desktop companion who lives on your taskbar and reacts to Claude Code.
+
+![claude-chan: idle, walking, working, needs your OK, done, asleep](preview.png)
+
+## Run
+
+Needs Node.js 18+.
+
+```bash
+npm install
+npm start
+```
+
+## Hook her up to Claude Code
+
+```bash
+npm run install-hooks:global   # every project (~/.claude/settings.json), recommended
+npm run install-hooks          # only when Claude Code runs in this folder (./.claude/settings.local.json)
+node install-hooks.mjs --remove [--global]
+```
+
+The hooks run `hook.mjs`, which forwards each event to `127.0.0.1:47321` with a 400 ms timeout. If she isn't running, nothing happens and Claude Code is unaffected. Set `CLAUDE_CHAN_PORT` to change the port.
+
+## What she does
+
+| Claude Code | claude-chan |
+| --- | --- |
+| Session starts | waves hello |
+| You send a prompt | sits on her cushion with the laptop, puts on her glasses, thinking bubble |
+| A tool runs | types with her eyes on the screen (her Clawd hairclip hops along); the bubble says what: running commands, writing code, reading files… Now and then she glances up at you |
+| Needs permission / your input | hops and waves with a red **!** until you answer |
+| Finished | cheers with sparkles: "Done! ✨" |
+| Session ends | waves bye |
+
+When Claude is idle:
+
+- she wanders along the taskbar, turning to a 3/4 view as she walks
+- she dances, and every so often does something goofy: trips and faceplants, does a full 360° twirl, backflips, or sneezes her hairclip off
+- after 5 idle minutes she sits on the floor and stares into space; after an hour she falls asleep
+
+Drag her anywhere and let go to toss her (she falls with gravity). Click to poke her. Right-click for the menu (dance, do a trick, nap, toggle wandering, quit).
+
+Glasses style: `GLASSES` in `renderer/app.js` (`round`, `half` or `square`).
+
+## Files
+
+- `main.js`: transparent, always-on-top Electron window plus the local event bridge
+- `renderer/index.html`: claude-chan, drawn as layered SVG: front, 3/4 and back views, every part animated separately
+- `renderer/style.css`: art styling and every pose/animation
+- `renderer/app.js`: behavior: wandering, drag/toss physics, tricks, idle timers, Claude status reactions
+- `hook.mjs`, `install-hooks.mjs`: the Claude Code side

@@ -1,0 +1,15 @@
+{
+  "name": "claude-chan-companion",
+  "version": "0.1.0",
+  "description": "2D desktop companion claude-chan that reacts to Claude Code",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "install-hooks": "node install-hooks.mjs",
+    "install-hooks:global": "node install-hooks.mjs --global"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0"
+  }
+}

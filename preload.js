@@ -1,0 +1,11 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('chan', {
+  setPos: (x, y) => ipcRenderer.send('pos', x, y),
+  ignoreMouse: (ignore) => ipcRenderer.send('mouse', ignore),
+  geometry: () => ipcRenderer.invoke('geometry'),
+  workAreaAt: (x, y) => ipcRenderer.invoke('workArea', x, y),
+  openMenu: () => ipcRenderer.send('menu'),
+  onClaude: (fn) => ipcRenderer.on('claude', (_e, ev) => fn(ev)),
+  onCommand: (fn) => ipcRenderer.on('command', (_e, cmd) => fn(cmd)),
+});

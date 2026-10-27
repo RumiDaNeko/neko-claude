@@ -1,0 +1,636 @@
+:root {
+  --hair: #e2876a;
+  --hair-back: #d27657;
+  --hair-shine: #f2b096;
+  --clip: #c15f3c;
+  --skin: #f6ebe2;
+  --face: #f9f0e9;
+  --dress: #f5efe7;
+  --dress-line: #e4d8ca;
+  --trim: #e8906e;
+  --shoe: #8b6b5e;
+  --ink: #2a2230;
+  --blush: #f3a3a0;
+  --lid: #4a403c;
+  --line: #a8705e;
+}
+
+html, body {
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+}
+
+#stage { position: relative; width: 240px; height: 300px; }
+
+#char {
+  position: absolute;
+  left: 20px;
+  bottom: 0;
+  width: 200px;
+  height: 240px;
+  transition: transform 0.15s;
+}
+#char.flip { transform: scaleX(-1); }
+
+svg { overflow: visible; display: block; }
+svg * { transform-box: fill-box; }
+svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotate/translate) where they were drawn */
+
+#hit { fill: transparent; cursor: grab; }
+#char.drag #hit { cursor: grabbing; }
+
+#shadow { fill: rgba(40, 20, 10, 0.18); transform-origin: center; }
+
+/* anime lineart: warm dark-brown outlines on everything */
+.skin, .face, .dress, .hair, .hair-back, .tail-hair, .shoe, .sock, .sailor, .bow, .frill, .sleeve {
+  stroke: var(--line); stroke-width: 1.3; stroke-linejoin: round;
+}
+.skin { fill: var(--skin); }
+.sock { fill: #ffffff; }
+.shoe { fill: var(--shoe); }
+.strap { stroke: #4a2e26; stroke-width: 1.6; stroke-linecap: round; }
+.dress { fill: var(--dress); }
+.dress-shadow { fill: #e7dccf; }
+.dress-shade { stroke: #e0d2c3; stroke-width: 1; fill: none; }
+.trim { fill: var(--trim); }
+.frill { fill: #ffffff; }
+.sailor { fill: #ffffff; }
+.sleeve { fill: var(--dress); }
+.bow { fill: var(--trim); }
+.bow-knot { fill: #c9603f; stroke: var(--line); stroke-width: 1; }
+.face { fill: var(--face); }
+.hair { fill: url(#hairGrad); }
+.hair-back { fill: var(--hair-back); }
+.tail-hair { fill: url(#tailGrad); }
+.tail-line { fill: none; stroke: #c4644a; stroke-width: 1.2; stroke-linecap: round; opacity: 0.7; }
+.tie { fill: #fff6ee; stroke: var(--clip); stroke-width: 2; }
+.hair-shine { fill: none; stroke: #ffd6c2; stroke-width: 3.2; stroke-linecap: round; opacity: 0.9; }
+.sclera { fill: #ffffff; }
+.eye .iris { fill: url(#iris); }
+.eye .pupil { fill: #3a120c; }
+.lash { fill: none; stroke: #2a1612; stroke-width: 3.4; stroke-linecap: round; }
+.lash.thin { stroke-width: 1.6; }
+.hatch { stroke: #e9837d; stroke-width: 1.1; stroke-linecap: round; opacity: 0.8; }
+.nose { stroke: #d9a08c; stroke-width: 1.4; stroke-linecap: round; }
+
+/* twintails sway gently from their ties */
+.tail { transform-box: view-box; }
+.tailL { transform-origin: 64px 66px; animation: tailL 3.2s ease-in-out infinite; }
+.tailR { transform-origin: 136px 66px; animation: tailR 3.2s ease-in-out infinite; }
+#char.walk .tail, #char.dance .tail, #char.cheer .tail { animation-duration: 0.5s; }
+#char.drag .tailL, #char.fall .tailL { animation: none; transform: rotate(28deg); }
+#char.drag .tailR, #char.fall .tailR { animation: none; transform: rotate(-28deg); }
+#clip path, #laptop .logo path { stroke: var(--clip); stroke-width: 3.2; stroke-linecap: round; fill: none; }
+#laptop .logo path { stroke: #e8906e; stroke-width: 2.6; }
+.blush { fill: var(--blush); opacity: 0.75; }
+.eye .hl { fill: #fff; }
+.line path, .line.mouth, path.mouth { fill: none; stroke: #3a1d16; stroke-width: 2.4; stroke-linecap: round; }
+#mouth-open { fill: #b5473f; stroke: var(--line); stroke-width: 1.2; }
+.lid { fill: var(--lid); }
+.base { fill: #2f2826; }
+.hand { stroke: #e6d3c4; }
+
+#glow { fill: #ffb27a; opacity: 0; mix-blend-mode: multiply; }
+
+/* transform origins */
+#legL { transform-origin: 50% 0%; }
+#legR { transform-origin: 50% 0%; }
+#armL { transform-origin: 50% 6%; transform: rotate(14deg); }
+#armR { transform-origin: 50% 6%; transform: rotate(-14deg); }
+#head, #puffs { transform-box: view-box; transform-origin: 100px 140px; }
+#body { transform-origin: 50% 100%; }
+#clip, #laptop .logo, #fx-sparkle path { transform-origin: center; }
+
+/* face parts: hidden unless the state shows them */
+.face-part { display: none; }
+#char #eyes-open, #char #mouth-smile { display: inline; }
+#eyes-open .eye { transform-origin: center; animation: blink 4.5s infinite; }
+#eyes-open .eye:nth-child(2) { animation-delay: 0.02s; }
+
+.fx { display: none; }
+.fx text { font-weight: 800; fill: var(--trim); paint-order: stroke; stroke: #fff; stroke-width: 3px; }
+#fx-bang text { font-size: 34px; fill: #e2553a; }
+#fx-zzz text { font-size: 16px; fill: #8a7ab8; }
+#fx-think circle { fill: #fff; stroke: #c9b8ab; stroke-width: 1.5; }
+#fx-sweat path { fill: #8fc8f0; stroke: #fff; stroke-width: 1.2; }
+#fx-sparkle path { fill: #ffc65c; stroke: #fff; stroke-width: 1; }
+#fx-notes text { font-size: 22px; fill: #e2876a; }
+#laptop { display: none; }
+
+/* ---------- idle ---------- */
+#char.idle #body { animation: breathe 3.2s ease-in-out infinite; }
+#char.idle #head, #char.idle #puffs { animation: sway 6s ease-in-out infinite; }
+
+/* ---------- walk ---------- */
+#char.walk #legL { animation: step 0.5s ease-in-out infinite; }
+#char.walk #legR { animation: step 0.5s ease-in-out -0.25s infinite; }
+#char.walk #armL { animation: swingL 0.5s ease-in-out infinite; }
+#char.walk #armR { animation: swingR 0.5s ease-in-out infinite; }
+#char.walk #body { animation: bob 0.25s ease-in-out infinite alternate; }
+
+/* ---------- working (Claude is busy) ---------- */
+#char.work #laptop { display: inline; }
+#char.work #armL { animation: typeL 0.24s ease-in-out infinite alternate; }
+#char.work #armR { animation: typeR 0.24s ease-in-out -0.12s infinite alternate; }
+#char.work #head, #char.work #puffs { animation: nod 1.6s ease-in-out infinite; }
+#char.work #glow { animation: glow 2s ease-in-out infinite; }
+#char.work #clip { animation: spin 3s linear infinite; }
+#char.work #laptop .logo { animation: pulse 1.2s ease-in-out infinite; }
+#char.work.thinking #fx-think { display: inline; animation: float 2s ease-in-out infinite; }
+
+/* ---------- waiting for the user ---------- */
+#char.wait #armR { animation: wave 0.6s ease-in-out infinite alternate; }
+#char.wait #body { animation: hop 1.2s ease-in-out infinite; }
+#char.wait #fx-bang { display: inline; animation: pop 0.6s ease-in-out infinite alternate; }
+#char.wait #mouth-smile { display: none; }
+#char.wait #mouth-open { display: inline; }
+
+/* ---------- done / cheer ---------- */
+#char.cheer #body { animation: jump 0.6s cubic-bezier(.3,.7,.4,1) 3; }
+#char.cheer #armL { transform: rotate(128deg); }
+#char.cheer #armR { transform: rotate(-128deg); }
+#char.cheer #eyes-open, #char.happy #eyes-open { display: none; }
+#char.cheer #eyes-happy, #char.happy #eyes-happy { display: inline; }
+#char.cheer #mouth-smile { display: none; }
+#char.cheer #mouth-open { display: inline; }
+#char.cheer #fx-sparkle { display: inline; }
+#char.cheer #fx-sparkle path { animation: twinkle 0.8s ease-in-out infinite alternate; }
+#char.cheer #fx-sparkle .s2 { animation-delay: 0.3s; }
+#char.cheer #fx-sparkle .s3 { animation-delay: 0.5s; }
+
+/* ---------- hello wave ---------- */
+#char.hello #armR { animation: wave 0.35s ease-in-out infinite alternate; }
+
+/* ---------- dance ---------- */
+#char.dance #body { animation: dance 0.8s ease-in-out infinite; }
+#char.dance #armL { animation: danceArmL 0.8s ease-in-out infinite; }
+#char.dance #armR { animation: danceArmR 0.8s ease-in-out infinite; }
+#char.dance #legL { animation: step 0.4s ease-in-out infinite; }
+#char.dance #legR { animation: step 0.4s ease-in-out -0.2s infinite; }
+#char.dance #fx-notes { display: inline; }
+#char.dance #fx-notes text { animation: float 1.2s ease-in-out infinite; }
+#char.dance #fx-notes .n2 { animation-delay: 0.6s; }
+
+/* ---------- sleep ---------- */
+#char.sleep #eyes-open, #char.sleep #mouth-smile { display: none; }
+#char.sleep #eyes-closed, #char.sleep #mouth-flat { display: inline; }
+#char.sleep #head, #char.sleep #puffs { transform: rotate(10deg); }
+#char.sleep #body { animation: breathe 4.5s ease-in-out infinite; }
+#char.sleep #fx-zzz { display: inline; }
+#char.sleep #fx-zzz text { animation: zfloat 3s ease-in-out infinite; opacity: 0; }
+#char.sleep #fx-zzz .z2 { animation-delay: 1s; }
+#char.sleep #fx-zzz .z3 { animation-delay: 2s; }
+
+/* ---------- dragged ---------- */
+#char.drag #armL { transform: rotate(132deg); }
+#char.drag #armR { transform: rotate(-132deg); }
+#char.drag #legL { animation: dangle 0.5s ease-in-out infinite alternate; }
+#char.drag #legR { animation: dangle 0.5s ease-in-out infinite alternate-reverse; }
+#char.drag #mouth-smile { display: none; }
+#char.drag #mouth-open { display: inline; }
+#char.drag #shadow, #char.fall #shadow { opacity: 0; }
+#char.fall #armL { transform: rotate(100deg); }
+#char.fall #armR { transform: rotate(-100deg); }
+
+/* ---------- land / poke ---------- */
+#char.land #body { animation: squash 0.35s ease-out; }
+#char.poke #body { animation: squash 0.35s ease-out; }
+
+/* ---------- error ---------- */
+#char.oops #fx-sweat { display: inline; animation: drip 1.2s ease-in infinite; }
+#char.oops #mouth-smile { display: none; }
+#char.oops #mouth-flat { display: inline; }
+#char.oops #head, #char.oops #puffs { animation: shake 0.5s ease-in-out 2; }
+
+/* ---------- bubble ---------- */
+#bubble {
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  transform: translateX(-50%);
+  max-width: 210px;
+  padding: 7px 12px;
+  background: #fffaf6;
+  color: #3a2c28;
+  border: 2px solid #e8906e;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(80, 40, 20, 0.15);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+}
+#bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 12px;
+  height: 12px;
+  background: #fffaf6;
+  border-right: 2px solid #e8906e;
+  border-bottom: 2px solid #e8906e;
+  transform: translateX(-50%) rotate(45deg);
+}
+#bubble.hidden { opacity: 0; transform: translateX(-50%) translateY(6px); }
+#bubble.urgent { border-color: #e2553a; }
+#bubble.urgent::after { border-color: #e2553a; }
+
+/* ---------- keyframes ---------- */
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
+@keyframes breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.012, 0.985); } }
+@keyframes sway { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+@keyframes step { 0%, 100% { transform: rotate(18deg); } 50% { transform: rotate(-18deg); } }
+@keyframes swingL { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(30deg); } }
+@keyframes swingR { 0%, 100% { transform: rotate(12deg); } 50% { transform: rotate(-30deg); } }
+@keyframes bob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+@keyframes tap { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+@keyframes nod { 0%, 100% { transform: rotate(0) translateY(0); } 50% { transform: rotate(2deg) translateY(1px); } }
+@keyframes glow { 0%, 100% { opacity: 0.08; } 50% { opacity: 0.22; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.18); opacity: 1; } }
+@keyframes wave { from { transform: rotate(-110deg); } to { transform: rotate(-138deg); } }
+@keyframes hop { 0%, 60%, 100% { transform: translateY(0); } 75% { transform: translateY(-8px); } }
+@keyframes pop { from { transform: translateY(0) scale(1); } to { transform: translateY(-4px) scale(1.15); } }
+@keyframes jump { 0%, 100% { transform: translateY(0) scale(1, 1); } 15% { transform: translateY(0) scale(1.06, 0.92); } 50% { transform: translateY(-22px) scale(0.97, 1.04); } }
+@keyframes twinkle { from { opacity: 0.3; transform: scale(0.7) rotate(0); } to { opacity: 1; transform: scale(1.15) rotate(20deg); } }
+@keyframes dance { 0%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-8px) rotate(-6deg); } 50% { transform: translateY(0) rotate(0); } 75% { transform: translateY(-8px) rotate(6deg); } }
+@keyframes danceArmL { 0%, 100% { transform: rotate(128deg); } 50% { transform: rotate(20deg); } }
+@keyframes danceArmR { 0%, 100% { transform: rotate(-20deg); } 50% { transform: rotate(-128deg); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes zfloat { 0% { opacity: 0; transform: translate(0, 6px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(6px, -10px); } }
+@keyframes dangle { from { transform: rotate(-10deg); } to { transform: rotate(14deg); } }
+@keyframes squash { 0% { transform: scale(1.12, 0.84); } 60% { transform: scale(0.96, 1.05); } 100% { transform: scale(1, 1); } }
+@keyframes drip { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(14px); opacity: 0; } }
+@keyframes shake { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-6deg); } 75% { transform: rotate(6deg); } }
+@keyframes tailL { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(5deg); } }
+@keyframes tailR { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-5deg); } }
+@keyframes typeL { from { transform: rotate(-24deg); } to { transform: rotate(-30deg); } }
+@keyframes typeR { from { transform: rotate(24deg); } to { transform: rotate(30deg); } }
+
+/* ---------- sitting on a cushion while Claude works ---------- */
+#sit { display: none; }
+.cushion { fill: #e8906e; stroke: var(--line); stroke-width: 1.3; }
+.cushion-top { fill: none; stroke: #f4b394; stroke-width: 2.5; stroke-linecap: round; }
+.sole { fill: var(--shoe); stroke: var(--line); stroke-width: 1; }
+#char.work #legL, #char.work #legR { display: none; }
+#char.work #sit { display: inline; }
+#char.work #body { transform: translateY(16px); }
+#char.work #shadow { transform: scale(1.6, 1.3); }
+#char.work .sit-leg:nth-of-type(2) { animation: kick 1.8s ease-in-out infinite; transform-origin: 50% 0%; }
+
+/* ---------- silly tricks (trò con bò) ---------- */
+/* trip and faceplant: lies flat on the ground, dizzy */
+#char.flop #body { transform-origin: 50% 55%; animation: flop 2.8s ease-in-out forwards; }
+#char.flop #eyes-open, #char.flop #mouth-smile { display: none; }
+#char.flop #eyes-dizzy, #char.flop #mouth-open { display: inline; }
+#char.flop #fx-sweat { display: inline; }
+/* twirl: spins on the spot, twintails fly out */
+#char.twirl #body { transform-origin: 50% 100%; animation: twirl 0.7s ease-in-out 2; }
+#char.twirl .tailL { animation: none; transform: rotate(35deg); }
+#char.twirl .tailR { animation: none; transform: rotate(-35deg); }
+#char.twirl #eyes-open { display: none; }
+#char.twirl #eyes-happy { display: inline; }
+/* backflip */
+#char.backflip #body { transform-origin: 50% 55%; animation: backflip 1.3s cubic-bezier(.4,.1,.4,1) forwards; }
+#char.backflip #armL { transform: rotate(128deg); }
+#char.backflip #armR { transform: rotate(-128deg); }
+#char.backflip #eyes-open { display: none; }
+#char.backflip #eyes-closed { display: inline; }
+/* sneeze */
+#char.achoo #head, #char.achoo #puffs { animation: achoo 1.8s ease-in-out forwards; }
+#char.achoo #eyes-open { display: none; }
+#char.achoo #eyes-closed { display: inline; }
+#char.achoo #mouth-smile { display: none; }
+#char.achoo #mouth-open { display: inline; }
+#char.achoo #clip { animation: clipPop 1.8s ease-in-out forwards; }
+
+@keyframes kick { 0%, 70%, 100% { transform: rotate(0); } 80% { transform: rotate(-10deg); } 90% { transform: rotate(6deg); } }
+@keyframes flop {
+  0% { transform: none; }
+  12% { transform: translateY(-10px) rotate(-10deg); }
+  30%, 72% { transform: translateY(40px) rotate(90deg); }
+  36% { transform: translateY(34px) rotate(90deg); }
+  42% { transform: translateY(40px) rotate(90deg); }
+  88% { transform: translateY(-6px) rotate(-4deg); }
+  100% { transform: none; }
+}
+@keyframes twirl { 0% { transform: scaleX(1) translateY(0); } 25% { transform: scaleX(0.1) translateY(-8px); } 50% { transform: scaleX(-1) translateY(-12px); } 75% { transform: scaleX(0.1) translateY(-8px); } 100% { transform: scaleX(1) translateY(0); } }
+@keyframes backflip {
+  0% { transform: none; }
+  18% { transform: translateY(6px) scale(1.06, 0.9); }
+  55% { transform: translateY(-60px) rotate(-200deg); }
+  82% { transform: translateY(0) rotate(-360deg); }
+  90% { transform: translateY(0) rotate(-360deg) scale(1.06, 0.92); }
+  100% { transform: rotate(-360deg); }
+}
+@keyframes achoo {
+  0% { transform: none; }
+  45% { transform: rotate(-9deg) translateY(-3px); }
+  55% { transform: rotate(-11deg) translateY(-4px); }
+  62% { transform: rotate(14deg) translateY(5px); }
+  75% { transform: rotate(-3deg); }
+  100% { transform: none; }
+}
+@keyframes clipPop { 0%, 60% { transform: none; } 68% { transform: translate(6px, -18px) rotate(180deg); } 85% { transform: translate(2px, -4px) rotate(330deg); } 100% { transform: rotate(360deg); } }
+
+/* ---------- pastel chibi art ---------- */
+.skin, .face, .dress, .hair, .hair-back, .hair-long, .shoe, .sock, .bow, .frill, .sleeve,
+.apron, .ear-out, .headband, .tail-fur, .ribbon-bow, .waist, .pocket {
+  stroke: var(--line); stroke-width: 1.1; stroke-linejoin: round;
+}
+.skin { fill: #fbeee6; }
+.face { fill: #fdf3ec; }
+.hair, .hair-back { fill: url(#hairGrad); stroke: #c97b5e; }
+.hair-back { fill: #df8d6c; }
+.hair-long { fill: url(#longHair); stroke: #c97b5e; }
+.hair-strand { fill: none; stroke: #d27f60; stroke-width: 1; stroke-linecap: round; opacity: 0.55; }
+.hair-shine { stroke: #fff0e8; stroke-width: 3.5; opacity: 0.85; }
+.ear-out { fill: #e8946f; stroke: #c97b5e; }
+.ear-in { fill: #f7c4bb; }
+.headband { fill: #ffffff; }
+.dress { fill: #e48e6c; }
+.dress-shadow { fill: #d27a5a; }
+.sleeve { fill: #e48e6c; }
+.cuff { fill: none; stroke: #ffffff; stroke-width: 2; stroke-linecap: round; }
+.frill { fill: #ffffff; }
+.apron { fill: #ffffff; }
+.apron-frill { fill: none; stroke: var(--line); stroke-width: 1; }
+.waist { fill: #ffffff; }
+.button { fill: #7b4a3e; }
+.pocket { fill: #fff7f2; }
+.pocket-logo { stroke: #d9705a; stroke-width: 1.5; stroke-linecap: round; }
+.collar { fill: #ffffff; stroke: var(--line); stroke-width: 1.1; }
+.bow, .ribbon-bow { fill: #6e4038; }
+.bow-knot, .ribbon-knot { fill: #5a332c; stroke: none; }
+.sock { fill: #ffffff; }
+.sock-frill { fill: #ffffff; stroke: var(--line); stroke-width: 0.9; }
+.shoe { fill: #4e2f2a; }
+.strap { stroke: #2e1b18; stroke-width: 1.4; }
+.sole { fill: #4e2f2a; }
+.tail-fur { fill: url(#hairGrad); stroke: #c97b5e; }
+.tail-tip { fill: #f7c3b4; }
+.sclera { fill: #ffffff; }
+.eye .iris { fill: url(#iris); }
+.eye .pupil { fill: #3a120c; opacity: 0.85; }
+.iris-glow { fill: #ffd0bf; opacity: 0.55; }
+.lash { stroke: #4a2620; stroke-width: 3; }
+.lash.thin { stroke: #8a5040; stroke-width: 1.3; }
+.blush { fill: url(#cheek); opacity: 1; }
+.hatch { stroke: #ee8f8a; stroke-width: 1; }
+.line path, .line.mouth, path.mouth { stroke: #6a352a; stroke-width: 2; }
+#mouth-open { fill: #c4564b; stroke: #6a352a; stroke-width: 1; }
+
+/* cat ears twitch, tail wags */
+.ear { transform-box: view-box; }
+.earL { transform-origin: 70px 66px; }
+.earR { transform-origin: 130px 66px; }
+#char .earL { animation: twitchL 5s ease-in-out infinite; }
+#char .earR { animation: twitchR 7s ease-in-out infinite 1.3s; }
+#cattail { transform-box: view-box; transform-origin: 118px 192px; animation: wag 1.6s ease-in-out infinite; }
+#char.walk #cattail, #char.dance #cattail, #char.cheer #cattail { animation-duration: 0.5s; }
+#char.sleep #cattail { animation-duration: 4s; }
+#char.wait .earL, #char.wait .earR { animation: perk 0.6s ease-in-out infinite alternate; }
+#char.drag .earL, #char.oops .earL, #char.flop .earL { animation: none; transform: rotate(-25deg); }
+#char.drag .earR, #char.oops .earR, #char.flop .earR { animation: none; transform: rotate(25deg); }
+#char.drag #puffs { transform: scale(1.08, 0.95); }
+
+@keyframes twitchL { 0%, 90%, 100% { transform: rotate(0); } 93% { transform: rotate(-14deg); } 96% { transform: rotate(4deg); } }
+@keyframes twitchR { 0%, 88%, 100% { transform: rotate(0); } 91% { transform: rotate(14deg); } 95% { transform: rotate(-4deg); } }
+@keyframes perk { from { transform: rotate(0); } to { transform: translateY(-3px); } }
+@keyframes wag { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(12deg); } }
+
+/* Clawd hairclip (Claude Code mascot) */
+.clawd { shape-rendering: crispEdges; filter: drop-shadow(0 0 0.6px #fff) drop-shadow(0 0 0.6px #fff) drop-shadow(0 0.6px 0.4px rgba(90,40,30,.5)); }
+.clawd-body { fill: #d97757; }
+.clawd-eye { fill: #1f1410; }
+#char.work #clip { animation: clawdHop 0.5s steps(2) infinite; }
+@keyframes clawdHop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+
+/* softer, thinner lineart like the reference */
+.skin, .face, .dress, .hair, .hair-back, .hair-long, .shoe, .sock, .bow, .frill, .sleeve, .apron, .ear-out, .headband, .tail-fur, .ribbon-bow, .waist, .pocket { stroke-width: 0.9; }
+.lash { stroke: #5a2c24; stroke-width: 2.2; }
+.eye .pupil { opacity: 0.7; }
+.iris-glow { opacity: 0.7; }
+
+/* softer hair + per-material tinted lineart */
+.hair, .hair-back, .hair-long, .tail-fur, .ear-out { stroke: #c4775a; stroke-width: 0.8; stroke-opacity: 0.85; }
+.skin, .face { stroke: #d9a493; stroke-width: 0.8; }
+.dress, .sleeve, .apron, .frill, .headband, .waist, .pocket, .sock, .collar { stroke: #b7806c; stroke-width: 0.8; stroke-opacity: 0.8; }
+.hair-strand { stroke: #c96f50; stroke-width: 0.9; opacity: 0.4; }
+.hair-ends { fill: #f8cdbf; opacity: 0.55; }
+.bang-shadow { fill: #f2cfc2; opacity: 0.85; }
+.shine path { fill: none; stroke: #fff4ee; stroke-width: 4; stroke-linecap: round; opacity: 0.75; }
+.shine.sharp path { stroke-width: 1.6; opacity: 0.95; }
+.hair-shine { display: none; }
+
+/* matte hair highlights (no plastic gloss), hairline */
+.shine.sharp { display: none; }
+.shine path { stroke: #f8c6ad; stroke-width: 5; opacity: 0.7; }
+.hair-root { fill: #cf7a5b; opacity: 0.35; filter: url(#glowBlur); }
+.hair-part { fill: none; stroke: #c4775a; stroke-width: 0.9; stroke-linecap: round; opacity: 0.7; }
+.bang-shadow { opacity: 0.6; }
+
+/* front-view walk: feet lift in turn, body bobs and rocks, small arm swing */
+#char.walk #legL { animation: lift 0.6s ease-in-out infinite; }
+#char.walk #legR { animation: lift 0.6s ease-in-out -0.3s infinite; }
+#char.walk #armL { animation: armWalkL 0.6s ease-in-out infinite; }
+#char.walk #armR { animation: armWalkR 0.6s ease-in-out infinite; }
+#char.walk #body { animation: rock 0.6s ease-in-out infinite; transform-origin: 50% 100%; }
+#char.walk #shadow { animation: shadowBob 0.3s ease-in-out infinite alternate; }
+#char.walk .earL, #char.walk .earR { animation: earBounce 0.3s ease-in-out infinite alternate; }
+@keyframes lift { 0%, 50%, 100% { transform: translateY(0) scaleY(1); } 25% { transform: translateY(-3px) scaleY(0.74); } }
+@keyframes armWalkL { 0%, 100% { transform: rotate(4deg); } 50% { transform: rotate(18deg); } }
+@keyframes armWalkR { 0%, 100% { transform: rotate(-18deg); } 50% { transform: rotate(-4deg); } }
+@keyframes rock { 0%, 50%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-3px) rotate(2.5deg); } 75% { transform: translateY(-3px) rotate(-2.5deg); } }
+@keyframes shadowBob { from { transform: scale(1); } to { transform: scale(0.9); } }
+@keyframes earBounce { from { transform: rotate(0); } to { transform: translateY(-1.5px); } }
+
+.clawd-bow rect { fill: #6e4038; }
+.clawd-bow rect.knot { fill: #4e2a24; }
+
+/* ---------- lounge: idle 5+ min, sits on the floor looking spaced-out ---------- */
+.eyelid { fill: #fdf3ec; }
+#mouth-dot { fill: #6a352a; }
+#char.lounge #legL, #char.lounge #legR, #char.sleep #legL, #char.sleep #legR { display: none; }
+#char.lounge #sit, #char.sleep #sit { display: inline; }
+#char.lounge .cushion, #char.lounge .cushion-top { display: none; }
+#char.lounge #body, #char.sleep #body { transform: translateY(16px); animation: none; }
+#char.lounge #shadow, #char.sleep #shadow { transform: scale(1.6, 1.3); }
+#char.lounge #eyes-open, #char.lounge #mouth-smile { display: none; }
+#char.lounge #eyes-bored, #char.lounge #mouth-dot { display: inline; }
+#char.lounge #head, #char.lounge #puffs { animation: ponder 7s ease-in-out infinite; }
+#char.lounge #armL { transform: rotate(-8deg); }
+#char.lounge #armR { transform: rotate(8deg); }
+#char.lounge #cattail { animation-duration: 3.5s; }
+#char.lounge .sit-leg:nth-of-type(2) { animation: kick 5s ease-in-out infinite; transform-origin: 50% 0%; }
+@keyframes ponder { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(-7deg) translateY(1px); } }
+
+/* ---------- side view while walking ---------- */
+#side { display: none; }
+#char.walk #body { display: none; }
+#char.walk #side { display: inline; }
+#side .back .skin { fill: #f1ddd1; }
+#side .back .sock { fill: #ece6e2; }
+#sLegF, #sLegB { transform-origin: 50% 0%; }
+#sArmF { transform-origin: 50% 8%; }
+#sHead { transform-box: view-box; transform-origin: 104px 140px; }
+#sHairBack { transform-box: view-box; transform-origin: 90px 80px; }
+#sTail { transform-box: view-box; transform-origin: 80px 192px; }
+#sideBody { transform-origin: 50% 100%; }
+#char.walk #sLegF { animation: sideStep 0.6s ease-in-out infinite; }
+#char.walk #sLegB { animation: sideStep 0.6s ease-in-out -0.3s infinite; }
+#char.walk #sArmF { animation: sideArm 0.6s ease-in-out infinite; }
+#char.walk #sideBody { animation: sideBob 0.3s ease-in-out infinite alternate; }
+#char.walk #sHead { animation: sideNod 0.6s ease-in-out infinite; }
+#char.walk #sHairBack { animation: hairFlow 0.6s ease-in-out infinite; }
+#char.walk #sTail { animation: wag 0.6s ease-in-out infinite; }
+#side .eye { animation: blink 4.5s infinite; transform-origin: center; }
+@keyframes sideStep { 0%, 100% { transform: rotate(-26deg); } 50% { transform: rotate(26deg); } }
+@keyframes sideArm { 0%, 100% { transform: rotate(22deg); } 50% { transform: rotate(-22deg); } }
+@keyframes sideBob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+@keyframes sideNod { 0%, 100% { transform: rotate(0); } 25%, 75% { transform: rotate(1.5deg); } }
+@keyframes hairFlow { 0%, 100% { transform: rotate(2deg); } 50% { transform: rotate(5deg); } }
+
+/* no shading that can land outside the hair */
+.bang-shadow, .hair-root { display: none; }
+#side .hair-back { fill: url(#hairGrad); }
+
+/* ---------- glasses while working ---------- */
+.glasses { display: none; }
+#char.work.g-round #glasses-round,
+#char.work.g-half #glasses-half,
+#char.work.g-square #glasses-square { display: inline; }
+.glasses .lens { fill: #ffffff; fill-opacity: 0.12; stroke: #5a2e26; stroke-width: 1.8; }
+.glasses .frame { fill: none; stroke: #5a2e26; stroke-width: 1.8; stroke-linecap: round; }
+.glasses .frame.thick { stroke-width: 3.2; }
+.glasses .frame.thin { stroke-width: 0.6; stroke-opacity: 0.6; }
+#glasses-half .lens { stroke: none; }
+.glasses .glare { stroke: #ffffff; stroke-width: 2; stroke-linecap: round; opacity: 0.75; }
+
+/* calmer side walk: short quick chibi steps */
+@keyframes sideStep { 0%, 100% { transform: rotate(-15deg); } 50% { transform: rotate(15deg); } }
+@keyframes sideArm { 0%, 100% { transform: rotate(14deg); } 50% { transform: rotate(-14deg); } }
+@keyframes sideBob { from { transform: translateY(0); } to { transform: translateY(-1.6px); } }
+#char.walk #sLegF { animation-duration: 0.5s; }
+#char.walk #sLegB { animation-duration: 0.5s; animation-delay: -0.25s; }
+#char.walk #sArmF, #char.walk #sHead, #char.walk #sHairBack, #char.walk #sTail { animation-duration: 0.5s; }
+#char.walk #sideBody { animation-duration: 0.25s; }
+
+/* working: eyes on the laptop, not on the user */
+#char.work #eyes-open { display: none; }
+#char.work #eyes-down { display: inline; }
+.hair.wisp { stroke-width: 0.6; }
+
+/* side profile details */
+.ear-h { stroke: #d9a493; stroke-width: 0.8; }
+.ear-line { fill: none; stroke: #d9a493; stroke-width: 1; stroke-linecap: round; }
+.earring { fill: #3a2420; }
+
+/* working: swept bangs; occasional glance up at the user */
+#bangs-swept { display: none; }
+#char.work #bangs-front { display: none; }
+#char.work #bangs-swept { display: inline; }
+#char.work.glance #eyes-down { display: none; }
+#char.work.glance #eyes-open { display: inline; }
+
+/* ---------- eye rig: one set of eyes, eased between looks ---------- */
+#eyes-open .eye.rig { animation: none; }
+.rig .gaze, .rig .lidpos { transition: transform 0.45s cubic-bezier(.45,.05,.35,1); }
+.rig .lidblink { animation: lidBlink 4.6s infinite; }
+#eyes-open .eye.rig:nth-child(2) .lidblink { animation-delay: 0.03s; }
+@keyframes lidBlink { 0%, 93%, 100% { transform: translateY(0); } 95.5% { transform: translateY(25px); } 97.5% { transform: translateY(0); } }
+
+/* working: looking down at the laptop (the rig replaces the separate eyes-down drawing) */
+#char.work #eyes-open { display: inline; }
+#char.work #eyes-down { display: none; }
+#char.work .rig .gaze { transform: translate(0, 6.5px); }
+#char.work .rig .lidpos { transform: translateY(10px); }
+/* glancing up: same rig, eased back up */
+#char.work.glance .rig .gaze { transform: translate(0, -1px); }
+#char.work.glance .rig .lidpos { transform: translateY(0); }
+
+/* lounge: half lids, looking up to the side */
+#char.lounge #eyes-open { display: inline; }
+#char.lounge #eyes-bored { display: none; }
+#char.lounge .rig .gaze { transform: translate(3px, -3px); }
+#char.lounge .rig .lidpos { transform: translateY(9px); }
+#char.lounge .rig .lidblink { animation-duration: 7s; }
+
+/* wait: eyes wide */
+#char.wait .rig .gaze { transform: translateY(-1px); }
+
+/* head lifts slightly when she glances up */
+#char.work #head, #char.work #puffs { transition: transform 0.45s ease; }
+#char.work.glance #head, #char.work.glance #puffs { animation: none; transform: translateY(-1.5px) rotate(-1deg); }
+
+/* 3/4 walk: far arm swings opposite the near one */
+#sArmB { transform-origin: 50% 8%; }
+#char.walk #sArmB { animation: sideArm 0.5s ease-in-out -0.25s infinite; }
+#side #sArmB .skin { fill: #f1ddd1; }
+
+/* ---------- views: front / 3-4 / back (spin + walk turn) ---------- */
+#back { display: none; }
+#char.view-side #body, #char.view-back #body { display: none; }
+#char.view-side #side { display: inline; }
+#char.view-back #back { display: inline; }
+#char.view-back #side, #char.view-side #back { display: none; }
+#svg { transition: transform 0.11s ease-in-out; transform-origin: 50% 100%; }
+/* the old mirror-flip twirl is replaced by the JS-driven spin */
+#char.twirl #body { animation: none; }
+
+/* screen glow tints the whole face evenly (clipped to the face), a little stronger toward the chin */
+#glow { fill: url(#glowGrad); }
+
+/* blink: the closed-eye line is thin */
+.rig .lidblink .lash:not(.thin) { animation: lashBlink 4.6s infinite; }
+#eyes-open .eye.rig:nth-child(2) .lidblink .lash:not(.thin) { animation-delay: 0.03s; }
+#char.lounge .rig .lidblink .lash:not(.thin) { animation-duration: 7s; }
+@keyframes lashBlink { 0%, 93%, 100% { stroke-width: 2.2px; } 94.5%, 96.5% { stroke-width: 1.1px; } }
+
+/* clear lenses: no whitish tint on the skin inside the frames */
+.glasses .lens { fill: none; }
+
+/* working: keep her normal bangs, falling over the glasses */
+#char.work #bangs-front { display: inline; }
+#char.work #bangs-swept { display: none; }
+
+/* glancing up: the head keeps swaying instead of freezing */
+#char.work.glance #head, #char.work.glance #puffs { animation: sway 3s ease-in-out infinite; transform: none; }
+
+/* ---------- blink v2: lid fully closes, open lash fades, closed curve shows ---------- */
+@keyframes lidBlink { 0%, 92%, 100% { transform: translateY(0); } 95% { transform: translateY(29px); } 97.5% { transform: translateY(0); } }
+.rig .lashblink { animation: lashOut 4.6s infinite; }
+.closedline { fill: none; stroke: #4a2620; stroke-width: 1.6; stroke-linecap: round; opacity: 0; }
+.rig .closedline { animation: closedIn 4.6s infinite; }
+#eyes-open .eye.rig:nth-child(2) .lashblink, #eyes-open .eye.rig:nth-child(2) .closedline { animation-delay: 0.03s; }
+#char.lounge .rig .lashblink, #char.lounge .rig .closedline { animation-duration: 7s; }
+@keyframes lashOut { 0%, 92.5%, 97.5%, 100% { opacity: 1; transform: translateY(0); } 94.5%, 96% { opacity: 0; transform: translateY(12px); } }
+@keyframes closedIn { 0%, 93.5%, 96.8%, 100% { opacity: 0; } 94.5%, 96% { opacity: 1; } }
+
+/* 3/4 view: no more vertical squash */
+#side .eye { animation: sideOpen 4.6s infinite; transform: none; }
+#side .closedline.side { animation: closedIn 4.6s infinite; }
+@keyframes sideOpen { 0%, 93.5%, 96.8%, 100% { opacity: 1; } 94.5%, 96% { opacity: 0; } }
+/* lower lash hides while the eye is closed (no double line) */
+.rig .lash.lower { animation: sideOpen 4.6s infinite; }
+#eyes-open .eye.rig:nth-child(2) .lash.lower { animation-delay: 0.03s; }
+#char.lounge .rig .lash.lower { animation-duration: 7s; }
+
+/* far-side hair in the 3/4 view: same hair, in shadow */
+#side .hair.far, #side .hair-long.far { fill: #d4795a; stroke: #b9694c; }
+
+/* far-side hair sways with the near hair */
+#sHairFar { transform-box: view-box; transform-origin: 130px 80px; }
+#char.walk #sHairFar { animation: hairFlow 0.5s ease-in-out -0.25s infinite; }
+#side .hair-strand.far { stroke: #a95e43; }
+#side .far-bow .ribbon-bow { fill: #5a332c; }
