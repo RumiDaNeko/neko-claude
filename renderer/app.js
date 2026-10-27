@@ -976,6 +976,7 @@ api.onCursor((p) => {
     setIgnore(!(x > b.left && x < b.right && y > b.top && y < b.bottom));
   }
 });
+const SEATED_POSES = ['snack', 'hello', 'megane', 'cheer'];
 const TRACK_POSES = ['idle', 'lounge', 'hello', 'cheer', 'wait', 'dance', 'hop', 'megane', 'stalk', 'perch'];
 function updateTracking(pose) {
   const glancing = pose === 'work' && charEl.classList.contains('glance');
@@ -1123,6 +1124,8 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('specs', state.alwaysGlasses || Date.now() < state.glassesUntil);
   charEl.classList.toggle('panic', Date.now() < state.panicUntil);
   charEl.classList.toggle('perched', !!state.perch && !state.perch.climb); // working / waving up on a window
+  // up on a window, or on her cushion mid-work: snacks, waves, glasses and cheers happen sitting down
+  charEl.classList.toggle('seated', SEATED_POSES.includes(pose) && ((!!state.perch && !state.perch.climb) || claudeStatus().status === 'working'));
   charEl.classList.toggle('night', isNight());
   const sea = season();
   charEl.classList.toggle('season-halloween', sea === 'halloween');
