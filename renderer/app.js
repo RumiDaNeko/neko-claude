@@ -5,7 +5,7 @@ const hit = document.getElementById('hit');
 const bubble = document.getElementById('bubble');
 const bubbleText = document.getElementById('bubble-text');
 
-const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk', 'hop', 'snack', 'megane', 'peek', 'pullout', 'stalk', 'pounce', 'perch', 'stuffed'];
+const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk', 'hop', 'snack', 'megane', 'peek', 'pullout', 'stalk', 'pounce', 'perch', 'stuffed', 'hang', 'climb'];
 
 // Goofy tricks she does now and then: [pose, duration ms, lines]
 const TRICKS = [
@@ -382,19 +382,24 @@ function morningCoffee() {
 
 // ---------- perching on window title bars ----------
 let wins = [];
-setInterval(async () => {
+(async function pollWindows() {
   try { wins = (api.windows && await api.windows()) || []; } catch { wins = []; }
   if (state.perch) updatePerch();
-}, 500);
-// where her seat sits, measured from the top of her window, when she sits
+  // quick while she's up on a window or in the air, so she rides along smoothly
+  setTimeout(pollWindows, state.perch || state.falling || state.leap ? 120 : 500);
+})();
+// how far below the top of her window her seat (sitting) and her hands (arms straight up) are
 function seatOffset() { const m = svgRoot.getScreenCTM(); return m.d * 214 + m.f; }
+function handOffset() { const m = svgRoot.getScreenCTM(); return m.d * 108 + m.f; }
+const HANG_MS = 900; // dangling from the edge after catching it
+const CLIMB_MS = 1100; // pulling herself up
 const frontOf = (i, x, y) => wins.slice(0, i).some((o) => x > o.x && x < o.x + o.w && y > o.y && y < o.y + o.h);
 function perchSpot() {
   const a = state.area;
   const mid = state.x + state.w / 2;
   let best = null;
   wins.forEach((w, i) => {
-    if (w.max || w.w < 260 || w.y < a.y + 140 || w.y > a.y + a.height - 140 || w.x + w.w < a.x || w.x > a.x + a.width) return;
+    if (w.min || w.max || w.w < 260 || w.y < a.y + 140 || w.y > a.y + a.height - 140 || w.x + w.w < a.x || w.x > a.x + a.width) return;
     const sx = Math.min(Math.max(mid, w.x + 60), w.x + w.w - 60);
     if (frontOf(i, sx, w.y)) return; // that bit of the bar is covered by a window in front
     const d = Math.abs(sx - mid) + Math.abs(w.y - state.y) * 0.3;
@@ -424,38 +429,96 @@ function updateLeap(now) {
   api.setPos(state.x, state.y);
   if (t < 1) return;
   state.leap = null;
-  sitOn(l.win, 'Nice view up here~ ✨');
-}
-function sitOn(w, line) {
-  state.perch = { id: w.id, dx: state.x - w.x, until: Date.now() + 40000 + Math.random() * 50000 };
-  state.falling = false;
-  state.vx = state.vy = 0;
-  state.y = w.y - seatOffset();
-  api.setPos(state.x, state.y);
+  sitOn(l.win);
   flash('land', 350);
   setFace('cat', 1600);
-  say(line, 2200);
+  say('Nice view up here~ ✨', 2200);
 }
+// she's on window w: sitting, or (climb) still hanging from its edge
+function sitOn(w, climb = false) {
+  state.perch = { id: w.id, dx: state.x - w.x, wx: w.x, wy: w.y, ww: w.w, until: Date.now() + 40000 + Math.random() * 50000,
+    moving: false, movedAt: 0, climb: climb ? { t0: Date.now(), stage: 'hang' } : null };
+  state.falling = false;
+  state.vx = state.vy = 0;
+  placeOnPerch(Date.now());
+}
+// every frame: follow the window, and play the hang → climb → sit sequence
+function placeOnPerch(now) {
+  const p = state.perch;
+  let off = seatOffset();
+  if (p.climb) {
+    const t = now - p.climb.t0;
+    if (t < HANG_MS) off = handOffset();
+    else if (t < HANG_MS + CLIMB_MS) {
+      p.climb.stage = 'climb';
+      const k = (t - HANG_MS) / CLIMB_MS;
+      off = handOffset() + (off - handOffset()) * k * k * (3 - 2 * k);
+    } else {
+      p.climb = null;
+      flash('land', 350);
+      setFace('uwu', 1800);
+      say(pick(['Phew… made it! 😅', '*climbs up* …ta-da~', 'Hehe, nailed it~']), 2200);
+    }
+  }
+  const x = Math.min(Math.max(p.wx + p.dx, p.wx - state.w / 2 + 30), p.wx + p.ww - state.w / 2 - 30);
+  const y = p.wy - off;
+  if (Math.abs(x - state.x) > 0.3 || Math.abs(y - state.y) > 0.3) { state.x = x; state.y = y; api.setPos(x, y); }
+}
+// each window scan: did her window move, vanish, shrink away or fill the screen?
 function updatePerch() {
   const p = state.perch;
   const w = wins.find((o) => o.id === p.id);
-  // the window closed, minimised or maximised: down she goes
-  if (!w || w.max) return dropFromPerch();
-  const x = Math.min(Math.max(w.x + p.dx, w.x - state.w / 2 + 30), w.x + w.w - state.w / 2 - 30);
-  const y = w.y - seatOffset();
-  if (Math.abs(x - state.x) > 0.5 || Math.abs(y - state.y) > 0.5) { state.x = x; state.y = y; api.setPos(x, y); }
+  if (!w) return fallOff('closed');
+  if (w.min) return fallOff('min');
+  if (w.max) return fallOff('max');
+  const now = Date.now();
+  const moved = Math.abs(w.x - p.wx) > 1 || Math.abs(w.y - p.wy) > 1;
+  p.wx = w.x;
+  p.wy = w.y;
+  p.ww = w.w;
+  if (moved) {
+    // you're dragging her window around: hold on for dear life
+    if (!p.moving && !p.climb) { setFace('shock', 60000); say(pick(['W-wait!! 😱', 'Whoa whoa whoa—!', 'Don\'t shake it!!', 'Earthquake?!']), 60000); }
+    p.moving = true;
+    p.movedAt = now;
+  } else if (p.moving && now - p.movedAt > 350) {
+    fallOff('drag'); // you let go of the window: she doesn't hold on
+  }
 }
-async function dropFromPerch() {
+async function fallOff(kind) {
+  const p = state.perch;
+  if (!p) return;
   state.perch = null;
+  state.noCatchId = p.id; // she won't grab the window she just fell off
+  state.pouncing = false;
   state.area = await api.workAreaAt(state.x + state.w / 2, state.y + state.h);
-  state.vx = 0;
-  state.vy = -2;
+  if (kind === 'max') {
+    // the window balloons to full screen and bounces her off
+    state.vx = (Math.random() < 0.5 ? -1 : 1) * (3 + Math.random() * 2);
+    state.vy = -12;
+    setFace('shock', 2600);
+    say(pick(['Whoa! It got HUGE!', 'Kyaa— it\'s taking over the screen!', 'Hey! No room for me?!']), 2400);
+  } else if (kind === 'min') {
+    state.vx = 0;
+    state.vy = 1;
+    setFace('surprised', 2200);
+    say(pick(['Eh?! It vanished!', 'Where did my seat go?!', 'It shrank into the taskbar?!']), 2400);
+  } else if (kind === 'drag') {
+    state.vx = (Math.random() * 2 - 1) * 2;
+    state.vy = -3;
+    setFace('shock', 2600);
+    say(pick(['Waaaah—!!', 'Noooo— I\'m falling!', 'Kyaa—!!']), 2200);
+  } else {
+    state.vx = 0;
+    state.vy = -2;
+    setFace('surprised', 1800);
+    say(pick(['Hey! My seat!', 'Waah—!', 'Eek—!']), 1800);
+  }
   state.falling = true;
-  setFace('surprised', 1400);
-  say(pick(['Waah—!', 'Hey! My seat!', 'Eek—!']), 1600);
 }
 async function hopDown() {
   if (!state.perch) return;
+  state.noCatchId = state.perch.id;
   state.perch = null;
   state.area = await api.workAreaAt(state.x + state.w / 2, state.y + state.h);
   state.pouncing = false;
@@ -464,18 +527,28 @@ async function hopDown() {
   state.falling = true;
   say(pick(['Wheee~', 'Coming down!', 'Hup!']), 1400);
 }
-// tossed through the air: land on a title bar if one is right under her
-function landOnWindow() {
-  const off = seatOffset();
-  const seatNow = state.y + off;
-  const seatBefore = seatNow - state.vy;
+// falling past a window: a gentle drop lands her sitting on it; a fast one, she grabs the edge and climbs up
+function catchWindow() {
   const mid = state.x + state.w / 2;
+  const seatNow = state.y + seatOffset();
+  const handNow = state.y + handOffset();
   for (let i = 0; i < wins.length; i++) {
     const w = wins[i];
-    if (w.max || seatBefore > w.y || seatNow < w.y || mid < w.x + 40 || mid > w.x + w.w - 40 || frontOf(i, mid, w.y)) continue;
-    if (w.y < state.area.y + 100) continue;
-    sitOn(w, pick(['Safe landing~ ✨', 'Nailed it! ✨', 'Ta-da~ I\'m up here!']));
-    return true;
+    if (w.min || w.max || w.id === state.noCatchId || mid < w.x + 40 || mid > w.x + w.w - 40 || w.y < state.area.y + 100) continue;
+    if (frontOf(i, mid, w.y)) continue;
+    if (state.vy < 7 && seatNow - state.vy <= w.y && seatNow >= w.y) {
+      sitOn(w);
+      flash('land', 350);
+      setFace('cat', 1600);
+      say(pick(['Safe landing~ ✨', 'Nailed it! ✨', 'Ta-da~ I\'m up here!']), 2200);
+      return true;
+    }
+    if (handNow - state.vy <= w.y && handNow >= w.y) {
+      sitOn(w, true);
+      setFace('nervous', HANG_MS + CLIMB_MS);
+      say(pick(['Hnngh—! Caught it!', '*grabs on*', 'S-safe…!']), 1600);
+      return true;
+    }
   }
   return false;
 }
@@ -769,6 +842,7 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('happy', extra.includes('happy'));
   charEl.classList.toggle('airwork', extra.includes('airwork'));
   charEl.classList.toggle('airwait', extra.includes('airwait'));
+  charEl.classList.toggle('quake', extra.includes('quake'));
   charEl.classList.toggle('flip', state.dir < 0 && pose === 'walk');
   if (!spinning) charEl.classList.toggle('view-back', pose === 'sulk');
   charEl.classList.toggle('specs', state.alwaysGlasses || Date.now() < state.glassesUntil);
@@ -813,7 +887,7 @@ function choosePose(now) {
   if (bubbleSticky) hideBubble();
   if (now < state.sulkUntil) return ['sulk'];
   if (state.hideSeek && state.hideSeek.phase === 'hidden') return ['peek'];
-  if (state.perch) return ['perch'];
+  if (state.perch) return [state.perch.climb ? state.perch.climb.stage : 'perch', state.perch.moving ? ['quake'] : []];
 
   if (state.napping || now - state.lastActivity > (isNight() ? NIGHT_SLEEP_AFTER_MS : SLEEP_AFTER_MS)) {
     if (!state.asleepSince) state.asleepSince = now;
@@ -897,6 +971,7 @@ function tick(t) {
   updateWorkHead(t, dt);
   updateTickle(Date.now());
   if (state.leap) updateLeap(now);
+  if (state.perch && !state.dragging) placeOnPerch(now);
   if (state.chase) updateChase(dt, now);
   updatePounce(now);
 
@@ -905,13 +980,14 @@ function tick(t) {
     state.x = clampX(state.x + state.vx * dt);
     state.y += state.vy * dt;
     state.vx *= 0.99;
-    if (state.vy > 0 && !state.pouncing && landOnWindow()) return void requestAnimationFrame(tick);
+    if (state.vy > 0 && !state.pouncing && catchWindow()) return void requestAnimationFrame(tick);
     if (state.y >= ground()) {
       state.y = ground();
       state.falling = false;
       if (state.vy > 22) { charEl.classList.add('oops'); setFace(Math.random() < 0.5 ? 'cry' : 'teary', 2200); say(pick(['Ouch!', 'Owie… >_<', 'That hurt!']), 2200); setTimeout(() => charEl.classList.remove('oops'), 1500); }
       state.vy = state.vx = 0;
       flash('land', 350);
+      state.noCatchId = null;
       if (state.pouncing) landPounce();
     }
     api.setPos(state.x, state.y);

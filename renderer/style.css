@@ -1281,3 +1281,25 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 #char.running #side .limb, #char.running #body { animation-duration: 0.26s !important; }
 .belly-dot { fill: #c98a72; }
 .belly-shine { stroke: #f3d9cc; }
+
+/* ---------- caught a window's edge: dangling by her hands, then pulling herself up ---------- */
+#char.hang #shadow, #char.climb #shadow, #char.hang #cushion, #char.climb #cushion { display: none; }
+#char.hang #armL { transform: rotate(172deg); }
+#char.hang #armR { transform: rotate(-172deg); }
+#char.hang #body { transform-origin: 50% 46%; animation: hangSway 1.1s ease-in-out infinite alternate; }
+@keyframes hangSway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+#char.hang #legL { animation: dangle 0.35s ease-in-out infinite alternate; }
+#char.hang #legR { animation: dangle 0.35s ease-in-out -0.17s infinite alternate; }
+#char.climb #armL { animation: climbArmL 0.55s ease-in-out infinite alternate; }
+#char.climb #armR { animation: climbArmR 0.55s ease-in-out -0.27s infinite alternate; }
+@keyframes climbArmL { from { transform: rotate(172deg); } to { transform: rotate(140deg); } }
+@keyframes climbArmR { from { transform: rotate(-172deg); } to { transform: rotate(-140deg); } }
+#char.climb #legL { transform: rotate(-38deg); }
+#char.climb #legR { animation: dangle 0.3s ease-in-out infinite alternate; }
+#char.climb #body { transform-origin: 50% 46%; animation: hangSway 0.55s ease-in-out infinite alternate; }
+/* her window is being dragged: clinging on, shaking */
+#char.perch.quake #body { animation: quakeSeated 0.12s linear infinite; }
+@keyframes quakeSeated { 0%, 100% { transform: translateY(16px); } 25% { transform: translate(-1.5px, 15px) rotate(-2deg); } 75% { transform: translate(1.5px, 17px) rotate(2deg); } }
+#char.perch.quake #armL { transform: rotate(-24deg); }
+#char.perch.quake #armR { transform: rotate(24deg); }
+#char.perch.quake .sit-leg { animation: none !important; }

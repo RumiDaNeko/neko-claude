@@ -48,7 +48,8 @@ function startWindowScan() {
       const line = buf.slice(0, i).trim();
       buf = buf.slice(i + 1);
       try {
-        windows = JSON.parse(line).map(([id, l, t, r, b, max, fg]) => {
+        windows = JSON.parse(line).map(([id, l, t, r, b, max, fg, min]) => {
+          if (min) return { id, x: 0, y: 0, w: 0, h: 0, max: false, fg: false, min: true };
           const d = screen.screenToDipRect(null, { x: l, y: t, width: r - l, height: b - t });
           return { id, x: d.x, y: d.y, w: d.width, h: d.height, max: !!max, fg: !!fg };
         });

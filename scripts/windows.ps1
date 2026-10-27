@@ -1,4 +1,4 @@
-# Prints the visible top-level windows (front to back) twice a second, one JSON line per scan,
+# Prints the visible top-level windows (front to back) about eight times a second, one JSON line per scan,
 # so claude-chan can perch on title bars. Rects are physical pixels (DWM visual bounds).
 param([int]$SelfPid = 0)
 Add-Type @"
@@ -25,7 +25,7 @@ public static class ChanWin {
     IntPtr fg = GetForegroundWindow();
     int n = 0;
     EnumWindows((h, p) => {
-      if (n >= 40 || !IsWindowVisible(h) || IsIconic(h) || GetWindowTextLength(h) == 0) return true;
+      if (n >= 40 || !IsWindowVisible(h) || GetWindowTextLength(h) == 0) return true;
       if ((GetWindowLong(h, -20) & 0x80) != 0) return true; // tool windows
       int cloaked; if (DwmGetWindowAttribute(h, 14, out cloaked, 4) == 0 && cloaked != 0) return true;
       uint pid; GetWindowThreadProcessId(h, out pid);
@@ -33,11 +33,18 @@ public static class ChanWin {
       var cls = new StringBuilder(64); GetClassName(h, cls, 64);
       string c = cls.ToString();
       if (c == "Shell_TrayWnd" || c == "Progman" || c == "WorkerW") return true;
+      // minimised: reported with a flag (no usable rect), so she can tell it from a closed window
+      if (IsIconic(h)) {
+        if (n > 0) sb.Append(',');
+        sb.Append('[').Append(h.ToInt64()).Append(",0,0,0,0,0,0,1]");
+        n++;
+        return true;
+      }
       RECT r; if (DwmGetWindowAttribute(h, 9, out r, 16) != 0) return true;
       if (r.R - r.L < 120 || r.B - r.T < 80) return true;
       if (n > 0) sb.Append(',');
       sb.Append('[').Append(h.ToInt64()).Append(',').Append(r.L).Append(',').Append(r.T).Append(',').Append(r.R).Append(',').Append(r.B)
-        .Append(',').Append(IsZoomed(h) ? 1 : 0).Append(',').Append(h == fg ? 1 : 0).Append(']');
+        .Append(',').Append(IsZoomed(h) ? 1 : 0).Append(',').Append(h == fg ? 1 : 0).Append(",0]");
       n++;
       return true;
     }, IntPtr.Zero);
@@ -48,5 +55,5 @@ public static class ChanWin {
 while ($true) {
   [Console]::Out.WriteLine([ChanWin]::Scan($SelfPid))
   [Console]::Out.Flush()
-  Start-Sleep -Milliseconds 500
+  Start-Sleep -Milliseconds 120
 }
