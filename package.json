@@ -8,7 +8,8 @@
     "start": "electron .",
     "install-hooks": "node install-hooks.mjs",
     "install-hooks:global": "node install-hooks.mjs --global",
-    "build:icon": "electron scripts/build-icon.js"
+    "build:icon": "electron scripts/build-icon.js",
+    "check": "node scripts/check.js"
   },
   "devDependencies": {
     "electron": "^38.0.0"

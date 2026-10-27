@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld('chan', {
   onCommand: (fn) => ipcRenderer.on('command', (_e, cmd) => fn(cmd)),
   onCursor: (fn) => ipcRenderer.on('cursor', (_e, p) => fn(p)),
   windows: () => ipcRenderer.invoke('windows'),
+  peer: () => ipcRenderer.invoke('peer'),
 });

@@ -1,6 +1,9 @@
 // claude-chan behavior: wandering, drag & toss physics, and Claude Code status reactions.
 const api = window.chan;
 const charEl = document.getElementById('char');
+// a second Claude session gets her little sister (same page, second window, ?sister=1)
+const SISTER = new URLSearchParams(location.search).has('sister');
+if (SISTER) charEl.classList.add('sister');
 const hit = document.getElementById('hit');
 const bubble = document.getElementById('bubble');
 const bubbleText = document.getElementById('bubble-text');
@@ -114,8 +117,13 @@ api.onClaude((ev) => {
       if (state.leaving) cancelLeave();
       sessions.set(id, { status: 'idle', at: Date.now() });
       doAction('hello', 2500);
-      say('Hi! Let\'s build something ✨', 3000);
-      morningCoffee();
+      say(SISTER ? 'Hi! I\'m her little sister~ I\'ll help with this one ✨' : 'Hi! Let\'s build something ✨', 3000);
+      if (!SISTER) morningCoffee();
+      break;
+    case 'Adopt': // her sister went home; this session is hers now
+      sessions.set(id, { status: 'idle', at: Date.now() });
+      doAction('hello', 1500);
+      say('Sis went home~ I\'ll take over! ✨', 2800);
       break;
     case 'UserPromptSubmit':
       sessions.set(id, { status: 'working', tool: null, at: Date.now() });
@@ -136,16 +144,23 @@ api.onClaude((ev) => {
       if (!turn.start) turn.start = Date.now();
       turn.tools++;
       if (!prev || prev.tool !== ev.tool || prev.status !== 'working') say(toolLine(ev.tool), 4000);
+      if (!reactToCommand('pre', ev) && /^(Grep|Glob)$/.test(ev.tool || '') && Math.random() < 0.25) {
+        setFace('think', 1800);
+        say(pick(['Where is it… 🔍', 'Hmm, somewhere in here…', 'Searching searching~']), 2200);
+      }
       break;
     case 'PostToolUseFailure':
       turn.errors = (turn.errors || 0) + 1;
       state.bugTool = ev.tool;
+      state.bugCmd = ev.command || '';
       state.bugAt = Date.now();
-      oops(turn.errors);
+      oops(turn.errors, ev.command);
       break;
     case 'PostToolUse':
-      // the command that failed earlier just went through
-      if (state.bugTool && ev.tool === state.bugTool && Date.now() - state.bugAt < 15 * 60 * 1000) fixedIt();
+      // the command that failed earlier (or the test run) just went through
+      if (state.bugTool && ev.tool === state.bugTool && Date.now() - state.bugAt < 15 * 60 * 1000
+        && (ev.command === state.bugCmd || (TESTS.test(ev.command || '') && TESTS.test(state.bugCmd)))) fixedIt();
+      else reactToCommand('post', ev);
       break;
     case 'Notification': {
       sessions.set(id, { status: 'waiting', tool: prev?.tool, at: Date.now() });
@@ -167,6 +182,8 @@ api.onClaude((ev) => {
         // long run: she's earned a coffee
         if (took > 3 * 60 * 1000) setTimeout(() => { if (claudeStatus().status === 'idle' && !state.action) snack('coffee', 'Phew… coffee break ☕'); }, 2600);
         doAction('cheer', 2200);
+        sfx('chime');
+        changeMood(2);
         const f = Math.random();
         if (f < 0.4) setFace('star', 2200); else if (f < 0.6) setFace('uwu', 2200);
         say(turn.errors ? pick(['Done! We beat those errors ✨', 'Finished… after a fight! 💪', 'Ta-da~ bugs defeated!'])
@@ -227,6 +244,8 @@ function snack(item = 'cookie', line) {
   charEl.classList.toggle('sipstraw', item === 'boba');
   doAction('snack', 3200);
   setFace(t.face, 3200);
+  changeMood(item === 'water' ? 2 : 6);
+  interacted();
   say(line || (forgiven ? '…for me? …fine. Forgiven ♡' : pick(t.hello)), 1200);
   setTimeout(() => say(t.during, 1600), 1200);
   setTimeout(t.after, 3200);
@@ -278,6 +297,8 @@ function updateHideSeek(now) {
   }
 }
 function found() {
+  changeMood(4);
+  interacted();
   const secs = Math.round((Date.now() - state.hideSeek.since) / 1000);
   endHideSeek();
   doAction('cheer', 1600);
@@ -294,8 +315,16 @@ function endHideSeek() {
 }
 
 // ---------- Claude hit an error / fixed it ----------
-function oops(n) {
+function oops(n, cmd = '') {
   state.panicUntil = Date.now() + 8000;
+  changeMood(-1.5);
+  sfx('uhoh');
+  if (TESTS.test(cmd)) {
+    flash('jolt', 450);
+    setFace(n >= 3 ? 'cry' : 'teary', 3000);
+    say(pick(['Red tests… 😭', 'The tests failed! T_T', 'Nooo, a failing test…']), 2600);
+    return;
+  }
   flash('jolt', 450);
   setFace('shock', 900);
   setTimeout(() => setFace(n >= 3 ? 'cry' : 'nervous', 6000), 900);
@@ -303,6 +332,8 @@ function oops(n) {
     : pick(['Eek! An error! 😱', 'Uh-oh… red text!', 'Th-that\'s not supposed to happen!', 'Huh?! It broke?!']), 2600);
 }
 function fixedIt() {
+  changeMood(3);
+  sfx('chime');
   state.bugTool = null;
   state.panicUntil = 0;
   setFace('star', 2400);
@@ -380,12 +411,14 @@ function morningCoffee() {
   setTimeout(() => { if (!state.action && claudeStatus().status === 'idle') snack('coffee', 'Good morning~ ☕'); }, 2800);
 }
 // the cap rides along on the walking (3/4) head too
-(function capToSide() {
-  const cap = document.getElementById('nightcap').cloneNode(true);
-  cap.removeAttribute('id');
-  cap.setAttribute('class', 'nightcap-side');
-  cap.setAttribute('transform', 'matrix(0.771 0 0 1 35.4 0)');
-  document.getElementById('sHead').appendChild(cap);
+(function hatsToSide() {
+  for (const id of ['nightcap', 'witchhat', 'santahat']) {
+    const hat = document.getElementById(id).cloneNode(true);
+    hat.removeAttribute('id');
+    hat.setAttribute('class', id + '-side');
+    hat.setAttribute('transform', 'matrix(0.771 0 0 1 35.4 0)');
+    document.getElementById('sHead').appendChild(hat);
+  }
 })();
 
 // ---------- perching on window title bars ----------
@@ -446,7 +479,7 @@ function updateLeap(now) {
   if (state.hideAfterLanding) return void hopDown();
   flash('land', 350);
   setFace('cat', 1600);
-  say('Nice view up here~ ✨', 2200);
+  say(l.win.id === 'cursor' ? pick(['Comfy seat~', 'Mine now~ ♡', 'Don\'t move, okay?']) : 'Nice view up here~ ✨', 2200);
 }
 // she's on window w: sitting, or (climb) still hanging from its edge
 function sitOn(w, climb = false) {
@@ -459,6 +492,13 @@ function sitOn(w, climb = false) {
 // every frame: follow the window, and play the hang → climb → sit sequence
 function placeOnPerch(now) {
   const p = state.perch;
+  if (p.id === 'cursor') {
+    // sitting on the mouse pointer: her seat rides just above its tip
+    const x = cursor.x - state.w / 2;
+    const y = cursor.y - seatOffset() - 2;
+    if (Math.abs(x - state.x) > 0.3 || Math.abs(y - state.y) > 0.3) { state.x = x; state.y = y; api.setPos(x, y); }
+    return;
+  }
   let off = seatOffset();
   if (p.climb) {
     const t = now - p.climb.t0;
@@ -501,6 +541,7 @@ function showLedge(edge, m) {
 // each window scan: did her window move, vanish, shrink away or fill the screen?
 function updatePerch() {
   const p = state.perch;
+  if (p.id === 'cursor') return;
   const w = wins.find((o) => o.id === p.id);
   if (!w) return fallOff('closed');
   if (w.min) return fallOff('min');
@@ -550,6 +591,11 @@ async function fallOff(kind) {
     state.vy = 1;
     setFace('surprised', 2200);
     say(pick(['Eh?! It vanished!', 'Where did my seat go?!', 'It shrank into the taskbar?!']), 2400);
+  } else if (kind === 'shake') {
+    state.vx = (Math.random() * 2 - 1) * 5;
+    state.vy = -5;
+    setFace('shock', 2400);
+    say(pick(['Whoa— too fast!', 'Waah! Slow down!', 'Kyaa— I fell off!']), 2200);
   } else if (kind === 'drag') {
     state.vx = (Math.random() * 2 - 1) * 2;
     state.vy = -3;
@@ -602,6 +648,147 @@ function catchWindow() {
   return false;
 }
 
+// ---------- sitting on the mouse cursor ----------
+function goCursor() {
+  const a = state.area;
+  if (state.perch || state.leap || state.falling || !a) return;
+  if (cursor.y < a.y + 180 || cursor.x < a.x + 40 || cursor.x > a.x + a.width - 40) return; // no room up there
+  if (Math.abs(cursor.x - (state.x + state.w / 2)) > 700) return; // too far to jump
+  state.action = null;
+  state.walkTarget = null;
+  state.dir = Math.sign(cursor.x - (state.x + state.w / 2)) || state.dir;
+  charEl.style.setProperty('--pdir', state.dir);
+  say(pick(['Ooh, a seat~', 'Mine!', '*eyes the cursor*']), 1400);
+  const y1 = cursor.y - seatOffset() - 2;
+  state.leap = { x0: state.x, y0: state.y, x1: cursor.x - state.w / 2, y1, t0: Date.now(), dur: 700,
+    arc: 60 + Math.max(0, state.y - y1) * 0.25, win: { id: 'cursor', x: cursor.x, y: cursor.y, w: 2 } };
+}
+
+// ---------- sister: wave when she's around ----------
+async function waveAtSister() {
+  const p = api.peer && await api.peer();
+  if (!p || state.action || state.perch || claudeStatus().status !== 'idle') return;
+  const dx = p.x - state.x;
+  if (Math.abs(dx) > 1200) return;
+  state.dir = Math.sign(dx) || state.dir;
+  doAction('hello', 1800);
+  setFace('cat', 1800);
+  say(SISTER ? pick(['Hi onee-chan~ 👋', 'Sis! Over here!', 'Big sis~ ♡']) : pick(['Hi imouto~ 👋', 'Hey sis! 👋', 'Working hard, sis? ✨']), 2200);
+}
+
+// ---------- seasons ----------
+function season() {
+  const d = new Date();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  if ((m === 10 && day >= 20) || (m === 11 && day <= 2)) return 'halloween';
+  if (m === 12 && day <= 26) return 'xmas';
+  return null;
+}
+
+// ---------- mood: pats, treats and finished work cheer her up; neglect and teasing wear her down ----------
+let mood = 60;
+try { const m = localStorage.getItem('mood'); if (m !== null && !isNaN(m)) mood = Math.max(0, Math.min(100, Number(m))); } catch { /* fresh start */ }
+let lastInteraction = Date.now();
+function changeMood(d) {
+  mood = Math.max(0, Math.min(100, mood + d));
+  try { localStorage.setItem('mood', String(Math.round(mood))); } catch { /* not saved */ }
+}
+function interacted() { lastInteraction = Date.now(); }
+// left alone for a long time, she gets a bit lonely
+setInterval(() => { if (Date.now() - lastInteraction > 10 * 60 * 1000) changeMood(-2); }, 5 * 60 * 1000);
+function tellMood() {
+  const m = Math.round(mood);
+  if (m > 80) { setFace('heart', 2600); popHearts(3); say(`I'm super happy~ ♡ (${m}/100)`, 3000); }
+  else if (m > 55) { setFace('uwu', 2400); say(`Pretty good! ✨ (${m}/100)`, 3000); }
+  else if (m > 30) { setFace('think', 2400); say(`Mm… okay, I guess. A pat would help~ (${m}/100)`, 3200); }
+  else { setFace('teary', 2600); say(`…lonely. Nobody plays with me T_T (${m}/100)`, 3200); }
+}
+
+// ---------- reacting to the commands Claude runs ----------
+const RISKY = /\brm\s+-[a-z]*(rf|fr)|git\s+push\b.*(--force|\s-f\b)|git\s+reset\s+--hard|git\s+clean\s+-[a-z]*f|\bdrop\s+(table|database)\b|Remove-Item\b.*-Recurse|\bdel\s+\/[sq]|\bformat\s+[a-z]:|\bmkfs\b/i;
+const TESTS = /\b(npm|pnpm|yarn|bun)\s+(run\s+)?test\b|\bjest\b|\bvitest\b|\bpytest\b|cargo\s+test|\bgo\s+test|dotnet\s+test|mvn\s+test|gradlew?\s+test|\bphpunit\b|\brspec\b|npm\s+run\s+check\b/i;
+function reactToCommand(phase, ev) {
+  const cmd = ev.command || '';
+  if (!cmd) return false;
+  if (phase === 'pre') {
+    if (RISKY.test(cmd)) {
+      setFace('shock', 2800);
+      say(pick(['E-eh?! Are you sure about that?! 😰', 'That looks dangerous… 😨', '*covers eyes* Tell me when it\'s over!']), 3200);
+      return true;
+    }
+    if (TESTS.test(cmd)) { setFace('nervous', 2400); say(pick(['Running the tests… fingers crossed 🤞', 'Please pass, please pass…']), 3000); return true; }
+    if (/\bgit\s+commit\b/.test(cmd)) { say('Committing~ 📝', 2000); return true; }
+    return false;
+  }
+  if (TESTS.test(cmd)) { setFace('star', 2400); flash('sparkle', 1400); sfx('chime'); changeMood(3); say(pick(['Tests pass! 👍✨', 'All green! 🟢', 'Yatta~ the tests pass!']), 2800); }
+  else if (/\bgit\s+commit\b/.test(cmd)) { setFace('uwu', 2000); popHearts(2); changeMood(2); say(pick(['Committed! ✨', 'Saved to history~ 📜']), 2400); }
+  else if (/\bgit\s+push\b/.test(cmd)) { setFace('star', 2200); flash('sparkle', 1200); changeMood(2); say(pick(['Shipped! 🚀', 'Pushed~ off it goes! 🚀']), 2400); }
+  return true;
+}
+
+// ---------- sound effects (off unless "Sounds" is ticked in the menu) ----------
+let soundOn = false;
+let actx = null;
+function tone(f0, f1, dur, type = 'sine', vol = 0.1, delay = 0) {
+  const t = actx.currentTime + delay;
+  const o = actx.createOscillator();
+  const g = actx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(f0, t);
+  o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g).connect(actx.destination);
+  o.start(t);
+  o.stop(t + dur + 0.02);
+}
+const SFX = {
+  boing: () => { tone(420, 150, 0.1, 'triangle', 0.1); tone(150, 460, 0.18, 'triangle', 0.08, 0.09); },
+  pop: () => tone(620, 1250, 0.06, 'sine', 0.06),
+  purr: () => { for (let i = 0; i < 6; i++) tone(58, 48, 0.09, 'sawtooth', 0.035, i * 0.1); },
+  chime: () => { tone(880, 880, 0.25, 'sine', 0.07); tone(1320, 1320, 0.35, 'sine', 0.06, 0.12); },
+  uhoh: () => { tone(520, 500, 0.16, 'square', 0.04); tone(390, 370, 0.26, 'square', 0.04, 0.18); },
+  meow: () => { tone(700, 1100, 0.12, 'sawtooth', 0.03); tone(1100, 620, 0.25, 'sawtooth', 0.03, 0.12); },
+};
+function sfx(name) {
+  if (!soundOn) return;
+  try { actx = actx || new AudioContext(); SFX[name](); } catch { /* no audio */ }
+}
+
+// ---------- drop a file on her: she reads it ----------
+const fmtSize = (n) => (n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(1) + ' MB');
+let dragHint = 0;
+document.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  if (Date.now() - dragHint > 3000 && !state.action) { dragHint = Date.now(); setFace('surprised', 1400); say(pick(['Ooh, what\'s that? 👀', 'For me?', 'Gimme gimme~']), 1600); }
+});
+document.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  const f = e.dataTransfer && e.dataTransfer.files[0];
+  if (!f || state.leaving) return;
+  interacted();
+  changeMood(1);
+  doAction('megane', 1000);
+  state.glassesUntil = Math.max(state.glassesUntil, Date.now() + 20000);
+  setTimeout(() => flash('glint', 800), 450);
+  const ext = (f.name.includes('.') ? f.name.split('.').pop() : '').toLowerCase();
+  let info = fmtSize(f.size);
+  // count lines of text files (never shows what's in them)
+  if (f.size && f.size < 5e6 && !/^(png|jpe?g|gif|webp|bmp|ico|mp4|mov|mkv|mp3|wav|zip|7z|rar|exe|dll|pdf|psd|blend)$/.test(ext)) {
+    try { const text = await f.text(); info = text.split('\n').length + ' lines · ' + info; } catch { /* a folder or unreadable */ }
+  }
+  const kind = /^(js|mjs|cjs|ts|tsx|jsx|py|rs|go|java|kt|c|h|cpp|cs|rb|php|lua|sh|ps1|swift)$/.test(ext) ? 'Ooh, code! 👩‍💻'
+    : /^(md|txt|rst|log)$/.test(ext) ? 'Some reading~ 📖'
+    : /^(png|jpe?g|gif|webp|bmp|svg|ico)$/.test(ext) ? 'A picture! So pretty~ 🖼️'
+    : /^(json|ya?ml|toml|ini|env|xml|csv)$/.test(ext) ? 'Config and data stuff… 🔧'
+    : /^(zip|7z|rar|tar|gz)$/.test(ext) ? 'A box of files?! 📦'
+    : !f.size && !ext ? 'A whole folder?! 📁'
+    : 'Hmm, what\'s this? 🤔';
+  setFace('think', 1800);
+  say(`${kind} ${f.name}: ${info}`, 5000);
+});
+
 // ---------- too many treats ----------
 function stuffed() {
   if (state.dragging || state.leaving) return;
@@ -641,6 +828,7 @@ function updateChase(dt, now) {
       state.dir = c.dir;
       setFace('surprised', 700);
       say(pick(['!! A kitty!', 'Nya?! A cat!', 'Kitty!! 🐈']), 1200);
+    sfx('meow');
     }
   } else if (c.phase === 'notice') {
     c.kx += c.dir * 1.2 * dt; // slows down and looks back at her
@@ -711,6 +899,9 @@ api.onCommand((cmd) => {
   if (cmd === 'hide') startHideSeek();
   if (cmd === 'perch') goPerch(true);
   if (cmd === 'kitty') startKitty(true);
+  if (cmd === 'mood') tellMood();
+  if (cmd === 'sound-on') soundOn = true;
+  if (cmd === 'sound-off') soundOn = false;
   if (cmd.startsWith('treat:')) snack(cmd.slice(6));
   if (cmd === 'glasses-on') { state.alwaysGlasses = true; putOnGlasses(0); }
   if (cmd === 'glasses-on-quiet') state.alwaysGlasses = true; // remembered from last time
@@ -766,7 +957,18 @@ function putOnGlasses(ms = 25000 + Math.random() * 20000) {
 // ---------- eyes follow the cursor ----------
 let cursor = { x: 0, y: 0, movedAt: 0 };
 api.onCursor((p) => {
+  const jump = Math.hypot(p.x - cursor.x, p.y - cursor.y);
   if (p.x !== cursor.x || p.y !== cursor.y) cursor = { x: p.x, y: p.y, movedAt: Date.now() };
+  const ride = state.perch && state.perch.id === 'cursor' ? state.perch : null;
+  if (ride && jump > 140) return void fallOff('shake'); // flung off
+  if (ride && jump > 4 && !ride.rode) { ride.rode = true; setFace('cat', 1600); say(pick(['Wheee~ a ride!', 'Faster faster~!', 'Giddy up! 🐎']), 1800); }
+  // the cursor is over her: take mouse input (so a file dragged from Explorer can be dropped on her)
+  if (!ride && !hovering && !drag) {
+    const b = hit.getBoundingClientRect();
+    const x = p.x - state.x;
+    const y = p.y - state.y;
+    setIgnore(!(x > b.left && x < b.right && y > b.top && y < b.bottom));
+  }
 });
 const TRACK_POSES = ['idle', 'lounge', 'hello', 'cheer', 'wait', 'dance', 'hop', 'megane', 'stalk', 'perch'];
 function updateTracking(pose) {
@@ -916,6 +1118,12 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('panic', Date.now() < state.panicUntil);
   charEl.classList.toggle('perched', !!state.perch && !state.perch.climb); // working / waving up on a window
   charEl.classList.toggle('night', isNight());
+  const sea = season();
+  charEl.classList.toggle('season-halloween', sea === 'halloween');
+  charEl.classList.toggle('season-xmas', sea === 'xmas');
+  const onCur = !!state.perch && state.perch.id === 'cursor';
+  if (onCur && !charEl.classList.contains('oncursor')) setIgnore(true);
+  charEl.classList.toggle('oncursor', onCur);
   charEl.classList.toggle('running', (!!state.chase && state.chase.phase === 'run') || (!!state.hideSeek && state.hideSeek.phase === 'going' && state.walkTarget != null));
   updateTracking(pose);
   updateBadge(pose);
@@ -996,6 +1204,15 @@ function think(now) {
 
   // late at night she gets sleepy and says so
   if (isNight() && Math.random() < 0.08) { setFace('yawn', 2200); say(pick(['It\'s late… 🌙', 'Shouldn\'t you sleep? 🌙', '*yawn* …so late~']), 2600); return; }
+  // mood shows: humming and dancing when happy, moping when neglected
+  if (mood > 80 && Math.random() < 0.12) { setFace('uwu', 2400); say(pick(['♪~ ♫', 'Hmm hmm hmm~ ♪', 'La la la~']), 2400); doAction('dance', 2600); return; }
+  if (mood < 30 && Math.random() < 0.2) { setFace('pout', 2600); say(pick(['Hmph…', '…nobody plays with me.', '*sigh*', '…pat me?']), 2600); return; }
+  const sea = season();
+  if (sea && Math.random() < 0.05) { say(sea === 'halloween' ? pick(['Trick or treat! 🎃', 'Boo! 👻', 'Got any candy? 🍬']) : pick(['Merry Christmas~ 🎄', 'Ho ho ho~ 🎅', 'Snow… ❄️']), 2600); return; }
+  // her sister's around: wave at her
+  if (Math.random() < 0.1) { waveAtSister(); return; }
+  // the cursor's been resting a while: go sit on it
+  if (now - cursor.movedAt > 15000 && Math.random() < 0.25) { goCursor(); return; }
   // the cursor moved off somewhere: tag along
   const cdx = cursor.x - (state.x + state.w / 2);
   if (now - cursor.movedAt < 2500 && cursor.y > state.y + 60 && Math.abs(cdx) > 150 && Math.abs(cdx) < 700 && Math.random() < 0.6) {
@@ -1056,6 +1273,7 @@ function tick(t) {
       state.vy = state.vx = 0;
       flash('land', 350);
       state.noCatchId = null;
+      sfx('boing');
       if (state.pouncing) landPounce();
       if (state.hideAfterLanding) { state.hideAfterLanding = false; setTimeout(startHideSeek, 350); }
     }
@@ -1077,8 +1295,10 @@ function tick(t) {
 // ---------- mouse: hover, drag, toss, poke ----------
 let hovering = false;
 let drag = null;
-hit.addEventListener('pointerenter', () => { hovering = true; api.ignoreMouse(false); });
-hit.addEventListener('pointerleave', () => { hovering = false; if (!drag) api.ignoreMouse(true); });
+let ignoring = true;
+function setIgnore(v) { if (v !== ignoring) { ignoring = v; api.ignoreMouse(v); } }
+hit.addEventListener('pointerenter', () => { hovering = true; setIgnore(false); });
+hit.addEventListener('pointerleave', () => { hovering = false; if (!drag) setIgnore(true); });
 
 hit.addEventListener('dblclick', () => {
   pokes.splice(-2);
@@ -1127,7 +1347,7 @@ hit.addEventListener('pointerup', async (e) => {
   if (!drag) return;
   const d = drag;
   drag = null;
-  if (!hovering) api.ignoreMouse(true);
+  if (!hovering) setIgnore(true);
   if (!d.moved && state.offering) return takeWater();
   if (!d.moved && state.hideSeek) return found();
   if (!d.moved) return onCheek(e) ? cheek() : onHead(e) ? pat() : poke();
@@ -1275,6 +1495,7 @@ function onHead(e) {
 
 const hearts = [];
 function spawnHeart() {
+  sfx('pop');
   const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   p.setAttribute('class', 'heart');
@@ -1347,7 +1568,9 @@ function pat() {
   setFace(pats.length >= 6 ? 'heart' : pats.length >= 3 && Math.random() < 0.4 ? 'uwu' : 'pat', 1800);
   const n = pats.length >= 4 ? 3 : pats.length >= 2 ? 2 : 1;
   for (let i = 0; i < n; i++) setTimeout(spawnHeart, i * 120);
-  if (pats.length >= 6) say(pick(['Purrr~ ♡', 'Nyaa~ ♡♡', '*melts*']), 1800);
+  changeMood(1.5);
+  interacted();
+  if (pats.length >= 6) { say(pick(['Purrr~ ♡', 'Nyaa~ ♡♡', '*melts*']), 1800); sfx('purr'); }
   else if (pats.length >= 3) say(pick(['Ehehe~ ♡', 'More~ ♡', 'Mmm~']), 1600);
   else say(pick(['♡', 'Hehe~', 'Pat pat~']), 1400);
 }
@@ -1365,6 +1588,7 @@ function pullLaptop() {
 // teased too much: up goes the laptop, and it's coming at you
 function yeet() {
   pokes.length = 0;
+  changeMood(-20);
   state.laptopGone = true;
   state.yeetAt = Date.now();
   state.sulkUntil = Date.now() + 1800 + 25000;
@@ -1392,7 +1616,7 @@ function poke() {
   const now = Date.now();
   pokes.push(now);
   while (pokes.length && now - pokes[0] > 6000) pokes.shift();
-  if (pokes.length >= 8) return yeet();
+  if (pokes.length >= (mood < 30 ? 5 : 8)) return yeet(); // grumpy: shorter fuse
   if (pokes.length >= 5) {
     setFace('pout', 2600);
     say(pick(['Mou! Stop it! 💢', 'Hmph!', 'I\'m not a button!']), 2600);

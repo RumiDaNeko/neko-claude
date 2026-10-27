@@ -31,6 +31,8 @@ process.stdin.on('end', async () => {
     session: input.session_id || 'default',
     tool: input.tool_name,
     message: input.message,
+    // the shell command, so she can react to tests, commits, pushes and scary rm -rf's
+    command: typeof input.tool_input?.command === 'string' ? input.tool_input.command.slice(0, 300) : undefined,
     error: typeof input.error === 'string' ? input.error.slice(0, 200) : undefined,
     cwd: input.cwd,
     at: Date.now(),

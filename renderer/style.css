@@ -1332,3 +1332,23 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 #char.perched.wait #legL, #char.perched.wait #legR { display: none; }
 #char.perched.wait #sit { display: inline; }
 #char.perched.wait #body { animation: none; transform: translateY(16px); }
+
+/* ---------- seasonal hats (the nightcap wins at night) ---------- */
+#witchhat, #santahat, .witchhat-side, .santahat-side { display: none; }
+#char.season-halloween:not(.night) #witchhat, #char.season-halloween:not(.night) .witchhat-side { display: inline; }
+#char.season-xmas:not(.night) #santahat, #char.season-xmas:not(.night) .santahat-side { display: inline; }
+.witch-brim { fill: #3b2a52; stroke: #24182f; stroke-width: 1.2; }
+.witch-cone { fill: #4a3466; stroke: #24182f; stroke-width: 1.2; stroke-linejoin: round; }
+.witch-band { fill: #f08a3c; }
+.witch-buckle { fill: none; stroke: #ffd257; stroke-width: 1.6; }
+.santa-cap { fill: #e04848; stroke: #9e2b2b; stroke-width: 1.2; stroke-linejoin: round; }
+.santa-pom, .santa-band { fill: #ffffff; stroke: #d9cfc8; stroke-width: 1.1; }
+
+/* ---------- her little sister (second Claude session): blue hair, lavender dress ---------- */
+/* leaves only: a filter on a group *and* its strands would stack and cancel out */
+#char.sister .hair, #char.sister .hair-back, #char.sister .hair-long, #char.sister .hair-strand, #char.sister .ear-out, #char.sister .tail-fur, #char.sister .tail-tip { filter: hue-rotate(185deg) saturate(0.85); }
+#char.sister .dress, #char.sister .sleeve { fill: #9a8fd9; }
+#char.sister .dress-shadow { fill: #8174c4; }
+
+/* ---------- riding the cursor: clicks go straight through her ---------- */
+#char.oncursor #hit { pointer-events: none; }

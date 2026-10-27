@@ -33,6 +33,9 @@ The hooks run `hook.mjs`, which forwards each event to `127.0.0.1:47321` with a 
 | You send a prompt | sits on her cushion with the laptop, puts on her glasses, thinking bubble |
 | A tool runs | types with her eyes on the screen (her Clawd hairclip hops along); the bubble says what: running commands, writing code, reading files… Now and then she glances up at you |
 | A tool fails | jolts, sweats and types twice as fast ("Eek! An error!"); a few in a row and she's in tears |
+| Claude runs something scary (`rm -rf`, `git push --force`, `git reset --hard`…) | shocked: "Are you sure about that?! 😰" |
+| Tests run / pass / fail | fingers crossed, then "All green! 🟢" or teary "Red tests… 😭" |
+| `git commit` / `git push` | "Committed! ✨" with hearts / "Shipped! 🚀" |
 | A failed command passes again | sparkles: "Fixed it! ✨" |
 | Needs permission / your input | hops and waves with a red **!** until you answer |
 | Finished | cheers with sparkles: "Done! ✨" |
@@ -40,12 +43,22 @@ The hooks run `hook.mjs`, which forwards each event to `127.0.0.1:47321` with a 
 
 While Claude works, a thought bubble next to her shows what it's doing with a little animated icon (terminal, book, notepad and pencil, magnifier, spinning globe, a squad of mini Clawds for subagents, a checklist, a gear for anything else), plus the tool count and elapsed time; it turns into a red **?** when Claude needs you and a green ✓ with the totals when it's done. If you're holding her up when Claude changes status she reacts in the air: types on her laptop while dangling, wriggles to be put down when Claude needs you, cheers when it's done. After a run longer than 3 minutes she takes a coffee break. After an hour of coding she holds out a glass of water and tells you to take a break; click her to take it, or she drinks it herself.
 
+**Mood:** pats, treats, found-you's, finished work and passing tests cheer her up; teasing, errors and being left alone for a long time wear her down. A happy clawde chan hums and dances more; a grumpy one mopes and has a shorter fuse before the laptop flies. Ask her **How are you feeling?** in the menu. The mood is remembered.
+
+**Her little sister:** if you open a second Claude session while the first is still going, her little sister (blue hair) walks in for it, reacts to that session only, and waves at her big sister now and then. When either session ends, that one heads out through the exit door; if it's the first session that ends, clawde chan takes over her sister's session.
+
+**Drop a file on her** (from Explorer): she puts on her glasses and reads it: name, line count and size, plus a comment on what kind of file it is. She only counts lines; nothing is shown or sent anywhere.
+
+**Seasons:** a witch hat around Halloween (Oct 20 – Nov 2), a Santa hat in December, with a few seasonal lines.
+
+**Sounds** (menu, off by default): little synthesized blips for landings, pats (purring), hearts, finished work, errors and the kitty. No audio files.
+
 When Claude is idle:
 
 - she wanders along the taskbar, turning to a 3/4 view as she walks (keeping whatever face she's making)
 - she dances, and every so often does something goofy: trips and faceplants (over a banana peel, a pebble, a stray cable, her own tail… or, classically, nothing at all), does a full 360° twirl, backflips, or sneezes her hairclip off
 - after 5 idle minutes she sits on the floor and stares into space; after an hour she drags her cushion over and falls asleep on it
-- she follows your cursor around, and if you leave it resting near her feet she crouches, wiggles and pounces on it
+- she follows your cursor around, and if you leave it resting near her feet she crouches, wiggles and pounces on it; leave it still somewhere for a while and she may hop up and sit on it. Move it and she rides along; flick it fast and she flies off. While she's sitting on it, your clicks go straight through her
 - now and then she leaps up onto the title bar of a window and sits there swinging her legs (if Claude starts working she stays up there and works on her laptop) . Drag that window and she clings on, shaking and wide-eyed; carry her upward and she enjoys the elevator ride, but drag it down or sideways and she slips off the moment you let go. Maximise it and it bounces her off; minimise or close it and she drops ("Eh?! It vanished!"). Falling past another window, she lands on it if she was dropping gently, or, if she was falling fast, catches its edge from behind (just her head and hands peeking over the top) and climbs out over it like out of a pool. Toss her at a window and the same happens. Windows only; `CLAUDE_CHAN_PERCH=0` turns it off
 - a little grey kitty dashes past sometimes, and she chases it (she never catches it)
 - after 23:00 she's in pajamas and a nightcap, yawns more and nods off sooner; the first time Claude opens in the morning she has a coffee
@@ -65,6 +78,14 @@ The icon lives in `assets/icon.svg`; `npm run build:icon` regenerates `icon.png`
 
 Glasses style: `GLASSES` in `renderer/app.js` (`round`, `half` or `square`).
 
+## Checks
+
+```bash
+npm run check
+```
+
+Parses every script, makes sure no class that app.js puts on her (poses, states) is also used by an SVG part (that kind of clash made the laptop lid see-through and walking left flip her off-screen), and that every element app.js looks up exists.
+
 ## Files
 
 - `main.js`: transparent, always-on-top Electron window plus the local event bridge
@@ -72,6 +93,7 @@ Glasses style: `GLASSES` in `renderer/app.js` (`round`, `half` or `square`).
 - `renderer/style.css`: art styling and every pose/animation
 - `renderer/app.js`: behavior: wandering, drag/toss physics, tricks, idle timers, Claude status reactions
 - `hook.mjs`, `install-hooks.mjs`: the Claude Code side
+- `scripts/check.js`: the sanity checks above
 - `scripts/windows.ps1`: lists the open windows (for perching on title bars); run by `main.js` on Windows
 
 ## Credits
