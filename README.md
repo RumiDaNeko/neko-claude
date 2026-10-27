@@ -38,9 +38,10 @@ When Claude is idle:
 
 - she wanders along the taskbar, turning to a 3/4 view as she walks
 - she dances, and every so often does something goofy: trips and faceplants, does a full 360° twirl, backflips, or sneezes her hairclip off
-- after 5 idle minutes she sits on the floor and stares into space; after an hour she falls asleep
+- after 5 idle minutes she sits on the floor and stares into space; after an hour she drags her cushion over and falls asleep on it
+- if she sleeps for half an hour she nods off sideways, tips over, and wakes up with a start
 
-**Pat pat:** click her head and a hand pats it, her head squishes and hearts pop out; keep patting and she starts purring.
+**Pat pat:** click her head and the classic petpet hand pats it, her head squishes (her long hair stays put) and hearts pop out; keep patting and she starts purring.
 
 **Expressions:** sparkly star eyes when Claude finishes, a wink when you poke her, flustered >///< then a 💢 pout if you keep poking, surprised when picked up, xx eyes if you hold her up too long, teary >_< after a hard landing, a thinking look when you send a prompt, plus a smug grin, a cat smile and yawns while idle.
 
@@ -57,3 +58,7 @@ Glasses style: `GLASSES` in `renderer/app.js` (`round`, `half` or `square`).
 - `renderer/style.css`: art styling and every pose/animation
 - `renderer/app.js`: behavior: wandering, drag/toss physics, tricks, idle timers, Claude status reactions
 - `hook.mjs`, `install-hooks.mjs`: the Claude Code side
+
+## Credits
+
+Petpet hand frames (`assets/petpet/`) are from [aDu/pet-pet-gif](https://github.com/aDu/pet-pet-gif), ISC license.

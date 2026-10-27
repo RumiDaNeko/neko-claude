@@ -461,11 +461,11 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 /* ---------- lounge: idle 5+ min, sits on the floor looking spaced-out ---------- */
 .eyelid { fill: #fdf3ec; }
 #mouth-dot { fill: #6a352a; }
-#char.lounge #legL, #char.lounge #legR, #char.sleep #legL, #char.sleep #legR { display: none; }
-#char.lounge #sit, #char.sleep #sit { display: inline; }
+#char.lounge #legL, #char.lounge #legR, #char.sleep #legL, #char.sleep #legR, #char.topple #legL, #char.topple #legR { display: none; }
+#char.lounge #sit, #char.sleep #sit, #char.topple #sit { display: inline; }
 #char.lounge .cushion, #char.lounge .cushion-top { display: none; }
 #char.lounge #body, #char.sleep #body { transform: translateY(16px); animation: none; }
-#char.lounge #shadow, #char.sleep #shadow { transform: scale(1.6, 1.3); }
+#char.lounge #shadow, #char.sleep #shadow, #char.topple #shadow { transform: scale(1.6, 1.3); }
 #char.lounge #eyes-open, #char.lounge #mouth-smile { display: none; }
 #char.lounge #eyes-bored, #char.lounge #mouth-dot { display: inline; }
 #char.lounge #head, #char.lounge #puffs { animation: ponder 7s ease-in-out infinite; }
@@ -701,40 +701,42 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 
 /* ---------- Pat Pat ---------- */
 #pat-hand { display: none; }
-.pat-palm { fill: #fbeee6; stroke: #c98e7a; stroke-width: 1.1; }
-.pat-cuff { fill: #e48e6c; stroke: #b7806c; stroke-width: 1; }
-.pat-line { stroke: #d9a493; stroke-width: 1; stroke-linecap: round; fill: none; }
 #char.patting #pat-hand { display: inline; }
-#char.patting .hand-inner { animation: patPress 0.42s ease-out; }
-#char.patting #head, #char.patting #puffs { animation: patSquash 0.42s ease-out !important; }
-#char.patting #sHead { animation: patSquashSide 0.42s ease-out !important; }
-@keyframes patPress { 0% { transform: translateY(-4px); opacity: 0; } 30% { transform: translateY(14px); opacity: 1; } 60% { transform: translateY(9px); } 100% { transform: translateY(3px); opacity: 1; } }
-@keyframes patSquash { 0%, 100% { transform: scale(1, 1); } 30% { transform: scale(1.06, 0.88); } 60% { transform: scale(0.98, 1.03); } }
-@keyframes patSquashSide { 0%, 100% { transform: scale(1, 1); } 30% { transform: scale(1.05, 0.9); } }
+/* the squish is set per GIF frame from app.js */
+#char.patting #head, #char.patting #sHead { animation: none !important; transform: scale(var(--pat-sx, 1), var(--pat-sy, 1)) !important; }
+/* long hair: the top rides down with the head, the ends stay where gravity left them */
+#char.patting #puffs { animation: none !important; transform-origin: 100px 223px; transform: scale(var(--pat-sx, 1), var(--pat-hy, 1)) !important; }
 
 /* happy-pat face: ^ω^ with a heavy blush */
 #char.face-pat #eyes-happy, #char.face-pat #mouth-cat, #char.face-pat #blush-hatch-heavy { display: inline !important; }
 #char.face-pat .blush { transform: scale(1.3); }
 
-.heart { fill: #ff7d9a; stroke: #ffffff; stroke-width: 0.8; transform-box: fill-box; transform-origin: center; animation: heartUp 1.3s ease-out forwards; }
-@keyframes heartUp { 0% { transform: translateY(0) scale(0.4); opacity: 0; } 20% { transform: translateY(-6px) scale(1.15); opacity: 1; } 100% { transform: translateY(-34px) scale(0.9); opacity: 0; } }
+.heart { fill: #ff7d9a; stroke: #ffffff; stroke-width: 0.8; }
 
-/* petpet-style: choppy GIF-like steps, hand presses, head squashes wide; two cycles per pat */
-#char.patting .hand-inner { animation: petHand 0.36s steps(1, end) 2; transform-origin: 50% 100%; }
-#char.patting #head, #char.patting #puffs { animation: petSquash 0.36s steps(1, end) 2 !important; }
-#char.patting #sHead { animation: petSquash 0.36s steps(1, end) 2 !important; }
-@keyframes petHand {
-  0% { transform: translateY(6px) scale(1, 1); }
-  20% { transform: translateY(11px) scale(1.05, 0.94); }
-  40% { transform: translateY(16px) scale(1.1, 0.88); }
-  60% { transform: translateY(11px) scale(1.05, 0.94); }
-  80% { transform: translateY(5px) scale(0.98, 1.03); }
+
+/* ---------- bedtime: drags the cushion over, then plops down on it ---------- */
+#char.sleep .cushion, #char.sleep .cushion-top { animation: cushionIn 1.1s ease-out both; }
+#char.sleep #body { animation: sleepSettle 1.6s ease-in-out both; }
+#char.sleep #legL, #char.sleep #legR { display: inline; animation: standLegsOut 1.6s step-end both; }
+#char.sleep .sit-leg { animation: sitLegsIn 1.6s step-end both; }
+@keyframes cushionIn { 0% { transform: translateX(-80px) rotate(-8deg); opacity: 0; } 25% { opacity: 1; } 70% { transform: translateX(6px) rotate(2deg); } 100% { transform: none; opacity: 1; } }
+@keyframes sleepSettle { 0%, 62% { transform: none; } 78% { transform: translateY(20px) scale(1.04, 0.95); } 100% { transform: translateY(16px); } }
+@keyframes standLegsOut { 0% { opacity: 1; } 70% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes sitLegsIn { 0% { opacity: 0; } 70% { opacity: 1; } 100% { opacity: 1; } }
+
+/* ---------- slept too long: nods, sways, tips off the cushion, wakes with a start ---------- */
+#char.topple #body { transform-origin: 50% 55%; animation: topple 3.6s ease-in-out both; }
+#char.topple #eyes-open, #char.topple #mouth-smile { display: none; }
+#char.topple #eyes-closed, #char.topple #mouth-flat { display: inline; }
+#char.topple .earL { animation: none; transform: rotate(-25deg); }
+#char.topple .earR { animation: none; transform: rotate(25deg); }
+@keyframes topple {
+  0% { transform: translateY(16px); }
+  14% { transform: translateY(16px) rotate(7deg); }
+  26% { transform: translateY(16px) rotate(-5deg); }
+  40% { transform: translateY(16px) rotate(14deg); }
+  52%, 76% { transform: translate(-6px, 42px) rotate(86deg); }
+  56% { transform: translate(-6px, 36px) rotate(84deg); }
+  60% { transform: translate(-6px, 42px) rotate(86deg); }
+  100% { transform: translateY(16px); }
 }
-@keyframes petSquash {
-  0% { transform: scale(1, 1); }
-  20% { transform: scale(1.07, 0.91); }
-  40% { transform: scale(1.14, 0.83); }
-  60% { transform: scale(1.07, 0.91); }
-  80% { transform: scale(0.98, 1.04); }
-}
-.heart { animation: none; }

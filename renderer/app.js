@@ -5,7 +5,7 @@ const hit = document.getElementById('hit');
 const bubble = document.getElementById('bubble');
 const bubbleText = document.getElementById('bubble-text');
 
-const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge'];
+const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple'];
 
 // Goofy tricks she does now and then: [pose, duration ms, lines]
 const TRICKS = [
@@ -17,6 +17,7 @@ const TRICKS = [
 const LOUNGE_AFTER_MS = 5 * 60 * 1000; // sits down and spaces out
 const GLASSES = 'round'; // work glasses: 'round' | 'half' | 'square'
 const SLEEP_AFTER_MS = 60 * 60 * 1000; // falls asleep
+const TOPPLE_AFTER_MS = 30 * 60 * 1000; // asleep this long: tips over and wakes up
 const STALE_SESSION_MS = 15 * 60 * 1000;
 
 const state = {
@@ -28,6 +29,7 @@ const state = {
   wander: true,
   action: null, actionUntil: 0, happyUntil: 0, // short one-off pose (cheer, hello, dance, poke)
   napping: false,
+  asleepSince: 0,
   lastActivity: Date.now(),
   nextIdeaAt: Date.now() + 4000,
 };
@@ -183,7 +185,17 @@ function doAction(name, ms) {
   state.walkTarget = null;
 }
 
+// slept too long: tips off the cushion and wakes up with a start
+function topple() {
+  wake();
+  state.asleepSince = 0;
+  doAction('topple', 3600);
+  setTimeout(() => { setFace('surprised', 1300); say(pick(['Hwah?!', 'Nya?!', '!!']), 1300); }, 1900);
+  setTimeout(() => { setFace('yawn', 1800); say(pick(['…I fell asleep?', 'Ouch… *rubs eyes*', 'I wasn\'t sleeping!']), 2400); }, 3200);
+}
+
 function wake() {
+  state.asleepSince = 0;
   state.lastActivity = Date.now();
   state.napping = false;
 }
@@ -237,7 +249,15 @@ function choosePose(now) {
   }
   if (bubbleSticky) hideBubble();
 
-  if (state.napping || now - state.lastActivity > SLEEP_AFTER_MS) return ['sleep'];
+  if (state.napping || now - state.lastActivity > SLEEP_AFTER_MS) {
+    if (!state.asleepSince) state.asleepSince = now;
+    if (now - state.asleepSince > TOPPLE_AFTER_MS) {
+      topple();
+      return [state.action];
+    }
+    return ['sleep'];
+  }
+  state.asleepSince = 0;
   if (now - state.lastActivity > LOUNGE_AFTER_MS) return ['lounge'];
   if (state.walkTarget != null) return ['walk'];
   return ['idle'];
@@ -285,6 +305,7 @@ function tick(t) {
   const now = Date.now();
   think(now);
   updateHearts(t);
+  updatePat(t);
 
   if (state.falling) {
     state.vy += 0.9 * dt;
@@ -372,7 +393,17 @@ hit.addEventListener('contextmenu', (e) => { e.preventDefault(); api.openMenu();
 const svgRoot = document.getElementById('svg');
 const heartsEl = document.getElementById('fx-hearts');
 const pats = [];
-let patClassTimer;
+let patStart = 0;
+const PAT_FRAME_MS = 30;
+const PAT_FRAMES = 10;
+const PAT_CYCLES = 2;
+const patImg = document.getElementById('pat-img');
+// preload so swapping frames never flickers
+const patFrames = Array.from({ length: PAT_FRAMES }, (_, i) => {
+  const src = `../assets/petpet/pet${i}.gif`;
+  new Image().src = src;
+  return src;
+});
 
 function onHead(e) {
   const pt = svgRoot.createSVGPoint();
@@ -406,18 +437,34 @@ function updateHearts(now) {
   }
 }
 
+// called every frame from tick(): one petpet frame, head squished the way the original GIF does it
+function updatePat(now) {
+  if (!patStart) return;
+  const f = Math.floor((now - patStart) / PAT_FRAME_MS);
+  if (f >= PAT_FRAMES * PAT_CYCLES) {
+    patStart = 0;
+    charEl.classList.remove('patting');
+    return;
+  }
+  const i = f % PAT_FRAMES;
+  const j = i < PAT_FRAMES / 2 ? i : PAT_FRAMES - i;
+  patImg.setAttribute('href', patFrames[i]);
+  charEl.style.setProperty('--pat-sx', 1 + j * 0.025);
+  charEl.style.setProperty('--pat-sy', 1 - j * 0.035);
+  // hair hangs from y 73 to 223: its top follows the squashed head, its ends don't move
+  charEl.style.setProperty('--pat-hy', (223 - (140 - 67 * (1 - j * 0.035))) / 150);
+}
+
 function pat() {
   wake();
   const now = Date.now();
   pats.push(now);
   while (pats.length && now - pats[0] > 4000) pats.shift();
 
-  // restart the hand + squish
-  clearTimeout(patClassTimer);
-  charEl.classList.remove('patting');
-  void charEl.getBoundingClientRect();
+  // restart the hand + squish; updatePat() plays it
+  patStart = performance.now();
   charEl.classList.add('patting');
-  patClassTimer = setTimeout(() => charEl.classList.remove('patting'), 740);
+  updatePat(patStart);
 
   setFace('pat', 1800);
   const n = pats.length >= 4 ? 3 : pats.length >= 2 ? 2 : 1;
