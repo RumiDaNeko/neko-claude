@@ -58,8 +58,17 @@ Right-click her (or click the tray icon) for the menu.
 - **Pat pat:** click her head and the classic petpet hand pats it, her head squishes and hearts pop out. Keep going and she purrs.
 - **Poke:** click her body for a wink. Keep poking and she gets flustered >///<, then pouts 💢, then throws her laptop at you and sulks with her back turned. Three head pats or any treat make up. (If Claude needs her mid-sulk she pulls a spare laptop out of her apron pocket.)
 - **Squish, hop, tickle:** click a cheek to squish it, double-click for a hop, wiggle the cursor over her body to tickle her.
-- **Toss her:** drag her anywhere and let go; she falls with gravity. Grab her mid-air to catch her.
-- **Give her…** a cookie 🍪, coffee ☕ (glasses mode), boba 🧋, matcha 🍵, milk 🥛 (milk mustache) or water 💧. If she's walking, jumping or chasing something she finishes first, then eats; up on a window or at her laptop she eats sitting down. Four treats in ten minutes and she's stuffed, round belly and all (water doesn't count).
+- **Boop her nose:** "Boop?!" Boop it twice in a row and she sneezes.
+- **Chin scritches:** click under her chin and she tips her head up and purrs; keep going for heart eyes.
+- **Ear rubs:** touch an ear and it flicks; wiggle the cursor over it and both ears go flat while she purrs.
+- **Grab her tail:** it puffs up like a bottlebrush ("MY TAIL?!"). Do it again and she swats you, hissing.
+- **Hold hands:** press and hold on one of her hands, then move: she walks along with your cursor. Let go and she waves.
+- **Toss her:** drag her anywhere and let go; she falls with gravity. Grab her mid-air to catch her. Shake her back and forth or swing her round in circles and she gets dizzy, with stars circling her head and a wobble once you set her down.
+- **High five ✋:** now and then she holds up a hand. Click her in time; leave her hanging and she's sad about it.
+- **Laser pointer 🔴** (menu): a red dot appears at your cursor and she dashes after it and pounces, over and over. She never catches it. Switch it off and she stares at the empty floor.
+- **Play fetch 🎾** (menu): a ball flies off and bounces along the floor; she runs after it, carries it back in her mouth and drops it for you. Sometimes she keeps it for a bit first.
+- **Rock-paper-scissors ✊** (menu): pick your throw. When she loses she sometimes "changes" hers after the fact, then owns up.
+- **Give her…** a cookie 🍪, coffee ☕ (glasses mode), boba 🧋, matcha 🍵, milk 🥛 (milk mustache), water 💧 or a fish 🐟 (her favourite: star eyes and a wildly wagging tail). If she's walking, jumping or chasing something she finishes first, then eats; up on a window or at her laptop she eats sitting down. Four treats in ten minutes and she's stuffed, round belly and all (water doesn't count).
 - **Drop a file on her** from Explorer: glasses on, she reads it and tells you its name, line count, size and what she thinks of it. She only counts lines; nothing is shown or sent anywhere.
 - **Hide and seek 🙈:** she hides behind a screen edge or ducks behind the taskbar with her ears poking up, giggling now and then as a hint. Click her to find her; she gives up after 90 s, and pops out if Claude needs you.
 - **Michael Clawdeson 🕺:** black fedora, black vest and one sparkly white glove. She moonwalks with her chin down and her hand on the brim (always gliding toward open space), spins, and goes up on her toes: "Hee-hee! ✨". Her lines live in `MOONWALK_LINES` in `renderer/app.js` if you want to add your own.
@@ -67,7 +76,7 @@ Right-click her (or click the tray icon) for the menu.
 
 ## Achievements 🏆
 
-34 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in `achievements.json` in the app's user-data folder; the list lives in `ACHIEVEMENTS` in `main.js`.
+46 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in `achievements.json` in the app's user-data folder; the list lives in `ACHIEVEMENTS` in `main.js`.
 
 **Mood:** pats, treats, finding her, finished work and passing tests cheer her up; teasing, errors and being ignored wear her down. A happy clawde chan hums and dances more; a grumpy one mopes and has a shorter fuse. Her mood and the menu toggles are remembered across restarts.
 

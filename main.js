@@ -17,6 +17,7 @@ let sister = null;
 let tray;
 let wander = true;
 let inTaskbar = false;
+let laserOn = false; // a toy, not a setting: not saved
 // achievements: what unlocks them (an event the renderer reports, how many times or how many kinds) and what they're called
 const ACHIEVEMENTS = [
   { id: 'hello', on: 'hello', icon: '👋', name: 'Hello, World', desc: 'Meet clawde chan' },
@@ -36,7 +37,7 @@ const ACHIEVEMENTS = [
   { id: 'yeet', on: 'yeet', icon: '💻', name: 'Incoming Laptop', desc: 'Poke her until she throws her laptop' },
   { id: 'madeup', on: 'madeup', icon: '🤝', name: 'Made Up', desc: 'Pat her out of a sulk' },
   { id: 'bestie', on: 'bestie', icon: '🌸', name: 'Best Friends', desc: 'Max out her mood' },
-  { id: 'gourmet', on: 'treat', kinds: 6, icon: '🍱', name: 'Full Menu', desc: 'Give her every treat' },
+  { id: 'gourmet', on: 'treat', kinds: 7, icon: '🍱', name: 'Full Menu', desc: 'Give her every treat' },
   { id: 'stuffed', on: 'stuffed', icon: '🎈', name: 'Food Coma', desc: 'Overfeed her' },
   { id: 'found', on: 'found', icon: '🙈', name: 'Gotcha', desc: 'Find her in hide and seek' },
   { id: 'foundfast', on: 'found-fast', icon: '🔍', name: 'Eagle Eye', desc: 'Find her within 3 seconds' },
@@ -53,6 +54,17 @@ const ACHIEVEMENTS = [
   { id: 'nap', on: 'nap', icon: '😴', name: 'Power Nap', desc: 'She sleeps her fill and wakes up on her own' },
   { id: 'bed', on: 'bed', icon: '🛏️', name: 'Lights Out', desc: 'She goes to bed at night' },
   { id: 'grumpy', on: 'grumpy', icon: '😾', name: 'Five More Minutes', desc: 'Wake her up in the middle of the night' },
+  { id: 'boop', on: 'boop', icon: '👃', name: 'Boop!', desc: 'Boop her nose' },
+  { id: 'chin', on: 'chin', icon: '😽', name: 'Chin Scritches', desc: 'Scratch under her chin' },
+  { id: 'ears', on: 'ears', icon: '👂', name: 'Weak Spot', desc: 'Rub her ears' },
+  { id: 'tail', on: 'tail', icon: '🙀', name: 'Not the Tail!', desc: 'Grab her tail' },
+  { id: 'dizzy', on: 'dizzy', icon: '😵‍💫', name: 'Round and Round', desc: 'Shake her or spin her until she\'s dizzy' },
+  { id: 'handhold', on: 'handhold', icon: '🤝', name: 'Hand in Hand', desc: 'Hold her hand and go for a walk' },
+  { id: 'laser', on: 'laser', icon: '🔴', name: 'THE DOT', desc: 'Turn on the laser pointer' },
+  { id: 'fetch', on: 'fetch', icon: '🎾', name: 'Good Girl', desc: 'She brings the ball back' },
+  { id: 'highfive', on: 'highfive', icon: '✋', name: 'Up Top!', desc: 'Give her a high five' },
+  { id: 'rpswin', on: 'rps-win', icon: '✊', name: 'Rock Solid', desc: 'Beat her at rock-paper-scissors' },
+  { id: 'rpscheat', on: 'rps-cheat', icon: '😏', name: 'Caught Red-Handed', desc: 'Catch her changing her throw' },
 ];
 let ach = { got: {}, counts: {}, kinds: {} };
 const achFile = () => path.join(app.getPath('userData'), 'achievements.json');
@@ -273,6 +285,13 @@ function menuTemplate() {
     { label: 'Play hide and seek 🙈', click: () => send('command', 'hide') },
     { label: 'Climb onto a window 🪟', click: () => send('command', 'perch') },
     { label: 'Call the kitty 🐈', click: () => send('command', 'kitty') },
+    { label: 'Laser pointer 🔴', type: 'checkbox', checked: laserOn, click: (i) => { laserOn = i.checked; send('command', laserOn ? 'laser-on' : 'laser-off'); refreshTrayMenu(); } },
+    { label: 'Play fetch 🎾', click: () => send('command', 'fetch') },
+    { label: 'Rock-paper-scissors ✊', submenu: [
+      { label: 'Rock ✊', click: () => send('command', 'rps:rock') },
+      { label: 'Paper ✋', click: () => send('command', 'rps:paper') },
+      { label: 'Scissors ✌️', click: () => send('command', 'rps:scissors') },
+    ] },
     { label: 'How are you feeling?', click: () => send('command', 'mood') },
     { label: 'Give her…', submenu: treats((cmd) => send('command', cmd)) },
     achievementsMenu(),
@@ -307,6 +326,7 @@ function treats(give) {
     { label: 'Matcha 🍵', click: fn('treat:matcha') },
     { label: 'Milk 🥛', click: fn('treat:milk') },
     { label: 'Water 💧', click: fn('treat:water') },
+    { label: 'Fish 🐟', click: fn('treat:fish') },
   ];
 }
 

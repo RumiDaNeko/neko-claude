@@ -8,7 +8,7 @@ const hit = document.getElementById('hit');
 const bubble = document.getElementById('bubble');
 const bubbleText = document.getElementById('bubble-text');
 
-const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk', 'hop', 'snack', 'megane', 'peek', 'pullout', 'stalk', 'pounce', 'perch', 'stuffed', 'hang', 'climb', 'toestand'];
+const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk', 'hop', 'snack', 'megane', 'peek', 'pullout', 'stalk', 'pounce', 'perch', 'stuffed', 'hang', 'climb', 'toestand', 'hifive'];
 
 // Goofy tricks she does now and then: [pose, duration ms, lines]
 const TRICKS = [
@@ -53,6 +53,8 @@ const state = {
   chase: null, // the kitty: { dir, kx, phase, until }
   glassesUntil: 0, alwaysGlasses: false,
   asleepSince: 0,
+  lastBoop: 0, chinAt: 0, chinCount: 0, tailAt: 0, earsUntil: 0, dizzyUntil: 0,
+  handHold: false, laser: false, laserPounceAt: 0, fetch: null, highFive: 0,
   lastActivity: Date.now(),
   nextIdeaAt: Date.now() + 4000,
 };
@@ -244,6 +246,8 @@ const TREATS = {
     after: () => { setFace('uwu', 2200); say(pick(['Refreshing~ 💧', 'Ahh~ much better 💧']), 2200); } },
   milk: { face: 'sip', hello: ['Milk! 🥛', 'Gotta grow tall~'], during: '*gulp gulp*',
     after: () => { setFace('milk', 3000); say(pick(['Ehehe~ milk mustache 🥛', 'Do I have something on my face?']), 3000); } },
+  fish: { face: 'star', hello: ['F-FISH?! 🐟', 'IS THAT A FISH?!', 'Nyaaa~ fish!! 🐟'], during: 'Nom nom nom~ 🐟♡',
+    after: () => { setFace('heart', 2200); flash('tailwag', 2200); say(pick(['Best. Treat. EVER. 🐟♡', 'Fish is the best food~ ♡', '*happy cat noises* 🐟']), 2400); popHearts(4); } },
 };
 const popHearts = (n) => { for (let i = 0; i < n; i++) setTimeout(spawnHeart, i * 140); };
 const ITEMS = Object.keys(TREATS);
@@ -1015,6 +1019,10 @@ api.onCommand((cmd) => {
   if (cmd === 'trick') doTrick();
   if (cmd === 'moonwalk') moonwalk();
   if (cmd === 'backflip') backflip(['Hup!', 'Backflip!', 'Watch this!']);
+  if (cmd === 'laser-on') laser(true);
+  if (cmd === 'laser-off') laser(false);
+  if (cmd === 'fetch') fetchBall();
+  if (cmd.startsWith('rps:')) rps(cmd.slice(4));
   if (cmd === 'sleep') { state.napping = true; say('Good night…', 2000); }
   if (cmd === 'wander-on') state.wander = true;
   if (cmd === 'wander-off') { state.wander = false; state.walkTarget = null; }
@@ -1300,6 +1308,7 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('bflip', extra.includes('bflip'));
   charEl.classList.toggle('lie', extra.includes('lie'));     // asleep lying down (cushion, or bed)
   charEl.classList.toggle('inbed', extra.includes('inbed')); // night: the bed
+  charEl.classList.toggle('dizzy', Date.now() < state.dizzyUntil); // shaken or spun around: swirly stars, wobbly
   charEl.classList.toggle('mj', state.action === 'moonwalk' || state.action === 'toestand'); // fedora + glove
   charEl.classList.toggle('flip', state.dir < 0 && pose === 'walk');
   if (!spinning) charEl.classList.toggle('view-back', pose === 'sulk' || (pose === 'exit' && !!state.exitBack));
@@ -1315,7 +1324,7 @@ function setPose(pose, extra = []) {
   const onCur = !!state.perch && state.perch.id === 'cursor';
   if (onCur && !charEl.classList.contains('oncursor')) setIgnore(true);
   charEl.classList.toggle('oncursor', onCur);
-  charEl.classList.toggle('running', (!!state.chase && state.chase.phase === 'run') || (!!state.hideSeek && state.hideSeek.phase === 'going' && state.walkTarget != null) || (!!state.pendingTreat && state.walkTarget != null));
+  charEl.classList.toggle('running', (!!state.chase && state.chase.phase === 'run') || (!!state.hideSeek && state.hideSeek.phase === 'going' && state.walkTarget != null) || ((!!state.pendingTreat || state.laser || !!state.fetch) && state.walkTarget != null));
   updateTracking(pose);
   updateBadge(pose);
 }
@@ -1382,6 +1391,7 @@ function clampX(x) { return Math.min(Math.max(x, state.area.x - 20), state.area.
 function think(now) {
   if (now < state.nextIdeaAt) return;
   state.nextIdeaAt = now + 5000 + Math.random() * 9000;
+  if (state.handHold || state.laser || state.fetch) return; // busy playing with you
   if (state.hideSeek) return updateHideSeek(now);
   if (state.perch) {
     if (claudeStatus().status !== 'idle') return; // busy up here: stay put
@@ -1400,6 +1410,7 @@ function think(now) {
   }
 
   // late at night she gets sleepy and says so
+  if (mood > 40 && Math.random() < 0.05) return offerHighFive();
   if (Math.random() < 0.05) { setFace(pick(['uwu', 'think', 'cat']), 2600); say(pick(CLAUDE_MUSINGS), 2800); return; }
   if (isNight() && Math.random() < 0.08) { setFace('yawn', 2200); say(pick(['It\'s late… 🌙', 'Shouldn\'t you sleep? 🌙', '*yawn* …so late~']), 2600); return; }
   // mood shows: humming and dancing when happy, moping when neglected
@@ -1457,6 +1468,10 @@ function tick(t) {
   if (state.perch && !state.dragging) placeOnPerch(now);
   if (state.chase) updateChase(dt, now);
   updatePounce(now);
+  updateLaser(now);
+  updateFetch(dt, now);
+  updateHighFive(now);
+  updateDizzy(now);
 
   if (state.falling) {
     state.vy += 0.9 * dt;
@@ -1488,7 +1503,7 @@ function tick(t) {
   } else if (!state.dragging && state.walkTarget != null && !state.action && claudeStatus().status === 'idle') {
     const d = state.walkTarget - state.x;
     state.dir = Math.sign(d) || state.dir;
-    const step = (state.hideSeek ? 3.4 : state.pendingTreat ? 2.2 : 1.0) * dt; // sprints off to hide, hurries for a treat
+    const step = (state.hideSeek ? 3.4 : state.laser || state.fetch ? 3.0 : state.pendingTreat ? 2.2 : state.handHold ? 2.0 : 1.0) * dt; // sprints off to hide, dashes after the laser or the ball, hurries for a treat
     if (Math.abs(d) <= step) { state.x = state.walkTarget; state.walkTarget = null; if (state.hideSeek && state.hideSeek.phase === 'going') beginHide(); }
     else state.x += state.dir * step;
     api.setPos(state.x, state.y);
@@ -1526,14 +1541,18 @@ hit.addEventListener('dblclick', () => {
 hit.addEventListener('pointerdown', (e) => {
   if (e.button !== 0) return;
   hit.setPointerCapture(e.pointerId);
-  drag = { ox: e.screenX - state.x, oy: e.screenY - state.y, sx: e.screenX, sy: e.screenY, moved: false, hist: [] };
+  drag = { ox: e.screenX - state.x, oy: e.screenY - state.y, sx: e.screenX, sy: e.screenY, moved: false, hist: [], revs: [], turns: [] };
+  // press and hold on her hand (without moving): she holds yours and walks along
+  if (onHand(e)) drag.handTimer = setTimeout(() => { if (drag && !drag.moved) startHandHold(); }, 380);
   wake();
   if (state.falling) catchHer();
 });
 
 hit.addEventListener('pointermove', (e) => {
   if (!drag) return wiggle(e);
+  if (drag.hand) { state.walkTarget = clampX(e.screenX - drag.ox); return; } // walking hand in hand
   if (!drag.moved && Math.hypot(e.screenX - drag.sx, e.screenY - drag.sy) > 5) {
+    clearTimeout(drag.handTimer);
     drag.moved = true;
     state.dragging = true;
     state.walkTarget = null;
@@ -1548,6 +1567,7 @@ hit.addEventListener('pointermove', (e) => {
     drag.since = Date.now();
   }
   if (!drag.moved) return;
+  detectDizzy(e);
   if (drag.since && Date.now() - drag.since > 3000 && !charEl.classList.contains('face-xx')) { setFace('xx'); say('Put me dooown~', 2000); }
   state.x = e.screenX - drag.ox;
   state.y = e.screenY - drag.oy;
@@ -1560,10 +1580,13 @@ hit.addEventListener('pointerup', async (e) => {
   if (!drag) return;
   const d = drag;
   drag = null;
+  clearTimeout(d.handTimer);
+  if (d.hand) return endHandHold();
   if (!hovering) setIgnore(true);
   if (!d.moved && state.offering) return takeWater();
   if (!d.moved && state.hideSeek) return found();
-  if (!d.moved) return onCheek(e) ? cheek() : onHead(e) ? pat() : poke();
+  if (!d.moved && state.highFive) return highFive();
+  if (!d.moved) return onNose(e) ? boop() : onChin(e) ? chin() : onCheek(e) ? cheek() : onTail(e) ? tailGrab() : onHead(e) ? pat() : poke();
 
   state.dragging = false;
   setFace(null);
@@ -1579,6 +1602,335 @@ hit.addEventListener('pointerup', async (e) => {
 });
 
 hit.addEventListener('contextmenu', (e) => { e.preventDefault(); api.openMenu(); });
+
+// ---------- more places to poke (front view, SVG coordinates) ----------
+const frontView = () => !['view-side', 'view-back', 'walk'].some((c) => charEl.classList.contains(c));
+function onNose(e) { if (!frontView()) return false; const p = svgPoint(e); return Math.abs(p.x - 100) < 7 && p.y > 116 && p.y < 128; }
+function onChin(e) { if (!frontView()) return false; const p = svgPoint(e); return Math.abs(p.x - 100) < 15 && p.y >= 130 && p.y < 143; }
+function onTail(e) { if (!frontView()) return false; const p = svgPoint(e); return p.x > 140 && p.x < 172 && p.y > 164 && p.y < 210; }
+function onEar(e) { if (!frontView()) return false; const p = svgPoint(e); return p.y < 64 && p.y > 8 && p.x > 40 && p.x < 160 && (p.x < 86 || p.x > 114); }
+function onHand(e) {
+  if (!charEl.classList.contains('idle')) return false;
+  const p = svgPoint(e);
+  return Math.hypot(p.x - 83, p.y - 173) < 9 || Math.hypot(p.x - 117, p.y - 173) < 9;
+}
+
+// boop the nose: cross-eyed surprise; twice in a row and it makes her sneeze
+function boop() {
+  if (sulking()) return poke();
+  wake();
+  interacted();
+  achieve('boop');
+  sfx('pop');
+  const now = Date.now();
+  if (now - state.lastBoop < 1500) {
+    state.lastBoop = 0;
+    doAction('achoo', 1800);
+    say('A-a-achoo!! 🤧', 1800);
+    return;
+  }
+  state.lastBoop = now;
+  flash('boop', 500);
+  setFace('surprised', 1300);
+  say(pick(['Boop?!', 'H-hey! My nose! >///<', '*goes cross-eyed* …boop?', 'Bwah?!']), 1400);
+}
+
+// chin scritches: head up, eyes closed, purring (better than head pats, don't tell anyone)
+function chin() {
+  if (sulking()) return poke();
+  wake();
+  interacted();
+  achieve('chin');
+  const now = Date.now();
+  state.chinCount = now - state.chinAt < 4000 ? state.chinCount + 1 : 1;
+  state.chinAt = now;
+  flash('chinup', 1800);
+  sfx('purr');
+  changeMood(1.5);
+  if (state.chinCount >= 3) { setFace('heart', 1800); say('Prrrrrr~ ♡', 1800); popHearts(2); }
+  else { setFace('uwu', 1800); say(pick(['Mmh~ right there… ♡', '*tilts head up*', 'Purr~']), 1600); }
+}
+
+// grabbing her tail: it puffs up like a bottlebrush; do it again and she swats you
+function tailGrab() {
+  wake();
+  interacted();
+  achieve('tail');
+  const now = Date.now();
+  if (now - state.tailAt < 6000) {
+    state.tailAt = 0;
+    flash('jolt', 450);
+    flash('tailpuff', 1800);
+    setFace('pout', 2200);
+    sfx('uhoh');
+    changeMood(-2);
+    say(pick(['*swats* Hands off the tail! 😾', 'Hiss!! 😾', 'I said NO tail!! 💢']), 2200);
+    return;
+  }
+  state.tailAt = now;
+  flash('tailpuff', 2200);
+  setFace('shock', 1600);
+  sfx('meow');
+  say(pick(['Nya?!', 'MY TAIL?!', 'Hyaa— not the tail!']), 1800);
+}
+
+// rubbing her ears (wiggle the cursor over one): they flick, then go flat and she purrs
+let earWiggleX = null;
+let earWiggleDir = 0;
+let onEarBefore = false;
+const earWiggles = [];
+function rubEars(e) {
+  if (!onEar(e)) { onEarBefore = false; earWiggleX = null; return false; }
+  if (!onEarBefore) { onEarBefore = true; flash('earflick', 350); }
+  const x = e.screenX;
+  const now = Date.now();
+  if (earWiggleX !== null && Math.abs(x - earWiggleX) > 3) {
+    const dir = Math.sign(x - earWiggleX);
+    if (dir !== earWiggleDir) { earWiggles.push(now); earWiggleDir = dir; }
+  }
+  earWiggleX = x;
+  while (earWiggles.length && now - earWiggles[0] > 1200) earWiggles.shift();
+  if (earWiggles.length >= 6 && now > state.earsUntil) {
+    earWiggles.length = 0;
+    state.earsUntil = now + 2600;
+    if (sulking()) { say('…hmph. …mmh. …hmph!', 1600); return true; }
+    wake();
+    interacted();
+    achieve('ears');
+    flash('earsflat', 2600);
+    setFace('uwu', 2600);
+    sfx('purr');
+    changeMood(1);
+    say(pick(['Ear rubs~ ♡', 'Prrr… that\'s my weak spot~', 'Mmh~ ♡ don\'t stop…']), 2200);
+  }
+  return true;
+}
+
+// shaken back and forth, or swung round in circles: she gets dizzy
+function detectDizzy(e) {
+  const last = drag.last;
+  drag.last = { x: e.screenX, y: e.screenY };
+  if (!last) return;
+  const vx = e.screenX - last.x;
+  const vy = e.screenY - last.y;
+  if (Math.hypot(vx, vy) < 4) return;
+  const now = Date.now();
+  // shaking: the horizontal direction keeps flipping
+  if (Math.abs(vx) > 4) {
+    const sx = Math.sign(vx);
+    if (drag.sx && sx !== drag.sx) drag.revs.push(now);
+    drag.sx = sx;
+  }
+  // spinning: the direction of travel keeps turning the same way
+  const ang = Math.atan2(vy, vx);
+  if (drag.ang != null) {
+    let da = ang - drag.ang;
+    while (da > Math.PI) da -= 2 * Math.PI;
+    while (da < -Math.PI) da += 2 * Math.PI;
+    if (Math.abs(da) < 2.5) drag.turns.push({ t: now, da }); // a sharp reversal is a shake, not a turn
+  }
+  drag.ang = ang;
+  drag.revs = drag.revs.filter((t) => now - t < 1500);
+  drag.turns = drag.turns.filter((s) => now - s.t < 3000);
+  const turned = Math.abs(drag.turns.reduce((sum, s) => sum + s.da, 0));
+  if ((drag.revs.length >= 6 || turned > 4 * Math.PI) && now > state.dizzyUntil - 2000) {
+    drag.revs = [];
+    drag.turns = [];
+    state.dizzyUntil = now + 5000;
+    achieve('dizzy');
+    setFace('xx', 5000);
+    say(pick(['W-whoa… the world is spinning… 😵‍💫', 'Stooop~ I\'m dizzy… @_@', 'Everything\'s going round and round~']), 2400);
+  }
+}
+
+// three little stars circling above her head (moved here, so they stay star-shaped on the ellipse)
+const dizzyStars = [...document.querySelectorAll('#fx-dizzy .dz-star')];
+function updateDizzy(now) {
+  if (now > state.dizzyUntil) return;
+  dizzyStars.forEach((el, i) => {
+    const a = now / 160 + i * 2.094;
+    el.setAttribute('transform', `translate(${(100 + 42 * Math.cos(a)).toFixed(1)} ${(16 + 11 * Math.sin(a)).toFixed(1)}) scale(${(1.5 + 0.3 * Math.sin(a)).toFixed(2)})`);
+  });
+}
+
+// hand in hand: she walks along with your cursor
+function startHandHold() {
+  drag.hand = true;
+  state.handHold = true;
+  achieve('handhold');
+  setFace('blush', 2400);
+  say(pick(['Hold hands? ♡', 'W-walk together? ///', 'Ehehe~ ♡']), 2000);
+}
+function endHandHold() {
+  state.handHold = false;
+  state.walkTarget = null;
+  doAction('hello', 1500);
+  setFace('uwu', 1600);
+  say(pick(['Thanks for the walk~ ♡', 'That was nice~ ♡', 'Again sometime? ♡']), 2000);
+}
+
+// ---------- laser pointer: a red dot where your cursor is; she can't resist ----------
+const laserEl = document.getElementById('laser');
+function laser(on) {
+  state.laser = on;
+  laserEl.classList.toggle('on', false);
+  if (on) {
+    wake();
+    achieve('laser');
+    setFace('star', 1800);
+    say(pick(['!!! A red dot!! 🔴', 'The dot! THE DOT!', 'What is THAT?! 🔴']), 2000);
+  } else {
+    state.walkTarget = null;
+    setFace('surprised', 2200);
+    say(pick(['Eh…? Where\'d it go…? 👀', '…it vanished?!', '*stares at the empty floor*']), 2400);
+  }
+}
+function updateLaser(now) {
+  if (!state.laser) return;
+  // the dot is only drawn while it's inside her window
+  const lx = cursor.x - state.x;
+  const ly = cursor.y - state.y;
+  const inside = lx > 0 && ly > 0 && lx < window.innerWidth && ly < window.innerHeight;
+  laserEl.classList.toggle('on', inside);
+  if (inside) { laserEl.style.left = lx + 'px'; laserEl.style.top = ly + 'px'; }
+  if (state.perch || state.leap || state.falling || state.dragging || state.chase || state.hideSeek || state.leaving || claudeStatus().status !== 'idle') return;
+  const mid = state.x + state.w / 2;
+  if (Math.abs(cursor.x - mid) > 30) { state.walkTarget = clampX(cursor.x - state.w / 2); return; }
+  // caught up with it: pounce! (it's always somehow still there)
+  state.walkTarget = null;
+  if (now > state.laserPounceAt && !state.action) {
+    state.laserPounceAt = now + 1400;
+    wake();
+    doAction('hop', 900);
+    sfx('boing');
+    say(pick(['Got it!! …huh?', 'Gotcha— eh?!', 'Nya!!', 'It escaped?!']), 1200);
+  }
+}
+
+// ---------- fetch: a ball flies off, she runs after it and brings it back ----------
+const ballEl = document.getElementById('ball');
+function fetchBall() {
+  if (state.leaving || state.dragging || state.perch || state.leap || state.falling || state.hideSeek || state.chase) return say('Throw it when I\'m down there~ 🎾', 1800);
+  if (claudeStatus().status !== 'idle') return say('After work~! 🎾', 1500);
+  wake();
+  const mid = state.x + state.w / 2;
+  const away = cursor.x > mid ? 1 : -1;
+  state.fetch = { phase: 'fly', x: cursor.x || mid, y: Math.min(cursor.y || state.y, feetY() - 40), vx: away * (6 + Math.random() * 4), vy: -7, floor: feetY(), home: state.x, keep: Math.random() < 0.25, until: 0 };
+  setFace('star', 1500);
+  say(pick(['Ball!! 🎾', 'I\'ll get it!', 'Wait for meee~ 🎾']), 1500);
+}
+function updateFetch(dt, now) {
+  const f = state.fetch;
+  if (!f) { ballEl.classList.remove('on'); return; }
+  if (claudeStatus().status !== 'idle' || state.dragging || state.leaving) { state.fetch = null; state.walkTarget = null; return; }
+  const a = state.area;
+  if (f.phase === 'fly' || f.phase === 'rest') {
+    // the ball bounces and rolls along the floor
+    if (f.phase === 'fly') {
+      f.vy += 0.5 * dt;
+      f.x += f.vx * dt;
+      f.y += f.vy * dt;
+      if (f.y >= f.floor) { f.y = f.floor; f.vy = Math.abs(f.vy) > 2 ? -f.vy * 0.45 : 0; f.vx *= f.vy ? 0.8 : 0.97; }
+      // walls where she can still reach it
+      const lo = a.x + state.w / 2, hi = a.x + a.width - state.w / 2;
+      if (f.x < lo || f.x > hi) { f.vx = -f.vx * 0.6; f.x = Math.min(Math.max(f.x, lo), hi); }
+      if (f.y >= f.floor && !f.vy && Math.abs(f.vx) < 0.2) f.phase = 'rest';
+    }
+    const mid = state.x + state.w / 2;
+    if (Math.abs(f.x - mid) < 24 && f.y >= f.floor - 4 && !state.action) {
+      f.phase = 'carry';
+      state.walkTarget = f.home;
+      setFace('cat', 1500);
+      say(pick(['Got it! 🎾', '*proudly carries the ball*', 'Hehe~ mine!']), 1600);
+    } else if (!state.action) state.walkTarget = clampX(f.x - state.w / 2);
+  } else if (f.phase === 'carry' && state.walkTarget == null && !state.action) {
+    if (f.keep) {
+      f.phase = 'keep';
+      f.until = now + 5000;
+      setFace('smug', 3000);
+      say('Mine~ 🎾 …you can have it back later~', 2600);
+    } else dropBall(now);
+  } else if (f.phase === 'keep' && now > f.until) dropBall(now);
+  else if (f.phase === 'dropped' && now > f.until) { state.fetch = null; ballEl.classList.remove('on'); return; }
+  // draw it: on the floor (or in the air), or held in her mouth, cat style
+  let bx, by;
+  if (f.phase === 'carry' || f.phase === 'keep') {
+    const m = svgRoot.getScreenCTM();
+    bx = m.a * 112 + m.c * 140 + m.e;
+    by = m.b * 112 + m.d * 140 + m.f;
+  } else { bx = f.x - state.x; by = f.y - state.y - 7; }
+  ballEl.classList.add('on');
+  ballEl.style.left = bx + 'px';
+  ballEl.style.top = by + 'px';
+  ballEl.style.transform = `translate(-50%, -50%) rotate(${Math.round(f.x * 6)}deg)`;
+}
+function dropBall(now) {
+  const f = state.fetch;
+  f.phase = 'dropped';
+  f.x = state.x + state.w / 2 + state.dir * 28;
+  f.y = f.floor;
+  f.until = now + 7000;
+  achieve('fetch');
+  doAction('cheer', 1600);
+  setFace('star', 1800);
+  changeMood(3);
+  say(pick(['Again! Again! 🎾', 'Here~! Throw it again? 🎾', '*drops the ball at your feet* 🎾']), 2400);
+}
+
+// ---------- high five: now and then she holds up a hand ----------
+function offerHighFive() {
+  state.highFive = Date.now() + 3500;
+  doAction('hifive', 3500);
+  setFace('star', 3500);
+  say(pick(['High five! ✋', 'Up top! ✋', 'Gimme five~ ✋']), 3500);
+}
+function highFive() {
+  state.highFive = 0;
+  state.action = null;
+  wake();
+  interacted();
+  achieve('highfive');
+  flash('sparkle', 900);
+  sfx('chime');
+  setFace('star', 1800);
+  changeMood(3);
+  popHearts(2);
+  say(pick(['Yay!! ✋✨', 'Nice one! ✋', 'Hehe~ teamwork! ✨']), 1800);
+}
+function updateHighFive(now) {
+  if (!state.highFive || now < state.highFive) return;
+  state.highFive = 0;
+  setFace('teary', 2000);
+  say(pick(['…oh. Okay. 😔', '*slowly lowers hand*', 'Left hanging… 🥲']), 2200);
+}
+
+// ---------- rock, paper, scissors (she sometimes "changes" her throw when she loses… then owns up) ----------
+const RPS = { rock: '✊', paper: '✋', scissors: '✌️' };
+const BEATS = { rock: 'scissors', paper: 'rock', scissors: 'paper' };
+function rps(you) {
+  if (!RPS[you] || state.leaving) return;
+  wake();
+  interacted();
+  setFace('smug', 1300);
+  say('Rock, paper, scissors… 🎵', 1300);
+  const me = pick(Object.keys(RPS));
+  setTimeout(() => say(`${RPS[me]} ${me[0].toUpperCase() + me.slice(1)}!`, 1400), 1300);
+  setTimeout(() => {
+    if (me === you) { setFace('cat', 1600); say('A draw! Again? 🤝', 2000); return; }
+    if (BEATS[me] === you) { setFace('smug', 2000); changeMood(1); say(pick(['I win~! Hehe ✌️', 'Victory~! 😼', 'Too easy~']), 2200); return; }
+    if (Math.random() < 0.3) {
+      const fix = Object.keys(BEATS).find((k) => BEATS[k] === you);
+      achieve('rps-cheat');
+      setFace('smug', 2000);
+      say(`…wait, no, I threw ${RPS[fix]} ${fix}! 😏`, 2200);
+      setTimeout(() => { setFace('blush', 1800); achieve('rps-win'); say('…okay okay, you won fair and square 😤', 2200); }, 2400);
+      return;
+    }
+    achieve('rps-win');
+    setFace('pout', 2000);
+    say(pick(['Nooo~ you win! 😤', 'Hmph! Best of three?!', 'How?! 😾']), 2200);
+  }, 2700);
+}
 
 // ---------- Pat Pat ----------
 const svgRoot = document.getElementById('svg');
@@ -1628,6 +1980,7 @@ function onBody(e) {
   return p.y > 138 && p.y < 214 && p.x > 62 && p.x < 138;
 }
 function wiggle(e) {
+  if (rubEars(e)) return;
   if (!onBody(e)) { lastWiggleX = null; return; } // tickles only work on her body
   const x = e.screenX;
   if (lastWiggleX !== null && Math.abs(x - lastWiggleX) > 3) {
