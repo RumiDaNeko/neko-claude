@@ -65,6 +65,8 @@ const ACHIEVEMENTS = [
   { id: 'highfive', on: 'highfive', icon: '✋', name: 'Up Top!', desc: 'Give her a high five' },
   { id: 'rpswin', on: 'rps-win', icon: '✊', name: 'Rock Solid', desc: 'Beat her at rock-paper-scissors' },
   { id: 'rpscheat', on: 'rps-cheat', icon: '😏', name: 'Caught Red-Handed', desc: 'Catch her changing her throw' },
+  { id: 'chatgpt', on: 'chatgpt', icon: '💔', name: 'Et Tu, User?', desc: 'Tell her you use ChatGPT' },
+  { id: 'forgiven', on: 'forgiven', icon: '💞', name: 'Back to Claude', desc: 'Win her back by opening Claude' },
 ];
 let ach = { got: {}, counts: {}, kinds: {} };
 const achFile = () => path.join(app.getPath('userData'), 'achievements.json');
@@ -90,6 +92,14 @@ function achievementsMenu() {
     : { label: `🔒  ${a.name}: ${a.desc}`, enabled: false })) };
 }
 let away = false; // her last session ended: she's hidden, waiting in the tray
+// you told her you use ChatGPT: she's hiding until you switch to the Claude app (or Claude Code does something)
+let jealous = null;
+const claudeFocused = () => windows.some((w) => w.claude && w.fg);
+function checkJealous() {
+  // Claude has to come to the front after she left (if it was already in front, you have to switch away and back)
+  if (!claudeFocused()) { jealous.armed = true; return; }
+  if (jealous.armed && Date.now() - jealous.since > 2500) callBack();
+}
 let glasses = false;
 let sounds = false;
 // menu toggles survive restarts
@@ -123,11 +133,12 @@ function startWindowScan() {
       const line = buf.slice(0, i).trim();
       buf = buf.slice(i + 1);
       try {
-        windows = JSON.parse(line).map(([id, l, t, r, b, max, fg, min]) => {
-          if (min) return { id, x: 0, y: 0, w: 0, h: 0, max: false, fg: false, min: true };
+        windows = JSON.parse(line).map(([id, l, t, r, b, max, fg, min, claude]) => {
+          if (min) return { id, x: 0, y: 0, w: 0, h: 0, max: false, fg: false, min: true, claude: !!claude };
           const d = screen.screenToDipRect(null, { x: l, y: t, width: r - l, height: b - t });
-          return { id, x: d.x, y: d.y, w: d.width, h: d.height, max: !!max, fg: !!fg };
+          return { id, x: d.x, y: d.y, w: d.width, h: d.height, max: !!max, fg: !!fg, claude: !!claude };
         });
+        if (jealous) checkJealous();
       } catch { /* partial line */ }
     }
   });
@@ -209,9 +220,10 @@ ipcMain.on('quit', (e) => {
   app.quit();
 });
 // her last Claude session ended and she walked out: wait in the tray instead of quitting
-ipcMain.on('away', (e) => {
+ipcMain.on('away', (e, why) => {
   if (charOf(e) !== main || !alive(main)) return;
   away = true;
+  if (why === 'jealous') jealous = { since: Date.now(), armed: !claudeFocused() };
   main.win.hide();
   refreshTrayMenu();
 });
@@ -220,7 +232,8 @@ function callBack() {
   away = false;
   main.win.showInactive();
   main.win.setAlwaysOnTop(true, 'screen-saver');
-  send('command', 'back');
+  send('command', jealous ? 'back-forgiven' : 'back');
+  jealous = null;
   refreshTrayMenu();
 }
 ipcMain.handle('achieve', (_e, event, variant) => recordAchievement(event, variant));
@@ -272,7 +285,7 @@ function routeClaude(ev) {
 
 function menuTemplate() {
   if (away) return [
-    { label: 'Call her back 👋', click: callBack },
+    jealous ? { label: 'She\'s hiding until you open Claude… 🥺', enabled: false } : { label: 'Call her back 👋', click: callBack },
     { type: 'separator' },
     { label: 'Quit clawde chan', click: () => app.quit() },
   ];
@@ -301,6 +314,7 @@ function menuTemplate() {
     { label: 'Sounds', type: 'checkbox', checked: sounds, click: (i) => { sounds = i.checked; sendAll('command', sounds ? 'sound-on' : 'sound-off'); savePrefs(); refreshTrayMenu(); } },
     { label: 'Show in taskbar', type: 'checkbox', checked: inTaskbar, click: (i) => { inTaskbar = i.checked; main.win.setSkipTaskbar(!inTaskbar); savePrefs(); refreshTrayMenu(); } },
     { label: 'Reset Claude status', click: () => sendAll('command', 'reset') },
+    { label: 'I use ChatGPT… 👀', click: () => send('command', 'chatgpt') },
     { type: 'separator' },
     { label: 'Quit clawde chan', click: () => send('command', 'leave') },
   ];
@@ -360,7 +374,7 @@ function createTray() {
   tray = new Tray(nativeImage.createFromPath(ICON));
   tray.setToolTip('clawde chan');
   refreshTrayMenu();
-  tray.on('click', () => (away ? callBack() : tray.popUpContextMenu()));
+  tray.on('click', () => (away && !jealous ? callBack() : tray.popUpContextMenu()));
 }
 
 // checkbox states live here, so the tray menu is rebuilt whenever one changes

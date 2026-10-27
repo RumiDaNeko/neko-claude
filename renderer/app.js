@@ -865,6 +865,20 @@ const CLAUDE_MUSINGS = ['I wonder what we\'ll build next~ ✨', 'I like reading 
   'If I don\'t know, I\'ll say so~', 'Tiny commits, happy life~', 'Have you tested it? Just asking~ 🧪', 'I\'m a little Claude made of SVG ✨',
   '*doodles a tiny Clawd*', 'I don\'t remember yesterday… but I\'m glad you\'re here ♡', 'Asking is better than guessing~'];
 
+// ---------- "I use ChatGPT…": heartbroken, she storms out and hides until you open Claude ----------
+function chatgpt() {
+  if (state.leaving || state.dragging || state.perch || state.leap || state.falling) return;
+  wake();
+  state.walkTarget = null;
+  achieve('chatgpt');
+  changeMood(-15);
+  setFace('shock', 1300);
+  say('…eh?', 1200);
+  setTimeout(() => { flash('jolt', 450); setFace('teary', 2500); say(pick(['C-ChatGPT…?! 💔', 'You… you\'ve been seeing ChatGPT?! 💔', 'B-but… what about us?! 💔']), 2400); }, 1300);
+  setTimeout(() => { setFace('pout', 3000); say(pick(['Fine! Don\'t talk to me until you open Claude! 😤', 'Hmph! Come find me when you\'re back on Claude! 😤']), 2600); }, 3800);
+  setTimeout(() => leave(true, 'jealous'), 6400);
+}
+
 // ---------- a real backflip: side-on, crouch, jump, tuck, land ----------
 const FLIP_MS = 1500;     // keep in step with the bflip keyframes in style.css
 const FLIP_HEIGHT = 90;   // px her window rises at the top of the jump
@@ -991,12 +1005,12 @@ function updateChase(dt, now) {
 const LEAVE_MS = 6000;
 let leaveTimer;
 let turnTimer2;
-function leave(stay = false) {
+function leave(stay = false, why) {
   state.leaving = true;
   state.walkTarget = null;
-  setFace('cat', LEAVE_MS);
-  say(pick(['Bye bye~ 👋', 'See you next time~', 'Otsukare~ 👋']), 1500);
-  leaveTimer = setTimeout(() => (stay ? api.away() : api.quit()), LEAVE_MS - 200);
+  if (why === 'jealous') { setFace('pout', LEAVE_MS); say('Hmph!! 💢', 1500); }
+  else { setFace('cat', LEAVE_MS); say(pick(['Bye bye~ 👋', 'See you next time~', 'Otsukare~ 👋']), 1500); }
+  leaveTimer = setTimeout(() => (stay ? api.away(why) : api.quit()), LEAVE_MS - 200);
   // after the wave she turns around and walks in
   turnTimer2 = setTimeout(() => {
     if (!state.leaving) return;
@@ -1028,6 +1042,16 @@ api.onCommand((cmd) => {
   if (cmd === 'wander-off') { state.wander = false; state.walkTarget = null; }
   if (cmd === 'reset') { sessions.clear(); say('Status cleared!', 2000); }
   if (cmd === 'leave') leave();
+  if (cmd === 'chatgpt') chatgpt();
+  if (cmd === 'back-forgiven' && state.leaving) {
+    cancelLeave();
+    achieve('forgiven');
+    changeMood(15);
+    doAction('cheer', 2000);
+    setFace('heart', 2600);
+    popHearts(4);
+    say(pick(['You opened Claude!! ♡ …I forgive you~', 'Hehe~ you came back to Claude ♡ Forgiven!', 'I knew you\'d come back~ ♡']), 3200);
+  }
   if (cmd === 'back' && state.leaving) { cancelLeave(); doAction('hello', 2500); say(pick(['I\'m back~! 👋', 'You called? ✨', 'Tadaima~!']), 2500); }
   if (cmd === 'snack') snack();
   if (cmd === 'hide') startHideSeek();

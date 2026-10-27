@@ -1,5 +1,6 @@
 # Prints the visible top-level windows (front to back) about eight times a second, one JSON line per scan,
 # so claude-chan can perch on title bars. Rects are physical pixels (DWM visual bounds).
+# The last field is 1 for windows of the Claude desktop app (she checks for it after you confess to using ChatGPT).
 param([int]$SelfPid = 0)
 Add-Type @"
 using System;
@@ -20,6 +21,16 @@ public static class ChanWin {
   [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr h, int i);
   [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr h, int a, out RECT r, int size);
   [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr h, int a, out int v, int size);
+  // process id -> is it Claude.exe (looked up once per process)
+  static Dictionary<uint, bool> claudePids = new Dictionary<uint, bool>();
+  static int IsClaude(uint pid) {
+    bool v;
+    if (!claudePids.TryGetValue(pid, out v)) {
+      try { v = System.Diagnostics.Process.GetProcessById((int)pid).ProcessName.Equals("claude", StringComparison.OrdinalIgnoreCase); } catch { v = false; }
+      claudePids[pid] = v;
+    }
+    return v ? 1 : 0;
+  }
   public static string Scan(int self) {
     var sb = new StringBuilder("[");
     IntPtr fg = GetForegroundWindow();
@@ -36,7 +47,7 @@ public static class ChanWin {
       // minimised: reported with a flag (no usable rect), so she can tell it from a closed window
       if (IsIconic(h)) {
         if (n > 0) sb.Append(',');
-        sb.Append('[').Append(h.ToInt64()).Append(",0,0,0,0,0,0,1]");
+        sb.Append('[').Append(h.ToInt64()).Append(",0,0,0,0,0,0,1,").Append(IsClaude(pid)).Append(']');
         n++;
         return true;
       }
@@ -44,7 +55,7 @@ public static class ChanWin {
       if (r.R - r.L < 120 || r.B - r.T < 80) return true;
       if (n > 0) sb.Append(',');
       sb.Append('[').Append(h.ToInt64()).Append(',').Append(r.L).Append(',').Append(r.T).Append(',').Append(r.R).Append(',').Append(r.B)
-        .Append(',').Append(IsZoomed(h) ? 1 : 0).Append(',').Append(h == fg ? 1 : 0).Append(",0]");
+        .Append(',').Append(IsZoomed(h) ? 1 : 0).Append(',').Append(h == fg ? 1 : 0).Append(",0,").Append(IsClaude(pid)).Append(']');
       n++;
       return true;
     }, IntPtr.Zero);
