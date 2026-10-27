@@ -1278,7 +1278,6 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 .k-leg { transform-box: fill-box; transform-origin: 50% 0%; animation: kStep 0.18s ease-in-out infinite alternate; }
 .k-legB { animation-delay: -0.09s; }
 @keyframes kStep { from { transform: rotate(-32deg); } to { transform: rotate(32deg); } }
-#char.running #side .limb, #char.running #body { animation-duration: 0.26s !important; }
 .belly-dot { fill: #c98a72; }
 .belly-shine { stroke: #f3d9cc; }
 
@@ -1302,3 +1301,27 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 #char.perch.quake #armL { transform: rotate(-24deg); }
 #char.perch.quake #armR { transform: rotate(24deg); }
 #char.perch.quake .sit-leg { animation: none !important; }
+
+/* ---------- running after the kitty: lean in, big strides, pumping arms, hair streaming, dust ---------- */
+#char.running #sideBody { animation: runBob 0.17s ease-in-out infinite alternate !important; }
+@keyframes runBob { from { transform: rotate(8deg) translateY(0); } to { transform: rotate(8deg) translateY(-6px); } }
+#char.running #sLegF { animation: runStep 0.34s ease-in-out infinite !important; }
+#char.running #sLegB { animation: runStep 0.34s ease-in-out -0.17s infinite !important; }
+@keyframes runStep { 0%, 100% { transform: rotate(-48deg); } 50% { transform: rotate(42deg); } }
+#char.running #sArmF { animation: runArm 0.34s ease-in-out -0.17s infinite !important; }
+#char.running #sArmB { animation: runArm 0.34s ease-in-out infinite !important; }
+@keyframes runArm { 0%, 100% { transform: rotate(-55deg); } 50% { transform: rotate(50deg); } }
+#char.running #sHead { animation: runHead 0.17s ease-in-out infinite alternate !important; }
+@keyframes runHead { from { transform: rotate(-2deg); } to { transform: rotate(1deg); } }
+#char.running #sHairBack, #char.running #sHairFar { animation: runHair 0.34s ease-in-out infinite !important; }
+@keyframes runHair { 0%, 100% { transform: rotate(14deg); } 50% { transform: rotate(20deg); } }
+#char.running #sTail { animation: runTail 0.2s ease-in-out infinite alternate !important; }
+@keyframes runTail { from { transform: rotate(-24deg); } to { transform: rotate(-8deg); } }
+#char.running #shadow { animation: shadowBob 0.17s ease-in-out infinite alternate; }
+#dust { display: none; }
+#char.running #dust { display: inline; }
+.dust { fill: #e9e1d8; stroke: #cbbfb2; stroke-width: 0.8; transform-box: fill-box; transform-origin: center; opacity: 0; }
+#char.running .dust { animation: dustPuff 0.34s ease-out infinite; }
+#char.running .d2 { animation-delay: -0.11s; }
+#char.running .d3 { animation-delay: -0.23s; }
+@keyframes dustPuff { 0% { opacity: 0.85; transform: translate(0, 0) scale(0.4); } 100% { opacity: 0; transform: translate(-16px, -4px) scale(1.5); } }
