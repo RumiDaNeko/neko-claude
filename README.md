@@ -21,7 +21,7 @@ npm run install-hooks          # only when Claude Code runs in this folder (./.c
 node install-hooks.mjs --remove [--global]
 ```
 
-When a Claude Code session starts and she isn't running, the hook launches her (set `CLAUDE_CHAN_AUTOSTART=0` to turn that off). When the last session ends, a tiny **EXIT** door pops up, she waves, turns around and walks into it, and the app closes until Claude opens again.
+When a Claude Code session starts and she isn't running, the hook launches her (set `CLAUDE_CHAN_AUTOSTART=0` to turn that off). When the last session ends, a tiny **EXIT** door pops up, she waves, turns around and walks into it, then waits hidden in the tray. Click the tray icon to call her back any time (no Claude needed), or she comes back on her own the next time Claude does something. **Quit clawde chan** in her menu closes the app for real.
 
 The hooks run `hook.mjs`, which forwards each event to `127.0.0.1:47321` with a 400 ms timeout. The same bridge takes her menu commands too, for scripts and testing: `curl -X POST --data perch http://127.0.0.1:47321/command` (`hello`, `dance`, `trick`, `hide`, `perch`, `kitty`, `treat:cookie`…). If she isn't running, nothing happens and Claude Code is unaffected. Set `CLAUDE_CHAN_PORT` to change the port.
 
@@ -39,7 +39,7 @@ The hooks run `hook.mjs`, which forwards each event to `127.0.0.1:47321` with a 
 | A failed command passes again | sparkles: "Fixed it! ✨" |
 | Needs permission / your input | hops and waves with a red **!** until you answer |
 | Finished | cheers with sparkles: "Done! ✨" |
-| Session ends | waves bye; after the last one she backs out through the EXIT door |
+| Session ends | waves bye; after the last one she walks out through the EXIT door and waits in the tray |
 
 While Claude works, a thought bubble next to her shows what it's doing with a little animated icon (terminal, book, notepad and pencil, magnifier, spinning globe, a squad of mini Clawds for subagents, a checklist, a gear for anything else), plus the tool count and elapsed time; it turns into a red **?** when Claude needs you and a green ✓ with the totals when it's done. If you're holding her up when Claude changes status she reacts in the air: types on her laptop while dangling, wriggles to be put down when Claude needs you, cheers when it's done. After a run longer than 3 minutes she takes a coffee break. After an hour of coding she holds out a glass of water and tells you to take a break; click her to take it, or she drinks it herself.
 

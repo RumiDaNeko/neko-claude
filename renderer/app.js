@@ -197,7 +197,7 @@ api.onClaude((ev) => {
       break;
     case 'SessionEnd':
       sessions.delete(id);
-      if (sessions.size === 0) { leave(); break; }
+      if (sessions.size === 0) { leave(!SISTER); break; } // she waits in the tray (her sister just goes home)
       say('Bye bye~', 2500);
       doAction('hello', 1800);
       break;
@@ -922,17 +922,18 @@ function updateChase(dt, now) {
   kittyEl.style.top = (b.top + b.height * (231 / 240) - 33) + 'px';
 }
 
-// Claude closed: a tiny EXIT door pops up, she waves and backs into it, then the app quits.
-// (the SessionStart hook brings her back next time)
+// Claude closed: a tiny EXIT door pops up, she waves, turns and walks in. Then either the app quits
+// (Quit from the menu) or, when her last session ended, she hides and waits in the tray: click the
+// tray icon to call her back, and the next Claude session brings her back too
 const LEAVE_MS = 6000;
 let leaveTimer;
 let turnTimer2;
-function leave() {
+function leave(stay = false) {
   state.leaving = true;
   state.walkTarget = null;
   setFace('cat', LEAVE_MS);
   say(pick(['Bye bye~ 👋', 'See you next time~', 'Otsukare~ 👋']), 1500);
-  leaveTimer = setTimeout(() => api.quit(), LEAVE_MS - 200);
+  leaveTimer = setTimeout(() => (stay ? api.away() : api.quit()), LEAVE_MS - 200);
   // after the wave she turns around and walks in
   turnTimer2 = setTimeout(() => {
     if (!state.leaving) return;
@@ -959,6 +960,7 @@ api.onCommand((cmd) => {
   if (cmd === 'wander-off') { state.wander = false; state.walkTarget = null; }
   if (cmd === 'reset') { sessions.clear(); say('Status cleared!', 2000); }
   if (cmd === 'leave') leave();
+  if (cmd === 'back' && state.leaving) { cancelLeave(); doAction('hello', 2500); say(pick(['I\'m back~! 👋', 'You called? ✨', 'Tadaima~!']), 2500); }
   if (cmd === 'snack') snack();
   if (cmd === 'hide') startHideSeek();
   if (cmd === 'perch') goPerch(true);

@@ -17,6 +17,7 @@ let sister = null;
 let tray;
 let wander = true;
 let inTaskbar = false;
+let away = false; // her last session ended: she's hidden, waiting in the tray
 let glasses = false;
 let sounds = false;
 // menu toggles survive restarts
@@ -135,6 +136,21 @@ ipcMain.on('quit', (e) => {
   if (c === sister) { c.win.close(); return; }
   app.quit();
 });
+// her last Claude session ended and she walked out: wait in the tray instead of quitting
+ipcMain.on('away', (e) => {
+  if (charOf(e) !== main || !alive(main)) return;
+  away = true;
+  main.win.hide();
+  refreshTrayMenu();
+});
+function callBack() {
+  if (!away || !alive(main)) return;
+  away = false;
+  main.win.showInactive();
+  main.win.setAlwaysOnTop(true, 'screen-saver');
+  send('command', 'back');
+  refreshTrayMenu();
+}
 ipcMain.handle('windows', () => windows);
 ipcMain.on('menu', (e) => {
   const c = charOf(e);
@@ -157,6 +173,7 @@ function dropSister() {
 }
 function routeClaude(ev) {
   const id = ev.session || 'default';
+  if (away && ev.event !== 'SessionEnd') callBack(); // Claude's back: so is she
   let who = owner.get(id);
   if (!who) {
     const mainBusy = [...owner.values()].includes('main');
@@ -181,6 +198,11 @@ function routeClaude(ev) {
 }
 
 function menuTemplate() {
+  if (away) return [
+    { label: 'Call her back 👋', click: callBack },
+    { type: 'separator' },
+    { label: 'Quit clawde chan', click: () => app.quit() },
+  ];
   return [
     { label: 'Wave hello', click: () => send('command', 'hello') },
     { label: 'Dance', click: () => send('command', 'dance') },
@@ -256,7 +278,7 @@ function createTray() {
   tray = new Tray(nativeImage.createFromPath(ICON));
   tray.setToolTip('clawde chan');
   refreshTrayMenu();
-  tray.on('click', () => tray.popUpContextMenu());
+  tray.on('click', () => (away ? callBack() : tray.popUpContextMenu()));
 }
 
 // checkbox states live here, so the tray menu is rebuilt whenever one changes
