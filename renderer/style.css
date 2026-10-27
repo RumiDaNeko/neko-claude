@@ -810,3 +810,36 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 
 /* working: nod <-> glance-up sway is blended per frame in app.js (no animation swap, no snap) */
 #char.work:not(.patting) #head, #char.work:not(.patting) #puffs { animation: none !important; transition: none !important; transform: translateY(var(--wy, 0px)) rotate(var(--wr, 0deg)) !important; }
+
+/* ---------- expressions in the 3/4 view ---------- */
+#sFace { display: none; }
+#char.has-face #sFace { display: inline; }
+#char.has-face #sEye, #char.has-face #sEyeFar, #char.has-face #side .closedline, #char.has-face #side .mouth { display: none !important; }
+
+/* ---------- exit door: Claude closed, she backs into it and is gone ---------- */
+#exit-door { display: none; }
+#char.exit #exit-door { display: inline; animation: doorPop 6s ease-in-out both; transform-box: view-box; transform-origin: 163px 202px; }
+.door-frame { fill: #8a5a44; stroke: var(--line); stroke-width: 1.2; }
+.door-hole { fill: #2b2230; }
+.door-leaf { fill: #c98a62; stroke: #7a4b36; stroke-width: 1; }
+.door-inset { fill: none; stroke: #a8704f; stroke-width: 1; }
+.door-knob { fill: #ffd479; }
+.exit-sign { fill: #2fae5f; stroke: #1d7a40; stroke-width: 1; }
+.exit-text { fill: #ffffff; font: bold 8px sans-serif; text-anchor: middle; letter-spacing: 0.5px; }
+#char.exit .door-panel { transform-box: view-box; transform-origin: 151px 178px; animation: doorSwing 6s ease-in-out both; }
+#char.exit .door-sign { animation: signBlink 0.8s steps(1, end) infinite; }
+#char.exit #body { transform-box: view-box; transform-origin: 100px 230px; animation: backAway 6s ease-in-out both; }
+#char.exit #shadow { animation: backShadow 6s ease-in-out both; }
+#char.exit #armR { animation: wave 0.35s ease-in-out 3 alternate; }
+#char.exit #legL { animation: backStep 0.42s ease-in-out infinite; }
+#char.exit #legR { animation: backStep 0.42s ease-in-out -0.21s infinite; }
+@keyframes doorPop { 0% { transform: scale(0); } 8% { transform: scale(1.15); } 12%, 92% { transform: scale(1); } 100% { transform: scale(0); } }
+@keyframes doorSwing { 0%, 16% { transform: none; } 24%, 80% { transform: scaleX(0.12); } 88%, 100% { transform: none; } }
+@keyframes signBlink { 0% { opacity: 1; } 50% { opacity: 0.55; } }
+@keyframes backAway {
+  0%, 22% { transform: none; opacity: 1; }
+  74% { transform: translate(63px, -28px) scale(0.22); opacity: 1; }
+  80%, 100% { transform: translate(63px, -30px) scale(0.2); opacity: 0; }
+}
+@keyframes backShadow { 0%, 22% { opacity: 1; transform: none; } 60%, 100% { opacity: 0; transform: scale(0.4); } }
+@keyframes backStep { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }

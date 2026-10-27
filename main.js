@@ -65,6 +65,7 @@ ipcMain.handle('geometry', () => {
   return { x: b.x, y: b.y, w: WIN_W, h: WIN_H, workArea: display.workArea };
 });
 ipcMain.handle('workArea', (_e, x, y) => screen.getDisplayNearestPoint({ x: Math.round(x), y: Math.round(y) }).workArea);
+ipcMain.on('quit', () => app.quit());
 ipcMain.on('menu', () => {
   Menu.buildFromTemplate(menuTemplate()).popup({ window: win });
 });
@@ -85,7 +86,7 @@ function menuTemplate() {
     { label: 'Show in taskbar', type: 'checkbox', checked: inTaskbar, click: (i) => { inTaskbar = i.checked; win.setSkipTaskbar(!inTaskbar); refreshTrayMenu(); } },
     { label: 'Reset Claude status', click: () => send('command', 'reset') },
     { type: 'separator' },
-    { label: 'Quit clawde chan', click: () => app.quit() },
+    { label: 'Quit clawde chan', click: () => send('command', 'leave') },
   ];
 }
 

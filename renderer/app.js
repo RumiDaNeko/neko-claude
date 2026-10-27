@@ -5,7 +5,7 @@ const hit = document.getElementById('hit');
 const bubble = document.getElementById('bubble');
 const bubbleText = document.getElementById('bubble-text');
 
-const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet'];
+const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit'];
 
 // Goofy tricks she does now and then: [pose, duration ms, lines]
 const TRICKS = [
@@ -29,6 +29,7 @@ const state = {
   wander: true,
   action: null, actionUntil: 0, happyUntil: 0, // short one-off pose (cheer, hello, dance, poke)
   napping: false,
+  leaving: false,
   asleepSince: 0,
   lastActivity: Date.now(),
   nextIdeaAt: Date.now() + 4000,
@@ -68,6 +69,7 @@ api.onClaude((ev) => {
   wake();
   switch (ev.event) {
     case 'SessionStart':
+      if (state.leaving) cancelLeave();
       sessions.set(id, { status: 'idle', at: Date.now() });
       doAction('hello', 2500);
       say('Hi! Let\'s build something ✨', 3000);
@@ -101,11 +103,29 @@ api.onClaude((ev) => {
       break;
     case 'SessionEnd':
       sessions.delete(id);
+      if (sessions.size === 0) { leave(); break; }
       say('Bye bye~', 2500);
       doAction('hello', 1800);
       break;
   }
 });
+
+// Claude closed: a tiny EXIT door pops up, she waves and backs into it, then the app quits.
+// (the SessionStart hook brings her back next time)
+const LEAVE_MS = 6000;
+let leaveTimer;
+function leave() {
+  state.leaving = true;
+  state.walkTarget = null;
+  setFace('cat', LEAVE_MS);
+  say(pick(['Bye bye~ 👋', 'See you next time~', 'Otsukare~ 👋']), 1500);
+  leaveTimer = setTimeout(() => api.quit(), LEAVE_MS - 200);
+}
+function cancelLeave() {
+  clearTimeout(leaveTimer);
+  state.leaving = false;
+  setFace(null);
+}
 
 api.onCommand((cmd) => {
   wake();
@@ -116,6 +136,7 @@ api.onCommand((cmd) => {
   if (cmd === 'wander-on') state.wander = true;
   if (cmd === 'wander-off') { state.wander = false; state.walkTarget = null; }
   if (cmd === 'reset') { sessions.clear(); say('Status cleared!', 2000); }
+  if (cmd === 'leave') leave();
 });
 
 // ---------- speech bubble ----------
@@ -135,6 +156,13 @@ function hideBubble() { bubble.classList.add('hidden'); bubbleSticky = false; }
 // ---------- expressions ----------
 const FACES = ['star', 'wink', 'xx', 'teary', 'surprised', 'smug', 'pout', 'blush', 'think', 'yawn', 'cat', 'pat'];
 let faceTimer;
+// copy every front expression part into the 3/4 head so faces stay on while she walks
+(function cloneFacesToSide() {
+  const sFace = document.getElementById('sFace');
+  const parts = document.querySelectorAll('#head .face-part, #tears, #fx-anger, #blush-hatch-heavy');
+  for (const el of parts) sFace.appendChild(el.cloneNode(true)); // same ids on purpose: the face rules match both
+})();
+
 function setFace(name, ms = 0) {
   clearTimeout(faceTimer);
   charEl.classList.remove('has-face', ...FACES.map((f) => 'face-' + f));
@@ -236,6 +264,7 @@ function flash(cls, ms) {
 }
 
 function choosePose(now) {
+  if (state.leaving) return ['exit'];
   if (state.dragging) return ['drag'];
   if (state.falling) return ['fall'];
   if (state.action && now < state.actionUntil) return [state.action, now < state.happyUntil ? ['happy'] : []];

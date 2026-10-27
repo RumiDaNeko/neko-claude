@@ -21,6 +21,8 @@ npm run install-hooks          # only when Claude Code runs in this folder (./.c
 node install-hooks.mjs --remove [--global]
 ```
 
+When a Claude Code session starts and she isn't running, the hook launches her (set `CLAUDE_CHAN_AUTOSTART=0` to turn that off). When the last session ends, a tiny **EXIT** door pops up, she waves and backs into it, and the app closes until Claude opens again.
+
 The hooks run `hook.mjs`, which forwards each event to `127.0.0.1:47321` with a 400 ms timeout. If she isn't running, nothing happens and Claude Code is unaffected. Set `CLAUDE_CHAN_PORT` to change the port.
 
 ## What she does
@@ -32,11 +34,11 @@ The hooks run `hook.mjs`, which forwards each event to `127.0.0.1:47321` with a 
 | A tool runs | types with her eyes on the screen (her Clawd hairclip hops along); the bubble says what: running commands, writing code, reading files… Now and then she glances up at you |
 | Needs permission / your input | hops and waves with a red **!** until you answer |
 | Finished | cheers with sparkles: "Done! ✨" |
-| Session ends | waves bye |
+| Session ends | waves bye; after the last one she backs out through the EXIT door |
 
 When Claude is idle:
 
-- she wanders along the taskbar, turning to a 3/4 view as she walks
+- she wanders along the taskbar, turning to a 3/4 view as she walks (keeping whatever face she's making)
 - she dances, and every so often does something goofy: trips and faceplants, does a full 360° twirl, backflips, or sneezes her hairclip off
 - after 5 idle minutes she sits on the floor and stares into space; after an hour she drags her cushion over and falls asleep on it
 - if she sleeps for half an hour she nods off sideways, tips off her cushion onto the floor (her hair spilling down), and wakes up with a start
