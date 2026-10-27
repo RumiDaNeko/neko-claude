@@ -201,7 +201,7 @@ function wake() {
 }
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-const POKE_LINES = ['Hehe~', 'That tickles!', 'I\'m claude-chan!', 'Need help with code?', '✨', 'Don\'t poke too hard!', 'Mou~', 'Hm? What is it?'];
+const POKE_LINES = ['Hehe~', 'That tickles!', 'I\'m clawde chan!', 'Need help with code?', '✨', 'Don\'t poke too hard!', 'Mou~', 'Hm? What is it?'];
 
 // Turning between the front view and the 3/4 walking view: squeeze narrow, swap, spring back.
 const svgEl = document.getElementById('svg');
