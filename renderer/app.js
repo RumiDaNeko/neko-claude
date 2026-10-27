@@ -424,6 +424,12 @@ function morningCoffee() {
     hat.setAttribute('class', id + '-side');
     hat.setAttribute('transform', 'matrix(0.771 0 0 1 35.4 0)');
     document.getElementById('sHead').appendChild(hat);
+    // ...and on the back of her head (mirrored: seen from behind the tip flops the other way)
+    const back = document.getElementById(id).cloneNode(true);
+    back.removeAttribute('id');
+    back.setAttribute('class', id + '-back');
+    back.setAttribute('transform', 'translate(200 0) scale(-1 1)');
+    document.querySelector('#backBody > g[transform^="translate(100 140)"]').appendChild(back);
   }
 })();
 
@@ -878,15 +884,24 @@ function updateChase(dt, now) {
 // (the SessionStart hook brings her back next time)
 const LEAVE_MS = 6000;
 let leaveTimer;
+let turnTimer2;
 function leave() {
   state.leaving = true;
   state.walkTarget = null;
   setFace('cat', LEAVE_MS);
   say(pick(['Bye bye~ 👋', 'See you next time~', 'Otsukare~ 👋']), 1500);
   leaveTimer = setTimeout(() => api.quit(), LEAVE_MS - 200);
+  // after the wave she turns around and walks in
+  turnTimer2 = setTimeout(() => {
+    if (!state.leaving) return;
+    squeeze(0.7);
+    setTimeout(() => { state.exitBack = true; squeeze(1); }, 110);
+  }, 1300);
 }
 function cancelLeave() {
   clearTimeout(leaveTimer);
+  clearTimeout(turnTimer2);
+  state.exitBack = false;
   state.leaving = false;
   setFace(null);
 }
@@ -1120,7 +1135,7 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('airwait', extra.includes('airwait'));
   charEl.classList.toggle('quake', extra.includes('quake'));
   charEl.classList.toggle('flip', state.dir < 0 && pose === 'walk');
-  if (!spinning) charEl.classList.toggle('view-back', pose === 'sulk');
+  if (!spinning) charEl.classList.toggle('view-back', pose === 'sulk' || (pose === 'exit' && !!state.exitBack));
   charEl.classList.toggle('specs', state.alwaysGlasses || Date.now() < state.glassesUntil);
   charEl.classList.toggle('panic', Date.now() < state.panicUntil);
   charEl.classList.toggle('perched', !!state.perch && !state.perch.climb); // working / waving up on a window
