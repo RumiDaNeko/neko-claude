@@ -989,8 +989,8 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 @keyframes scrollUp { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-11px); opacity: 0; } }
 .ic-page { fill: #ffffff; stroke: #9a6233; stroke-width: 1.1; stroke-linejoin: round; }
 .ic-line { fill: none; stroke: #c9a594; stroke-width: 1.2; stroke-linecap: round; }
-.flip { transform-origin: 0% 50%; }
-#char.tk-read .flip { animation: pageFlip 1.4s ease-in-out infinite; }
+.pageflip { transform-origin: 0% 50%; }
+#char.tk-read .pageflip { animation: pageFlip 1.4s ease-in-out infinite; }
 @keyframes pageFlip { 0%, 30% { transform: scaleX(1); } 70%, 100% { transform: scaleX(-1); } }
 .write { stroke: #6a8fd8; stroke-dasharray: 46; }
 #char.tk-edit .write { animation: writeLines 2s linear infinite; }
