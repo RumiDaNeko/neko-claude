@@ -962,3 +962,116 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 /* looking down at the laptop: glasses slide down her nose so her eyes stay inside the lenses */
 #glasses-round, #glasses-half, #glasses-square, #glint { transition: transform 0.45s cubic-bezier(.45,.05,.35,1); }
 #char.work:not(.glance) #glasses-round, #char.work:not(.glance) #glasses-half, #char.work:not(.glance) #glasses-square, #char.work:not(.glance) #glint { transform: translateY(4px); }
+
+/* ---------- Claude status badge ---------- */
+#status-badge { display: none; }
+#char.badge #status-badge { display: inline; }
+#char.badge #fx-think { display: none !important; }
+.badge-bg { fill: #ffffff; stroke: #e8906e; stroke-width: 1.6; }
+.badge-pop { transform-origin: 151px 51px; transform-box: view-box; }
+#char.badge .badge-pop { animation: badgeIn 0.35s ease-out both, float 2.4s ease-in-out 0.35s infinite; }
+@keyframes badgeIn { from { transform: scale(0.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.badge-text { font: bold 6.5px sans-serif; fill: #b0624a; text-anchor: middle; }
+.tk { display: none; }
+#char.tk-think .tk-think, #char.tk-term .tk-term, #char.tk-read .tk-read, #char.tk-edit .tk-edit, #char.tk-search .tk-search,
+#char.tk-web .tk-web, #char.tk-agent .tk-agent, #char.tk-plan .tk-plan, #char.tk-gear .tk-gear, #char.tk-ask .tk-ask, #char.tk-done .tk-done { display: inline; }
+.dot { fill: #c9a594; }
+#char.tk-think .dot { animation: dotHop 1s ease-in-out infinite; }
+#char.tk-think .d2 { animation-delay: 0.15s; } #char.tk-think .d3 { animation-delay: 0.3s; }
+@keyframes dotHop { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-3px); } }
+.ic-dark { fill: #2b2230; }
+.ic-green { fill: none; stroke: #7cf09a; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.ic-green-fill { fill: #7cf09a; }
+.ic-dim { fill: #7c6f86; }
+#char.tk-term .blink { animation: blink 0.8s steps(1, end) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+#char.tk-term .scroll { animation: scrollUp 0.9s linear infinite; }
+@keyframes scrollUp { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-11px); opacity: 0; } }
+.ic-page { fill: #ffffff; stroke: #9a6233; stroke-width: 1.1; stroke-linejoin: round; }
+.ic-line { fill: none; stroke: #c9a594; stroke-width: 1.2; stroke-linecap: round; }
+.flip { transform-origin: 0% 50%; }
+#char.tk-read .flip { animation: pageFlip 1.4s ease-in-out infinite; }
+@keyframes pageFlip { 0%, 30% { transform: scaleX(1); } 70%, 100% { transform: scaleX(-1); } }
+.write { stroke: #6a8fd8; stroke-dasharray: 46; }
+#char.tk-edit .write { animation: writeLines 2s linear infinite; }
+@keyframes writeLines { from { stroke-dashoffset: 46; } to { stroke-dashoffset: 0; } }
+.ic-pencil { fill: #f2c14e; stroke: #9a6233; stroke-width: 0.8; }
+.ic-tip { fill: #5a3420; }
+#char.tk-edit .pencil { animation: scribble 0.5s ease-in-out infinite alternate; }
+@keyframes scribble { from { transform: translate(-4px, 6px); } to { transform: translate(0, 0); } }
+.ic-glass { fill: #e8f6ff; stroke: #5a3420; stroke-width: 2; }
+.ic-handle { stroke: #5a3420; stroke-width: 2.6; stroke-linecap: round; }
+#char.tk-search .mag { animation: magOrbit 1.6s linear infinite; }
+@keyframes magOrbit { 0% { transform: translate(-3px, 0); } 25% { transform: translate(0, -2px); } 50% { transform: translate(3px, 0); } 75% { transform: translate(0, 2px); } 100% { transform: translate(-3px, 0); } }
+.ic-globe { fill: #9fd4f5; stroke: #3a7bbf; stroke-width: 1.4; }
+.ic-gline { fill: none; stroke: #3a7bbf; stroke-width: 1; }
+.meridian { transform-origin: center; }
+#char.tk-web .meridian { animation: spinGlobe 1.6s linear infinite; }
+@keyframes spinGlobe { 0% { transform: scaleX(1); } 50% { transform: scaleX(0.05); } 100% { transform: scaleX(-1); } }
+#char.tk-agent .mini { animation: miniHop 0.6s ease-in-out infinite; }
+#char.tk-agent .m2 { animation-delay: 0.2s; } #char.tk-agent .m3 { animation-delay: 0.4s; }
+@keyframes miniHop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
+.ic-box { fill: #ffffff; stroke: #9a6233; stroke-width: 0.9; }
+.tick { fill: none; stroke: #2fae5f; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+#char.tk-plan .tick { animation: tickOn 2.4s steps(1, end) infinite; }
+#char.tk-plan .t2 { animation-delay: 0.6s; } #char.tk-plan .t3 { animation-delay: 1.2s; }
+@keyframes tickOn { 0% { opacity: 1; } 75% { opacity: 0; } }
+.ic-gear-teeth { fill: none; stroke: #8a7c90; stroke-width: 3.4; stroke-dasharray: 2.6 2.9; }
+.ic-gear { fill: #8a7c90; }
+.ic-hole { fill: #ffffff; }
+.gear { transform-origin: center; }
+#char.tk-gear .gear { animation: spin 2s linear infinite; }
+.ic-q { font: bold 20px sans-serif; fill: #e2553a; text-anchor: middle; }
+#char.tk-ask .ic-q { transform-origin: center; transform-box: fill-box; animation: wobble 0.6s ease-in-out infinite alternate; }
+@keyframes wobble { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+.ic-check { fill: none; stroke: #2fae5f; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 30; }
+#char.tk-done .ic-check { animation: drawCheck 0.5s ease-out both; }
+@keyframes drawCheck { from { stroke-dashoffset: 30; } to { stroke-dashoffset: 0; } }
+
+/* ---------- drinks ---------- */
+.item { display: none; transform-origin: 50% 70%; }
+#char.snack.item-coffee .item-coffee, #char.snack.item-boba .item-boba, #char.snack.item-matcha .item-matcha, #char.snack.item-milk .item-milk { display: inline; animation: itemPop 3.2s ease-in-out both; }
+@keyframes itemPop { 0% { transform: scale(0); } 9%, 74% { transform: scale(1); } 80%, 100% { transform: scale(0); } }
+#char.snack .cookie { display: none; }
+#char.snack.item-cookie .cookie { display: inline; }
+#char.snack:not(.item-cookie) .crumbs { animation: none; }
+.mug { fill: #ffffff; stroke: #9a6233; stroke-width: 1.2; }
+.mug-handle { fill: none; stroke: #9a6233; stroke-width: 2.4; }
+.coffee-top { fill: #6b3e26; }
+.mug-heart { fill: #ff8fa8; }
+.steam { fill: none; stroke: #ffffff; stroke-width: 1.6; stroke-linecap: round; opacity: 0; }
+#char.snack .steam { animation: steamUp 1.4s ease-in-out infinite; }
+#char.snack .steam.s2 { animation-delay: 0.7s; }
+@keyframes steamUp { 0% { opacity: 0; transform: translateY(3px); } 40% { opacity: 0.85; } 100% { opacity: 0; transform: translateY(-6px); } }
+.cup { fill: #fff8ef; fill-opacity: 0.55; stroke: #b9a08c; stroke-width: 1; }
+.boba-tea { fill: #d9a77a; }
+.pearl { fill: #3a2620; }
+.lid { fill: #ffffff; fill-opacity: 0.7; stroke: #b9a08c; stroke-width: 1; }
+.straw { stroke: #ff8fa8; stroke-width: 2.6; stroke-linecap: round; }
+.tea-cup { fill: #f3efe3; stroke: #8a7c60; stroke-width: 1.2; }
+.matcha { fill: #8cc152; }
+.tea-band { fill: none; stroke: #8cc152; stroke-width: 1.4; }
+.glass { fill: #ffffff; fill-opacity: 0.35; stroke: #9fb6c9; stroke-width: 1.1; }
+.milk { fill: #ffffff; }
+.glass-shine { stroke: #ffffff; stroke-width: 1.2; stroke-linecap: round; opacity: 0.8; }
+.liquid-wrap { transform-origin: 50% 100%; }
+#char.snack .liquid-wrap { animation: drain 3.2s steps(1, end) both; }
+@keyframes drain { 0% { transform: scaleY(1); } 27% { transform: scaleY(0.75); } 47% { transform: scaleY(0.5); } 67%, 100% { transform: scaleY(0.2); } }
+#char.face-sip #eyes-closed, #char.face-sip #mouth-dot, #char.face-sip #blush-hatch-heavy { display: inline !important; }
+#fx-mustache { fill: #ffffff; stroke: #e6e1dc; stroke-width: 0.7; }
+#char.face-milk #eyes-happy, #char.face-milk #mouth-cat, #char.face-milk #fx-mustache { display: inline !important; }
+
+/* ---------- held up in the air while Claude works / needs you / finishes ---------- */
+/* working: she pulls the laptop up and types while dangling */
+#char.drag.airwork #laptop { display: inline; }
+#char.drag.airwork #armL { animation: typeL 0.24s ease-in-out infinite alternate; }
+#char.drag.airwork #armR { animation: typeR 0.24s ease-in-out -0.12s infinite alternate; }
+#char.drag.airwork #legL { animation: kickL 0.9s ease-in-out infinite; }
+#char.drag.airwork #legR { animation: kickL 0.9s ease-in-out -0.45s infinite; }
+@keyframes kickL { 0%, 100% { transform: rotate(8deg); } 50% { transform: rotate(-8deg); } }
+/* Claude needs you: she wriggles to get down */
+#char.drag.airwait #body { animation: wriggle 0.22s ease-in-out infinite alternate; }
+@keyframes wriggle { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+/* done: a happy kick */
+#char.drag.airjoy #body { animation: airJoy 0.9s ease-out; }
+@keyframes airJoy { 0%, 100% { transform: none; } 30% { transform: translateY(-6px) scale(1.04, 0.96); } 60% { transform: translateY(2px); } }

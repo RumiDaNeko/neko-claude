@@ -51,6 +51,20 @@ const TOOL_LINES = [
   [/browser|Browser|chrome/, 'Clicking around…'],
   [/^mcp__/, 'Using tools…'],
 ];
+const TOOL_KINDS = [
+  [/^(Bash|PowerShell)$/, 'term'],
+  [/^(Read|NotebookRead)$/, 'read'],
+  [/^(Grep|Glob|LS)$/, 'search'],
+  [/^(Edit|MultiEdit|Write|NotebookEdit)$/, 'edit'],
+  [/^(WebFetch|WebSearch)$/, 'web'],
+  [/browser|Browser|chrome|computer/, 'web'],
+  [/^(Agent|Task)$/, 'agent'],
+  [/(TodoWrite|update_plan)$/, 'plan'],
+];
+const BADGE_KINDS = ['think', 'term', 'read', 'search', 'edit', 'web', 'agent', 'plan', 'gear', 'ask', 'done'];
+const toolKind = (tool) => (tool ? (TOOL_KINDS.find(([re]) => re.test(tool)) || [, 'gear'])[1] : 'think');
+// the current Claude turn, for the badge's tool count and timer
+const turn = { start: 0, tools: 0, doneUntil: 0, doneText: '' };
 const toolLine = (tool) => (TOOL_LINES.find(([re]) => re.test(tool || '')) || [, 'Working on it…'])[1];
 
 function claudeStatus() {
@@ -65,8 +79,16 @@ function claudeStatus() {
   return { status, tool };
 }
 
+// Claude changes status while you're holding her up in the air
+function airReact(event) {
+  if (event === 'UserPromptSubmit') { setFace('fired', 1800); say(pick(['Coding mid-air?! Okay~ 💻', 'I can type from up here!', 'Hold me steady, I\'m working!']), 2400); }
+  if (event === 'Notification') { setFace('nervous', 2500); say('Put me down! Claude needs you! 👉', 0, true); }
+  if (event === 'Stop' && claudeStatus().status === 'idle') { setFace('star', 2200); flash('airjoy', 900); say(pick(['Done! ✨ …can I come down now?', 'Finished! Up here! ✨', 'Ta-da~ (from the sky)']), 3000); }
+}
+
 api.onClaude((ev) => {
   const id = ev.session || 'default';
+  if (state.dragging) queueMicrotask(() => airReact(ev.event));
   const prev = sessions.get(id);
   wake();
   switch (ev.event) {
@@ -78,6 +100,9 @@ api.onClaude((ev) => {
       break;
     case 'UserPromptSubmit':
       sessions.set(id, { status: 'working', tool: null, at: Date.now() });
+      turn.start = Date.now();
+      turn.tools = 0;
+      turn.doneUntil = 0;
       if (Math.random() < 0.4) {
         setFace('fired', 2000);
         say(pick(['Let\'s go! 🔥', 'Leave it to me! 🔥', 'Yosh!']), 2500);
@@ -88,6 +113,8 @@ api.onClaude((ev) => {
       break;
     case 'PreToolUse':
       sessions.set(id, { status: 'working', tool: ev.tool, at: Date.now() });
+      if (!turn.start) turn.start = Date.now();
+      turn.tools++;
       if (!prev || prev.tool !== ev.tool || prev.status !== 'working') say(toolLine(ev.tool), 4000);
       break;
     case 'Notification': {
@@ -103,6 +130,12 @@ api.onClaude((ev) => {
     case 'Stop':
       sessions.set(id, { status: 'idle', at: Date.now() });
       if (claudeStatus().status === 'idle') {
+        const took = turn.start ? Date.now() - turn.start : 0;
+        turn.doneUntil = Date.now() + 2600;
+        turn.doneText = (turn.tools ? '⚙' + turn.tools + ' · ' : '') + clock(took);
+        turn.start = 0;
+        // long run: she's earned a coffee
+        if (took > 3 * 60 * 1000) setTimeout(() => { if (claudeStatus().status === 'idle' && !state.action) snack('coffee', 'Phew… coffee break ☕'); }, 2600);
         doAction('cheer', 2200);
         const f = Math.random();
         if (f < 0.4) setFace('star', 2200); else if (f < 0.6) setFace('uwu', 2200);
@@ -119,19 +152,33 @@ api.onClaude((ev) => {
 });
 
 // a cookie from the menu: three bites, crumbs, heart eyes (and all is forgiven)
-function snack() {
+// what she says and how she reacts for each treat
+const TREATS = {
+  cookie: { face: 'nom', hello: ['A cookie! ✨', 'For me?!', 'Snack time~'], during: 'Nom nom nom~',
+    after: () => { setFace('heart', 1800); say(pick(['Thanks for the snack! ♡', 'Delicious~ ♡', 'More? ♡']), 2000); popHearts(2); } },
+  coffee: { face: 'sip', hello: ['Coffee! ☕', 'Ooh, coffee~'], during: '*sip* … *sip*',
+    after: () => { setFace('fired', 2000); putOnGlasses(30000); say(pick(['Caffeine get! ⚡', 'Fully charged! ⚡ Let\'s code!']), 2200); } },
+  boba: { face: 'sip', hello: ['BOBA!! 🧋', 'Boba time~'], during: '*slurp* ♪',
+    after: () => { setFace('heart', 1800); say(pick(['Boba is life~ 🧋♡', 'The pearls are so chewy~ ♡']), 2200); popHearts(3); } },
+  matcha: { face: 'sip', hello: ['Matcha~ 🍵', 'Tea time~'], during: '*sip*… ahh~',
+    after: () => { setFace('uwu', 2400); say(pick(['So calming~ 🍵', 'Ahh~ peaceful…']), 2400); } },
+  milk: { face: 'sip', hello: ['Milk! 🥛', 'Gotta grow tall~'], during: '*gulp gulp*',
+    after: () => { setFace('milk', 3000); say(pick(['Ehehe~ milk mustache 🥛', 'Do I have something on my face?']), 3000); } },
+};
+const popHearts = (n) => { for (let i = 0; i < n; i++) setTimeout(spawnHeart, i * 140); };
+const ITEMS = Object.keys(TREATS);
+
+function snack(item = 'cookie', line) {
   if (state.leaving || state.dragging) return;
+  const t = TREATS[item] || TREATS.cookie;
   const forgiven = sulking();
   state.sulkUntil = 0;
+  for (const i of ITEMS) charEl.classList.toggle('item-' + i, i === item);
   doAction('snack', 3200);
-  setFace('nom', 3200);
-  say(forgiven ? '…a cookie? …fine. Forgiven ♡' : pick(['A cookie! ✨', 'For me?!', 'Snack time~']), 1200);
-  setTimeout(() => say('Nom nom nom~', 1600), 1200);
-  setTimeout(() => {
-    setFace('heart', 1800);
-    say(pick(['Thanks for the snack! ♡', 'Delicious~ ♡', 'More? ♡']), 2000);
-    for (let i = 0; i < 2; i++) setTimeout(spawnHeart, i * 140);
-  }, 3200);
+  setFace(t.face, 3200);
+  say(line || (forgiven ? '…for me? …fine. Forgiven ♡' : pick(t.hello)), 1200);
+  setTimeout(() => say(t.during, 1600), 1200);
+  setTimeout(t.after, 3200);
 }
 
 // Claude closed: a tiny EXIT door pops up, she waves and backs into it, then the app quits.
@@ -162,6 +209,7 @@ api.onCommand((cmd) => {
   if (cmd === 'reset') { sessions.clear(); say('Status cleared!', 2000); }
   if (cmd === 'leave') leave();
   if (cmd === 'snack') snack();
+  if (cmd.startsWith('treat:')) snack(cmd.slice(6));
   if (cmd === 'glasses-on') { state.alwaysGlasses = true; putOnGlasses(0); }
   if (cmd === 'glasses-off') { state.alwaysGlasses = false; state.glassesUntil = 0; say('*takes off glasses*', 1500); }
 });
@@ -181,8 +229,28 @@ function say(text, ms = 3000, sticky = false) {
 function hideBubble() { bubble.classList.add('hidden'); bubbleSticky = false; }
 
 // ---------- expressions ----------
-const FACES = ['star', 'wink', 'xx', 'teary', 'surprised', 'smug', 'pout', 'blush', 'think', 'yawn', 'cat', 'pat', 'heart', 'uwu', 'nervous', 'fired', 'cry', 'shock', 'drowsy', 'laugh', 'nom'];
+const FACES = ['star', 'wink', 'xx', 'teary', 'surprised', 'smug', 'pout', 'blush', 'think', 'yawn', 'cat', 'pat', 'heart', 'uwu', 'nervous', 'fired', 'cry', 'shock', 'drowsy', 'laugh', 'nom', 'sip', 'milk'];
 let faceTimer;
+// ---------- Claude status badge ----------
+const badgeText = document.getElementById('badge-text');
+const clock = (ms) => { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+function updateBadge(pose) {
+  const now = Date.now();
+  const claude = claudeStatus();
+  let kind = null;
+  let text = '';
+  if (claude.status === 'waiting') { kind = 'ask'; text = 'your turn!'; }
+  else if (claude.status === 'working') {
+    kind = toolKind(claude.tool);
+    text = (turn.tools ? '⚙' + turn.tools + ' · ' : '') + clock(turn.start ? now - turn.start : 0);
+  } else if (now < turn.doneUntil) { kind = 'done'; text = turn.doneText; }
+  // the badge steps aside for poses that fill the top-right corner
+  if (['sulk', 'exit', 'sleep', 'topple', 'yeet'].includes(pose)) kind = null;
+  charEl.classList.toggle('badge', !!kind);
+  for (const k of BADGE_KINDS) charEl.classList.toggle('tk-' + k, k === kind);
+  if (kind && badgeText.textContent !== text) badgeText.textContent = text;
+}
+
 // ---------- glasses ----------
 function putOnGlasses(ms = 25000 + Math.random() * 20000) {
   const already = charEl.classList.contains('specs');
@@ -314,10 +382,13 @@ function setPose(pose, extra = []) {
   for (const p of POSES) charEl.classList.toggle(p, p === pose);
   charEl.classList.toggle('thinking', extra.includes('thinking'));
   charEl.classList.toggle('happy', extra.includes('happy'));
+  charEl.classList.toggle('airwork', extra.includes('airwork'));
+  charEl.classList.toggle('airwait', extra.includes('airwait'));
   charEl.classList.toggle('flip', state.dir < 0 && pose === 'walk');
   if (!spinning) charEl.classList.toggle('view-back', pose === 'sulk');
   charEl.classList.toggle('specs', state.alwaysGlasses || Date.now() < state.glassesUntil);
   updateTracking(pose);
+  updateBadge(pose);
 }
 
 function flash(cls, ms) {
@@ -329,7 +400,10 @@ function flash(cls, ms) {
 
 function choosePose(now) {
   if (state.leaving) return ['exit'];
-  if (state.dragging) return ['drag'];
+  if (state.dragging) {
+    const c = claudeStatus().status;
+    return ['drag', c === 'working' ? ['airwork'] : c === 'waiting' ? ['airwait'] : []];
+  }
   if (state.falling) return ['fall'];
   if (state.action && now < state.actionUntil) return [state.action, now < state.happyUntil ? ['happy'] : []];
   state.action = null;

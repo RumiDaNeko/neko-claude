@@ -363,6 +363,7 @@
           <g id="tears-stream" class="face-part"><path d="M72,123 L72,152 M80,123 L80,148" /><path d="M120,123 L120,148 M128,123 L128,152" /></g>
           <path id="fx-drop" class="face-part" d="M152,84 Q145,96 147,100 Q148.5,105 152,105 Q155.5,105 157,100 Q159,96 152,84 Z" />
           <g id="fx-gloom" class="face-part"><path d="M78,62 L78,84 M86,58 L86,88 M94,56 L94,86 M102,56 L102,88 M110,57 L110,85 M118,60 L118,82" /></g>
+          <path id="fx-mustache" class="face-part" d="M92.5,127.6 Q96.5,124.2 100,126.9 Q103.5,124.2 107.5,127.6 Q104,130.2 100,128.4 Q96,130.2 92.5,127.6 Z" />
           <!-- tears + anger mark ride along with the head -->
           <g id="tears">
             <path class="tear" d="M66,124 Q61.5,133 66,138 Q70.5,133 66,124 Z" />
@@ -394,6 +395,11 @@
           <circle cx="100" cy="160" r="10" class="cookie-dough" />
           <circle cx="96" cy="157" r="1.6" class="chip" /><circle cx="103" cy="156" r="1.4" class="chip" /><circle cx="101" cy="163" r="1.7" class="chip" /><circle cx="95" cy="164" r="1.2" class="chip" /><circle cx="106" cy="161" r="1.2" class="chip" />
         </g></g>
+        <!-- drinks, held in the same spot -->
+        <g class="item item-coffee"><path class="steam s1" d="M96,131 Q94,127 96,124 Q98,121 96,118" /><path class="steam s2" d="M102,131 Q100,127 102,124 Q104,121 102,118" /><path d="M107,138 Q113.5,138 113.5,142.5 Q113.5,147 107,147" class="mug-handle" /><rect x="91" y="134" width="16" height="17" rx="3" class="mug" /><ellipse cx="99" cy="135.2" rx="6.6" ry="1.6" class="coffee-top" /><path d="M95,141 Q99,138.5 103,141 Q99,146 95,141 Z" class="mug-heart" /></g>
+        <g class="item item-boba"><path d="M101.5,135 L99.8,125.5" class="straw" /><path d="M91,137 L109,137 L106.6,157 L93.4,157 Z" class="cup" /><g class="liquid-wrap"><path d="M91.6,140 L108.4,140 L106.6,157 L93.4,157 Z" class="liquid boba-tea" /></g><circle cx="95.5" cy="154" r="1.6" class="pearl" /><circle cx="99" cy="155" r="1.6" class="pearl" /><circle cx="102.6" cy="154.2" r="1.6" class="pearl" /><circle cx="97.4" cy="151.6" r="1.6" class="pearl" /><circle cx="101" cy="152" r="1.6" class="pearl" /><path d="M90,137 Q100,131.5 110,137 Z" class="lid" /></g>
+        <g class="item item-matcha"><path class="steam s1" d="M96,134 Q94,130 96,127 Q98,124 96,121" /><path class="steam s2" d="M103,134 Q101,130 103,127 Q105,124 103,121" /><path d="M89.5,137 Q89.5,153 100,153 Q110.5,153 110.5,137 Z" class="tea-cup" /><ellipse cx="100" cy="137" rx="10.5" ry="2.3" class="matcha" /><path d="M92,145 Q100,148 108,145" class="tea-band" /></g>
+        <g class="item item-milk"><path d="M92,133 L108,133 L106.5,156 L93.5,156 Z" class="glass" /><g class="liquid-wrap"><path d="M92.6,137 L107.4,137 L106.5,156 L93.5,156 Z" class="liquid milk" /></g><path d="M94.5,136 L95.5,153" class="glass-shine" /></g>
         <!-- eating arms: upper arm + forearm, so the elbows bend -->
         <g id="snArmL" class="snack-arm"><g class="upper">
           <rect x="79" y="142" width="8" height="16" rx="4" class="skin" />
@@ -578,6 +584,23 @@
       <g id="fx-zzz" class="fx"><text x="150" y="44" class="z1">z</text><text x="162" y="30" class="z2">z</text><text x="174" y="16" class="z3">Z</text></g>
       <g id="fx-think" class="fx"><circle cx="156" cy="40" r="3" /><circle cx="164" cy="30" r="4" /><circle cx="176" cy="18" r="6" /></g>
       <g id="fx-sulk" class="fx"><g transform="translate(146 46)"><g class="sulk-mark"><path d="M-8,-2 Q-2,-2 -2,-8 M2,-8 Q2,-2 8,-2 M8,2 Q2,2 2,8 M-2,8 Q-2,2 -8,2" /></g></g></g>
+      <!-- Claude status: what Claude is doing right now -->
+      <g id="status-badge"><g class="badge-pop">
+        <circle cx="146" cy="57" r="2" class="badge-bg" /><circle cx="151" cy="51" r="3" class="badge-bg" />
+        <rect x="150" y="4" width="46" height="44" rx="13" class="badge-bg" />
+        <g class="tk tk-think"><circle cx="164" cy="21" r="2.4" class="dot d1" /><circle cx="172" cy="21" r="2.4" class="dot d2" /><circle cx="180" cy="21" r="2.4" class="dot d3" /></g>
+        <g class="tk tk-term"><rect x="161" y="11" width="22" height="18" rx="2.5" class="ic-dark" /><path d="M164.5,16 L167.5,19 L164.5,22" class="ic-green" /><rect x="169" y="21" width="6" height="1.8" class="ic-green-fill blink" /><rect x="164" y="25" width="12" height="1.2" class="ic-dim scroll" /></g>
+        <g class="tk tk-read"><path d="M161,14 Q166,12 172,14 L172,29 Q166,27 161,29 Z" class="ic-page" /><path d="M183,14 Q178,12 172,14 L172,29 Q178,27 183,29 Z" class="ic-page" /><path d="M163.5,17.5 L170,17 M163.5,20.5 L170,20 M163.5,23.5 L169,23" class="ic-line" /><path class="flip ic-page" d="M172,14 Q178,12 183,14 L183,29 Q178,27 172,29 Z" /></g>
+        <g class="tk tk-edit"><rect x="162" y="10" width="15" height="21" rx="1.5" class="ic-page" /><path d="M164.5,14.5 L174.5,14.5 M164.5,18 L172.5,18 M164.5,21.5 L174.5,21.5 M164.5,25 L170,25" class="ic-line write" /><g class="pencil"><path d="M178,15 L184,9 L186.4,11.4 L180.4,17.4 Z" class="ic-pencil" /><path d="M178,15 L177,18.4 L180.4,17.4 Z" class="ic-tip" /></g></g>
+        <g class="tk tk-search"><g class="mag"><circle cx="170" cy="19" r="5.5" class="ic-glass" /><path d="M174,23 L179,28" class="ic-handle" /></g></g>
+        <g class="tk tk-web"><circle cx="172" cy="20" r="9" class="ic-globe" /><path d="M163,20 L181,20 M164.6,15.5 L179.4,15.5 M164.6,24.5 L179.4,24.5" class="ic-gline" /><ellipse cx="172" cy="20" rx="4.2" ry="9" class="ic-gline meridian" /></g>
+        <g class="tk tk-agent"><g class="mini m1"><rect x="158" y="19" width="8" height="4.4" class="clawd-body" /><rect x="157" y="20.6" width="10" height="1.8" class="clawd-body" /><rect x="160" y="20" width="1" height="1.6" class="clawd-eye" /><rect x="163" y="20" width="1" height="1.6" class="clawd-eye" /><rect x="159" y="23.4" width="1" height="1.8" class="clawd-body" /><rect x="164" y="23.4" width="1" height="1.8" class="clawd-body" /></g><g class="mini m2"><rect x="168" y="19" width="8" height="4.4" class="clawd-body" /><rect x="167" y="20.6" width="10" height="1.8" class="clawd-body" /><rect x="170" y="20" width="1" height="1.6" class="clawd-eye" /><rect x="173" y="20" width="1" height="1.6" class="clawd-eye" /><rect x="169" y="23.4" width="1" height="1.8" class="clawd-body" /><rect x="174" y="23.4" width="1" height="1.8" class="clawd-body" /></g><g class="mini m3"><rect x="178" y="19" width="8" height="4.4" class="clawd-body" /><rect x="177" y="20.6" width="10" height="1.8" class="clawd-body" /><rect x="180" y="20" width="1" height="1.6" class="clawd-eye" /><rect x="183" y="20" width="1" height="1.6" class="clawd-eye" /><rect x="179" y="23.4" width="1" height="1.8" class="clawd-body" /><rect x="184" y="23.4" width="1" height="1.8" class="clawd-body" /></g></g>
+        <g class="tk tk-plan"><rect x="162" y="10" width="20" height="21" rx="2" class="ic-page" /><rect x="164.5" y="13.5" width="3.6" height="3.6" class="ic-box" /><rect x="164.5" y="19" width="3.6" height="3.6" class="ic-box" /><rect x="164.5" y="24.5" width="3.6" height="3.6" class="ic-box" /><path d="M170.5,15.3 L179.5,15.3 M170.5,20.8 L178.5,20.8 M170.5,26.3 L177.5,26.3" class="ic-line" /><path d="M164.8,15.2 L166.2,16.6 L168.8,12.8" class="tick t1" /><path d="M164.8,20.7 L166.2,22.1 L168.8,18.3" class="tick t2" /><path d="M164.8,26.2 L166.2,27.6 L168.8,23.8" class="tick t3" /></g>
+        <g class="tk tk-gear"><g class="gear"><circle cx="172" cy="20" r="7" class="ic-gear-teeth" /><circle cx="172" cy="20" r="5" class="ic-gear" /><circle cx="172" cy="20" r="1.9" class="ic-hole" /></g></g>
+        <g class="tk tk-ask"><text x="172" y="28" class="ic-q">?</text></g>
+        <g class="tk tk-done"><path d="M163,20 L169.5,26.5 L181.5,13" class="ic-check" /></g>
+        <text x="173" y="41.5" id="badge-text" class="badge-text"></text>
+      </g></g>
       <g id="fx-sweat" class="fx"><path d="M152,70 Q146,82 152,86 Q158,82 152,70 Z" /></g>
       <g id="fx-sparkle" class="fx">
         <g transform="translate(26 60)"><path class="s1" d="M0,-9 Q1,-1 9,0 Q1,1 0,9 Q-1,1 -9,0 Q-1,-1 0,-9 Z" /></g>

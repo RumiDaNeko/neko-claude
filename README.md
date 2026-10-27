@@ -36,6 +36,8 @@ The hooks run `hook.mjs`, which forwards each event to `127.0.0.1:47321` with a 
 | Finished | cheers with sparkles: "Done! ✨" |
 | Session ends | waves bye; after the last one she backs out through the EXIT door |
 
+While Claude works, a thought bubble next to her shows what it's doing with a little animated icon (terminal, book, notepad and pencil, magnifier, spinning globe, a squad of mini Clawds for subagents, a checklist, a gear for anything else), plus the tool count and elapsed time; it turns into a red **?** when Claude needs you and a green ✓ with the totals when it's done. If you're holding her up when Claude changes status she reacts in the air: types on her laptop while dangling, wriggles to be put down when Claude needs you, cheers when it's done. After a run longer than 3 minutes she takes a coffee break.
+
 When Claude is idle:
 
 - she wanders along the taskbar, turning to a 3/4 view as she walks (keeping whatever face she's making)
@@ -47,7 +49,7 @@ When Claude is idle:
 
 **Expressions:** sparkly star eyes when Claude finishes, a wink when you poke her, flustered >///< then a 💢 pout if you keep poking, and if you still don't stop she hurls her laptop at you and sulks with her back turned (pokes only make it worse; three head pats make up), surprised when picked up, xx eyes if you hold her up too long, teary >_< after a hard landing, a thinking look when you send a prompt, plus a smug grin, a cat smile, uwu and yawns while idle. Also: heart eyes when you pat her a lot, fired-up brows 🔥 when you send a prompt, a nervous sweat drop when Claude asks permission, a blank shocked stare with gloom lines when you grab her, T_T waterfall tears after a hard landing (or when she remembers her laptop), drowsy eyes while lounging, and her glasses catch the light while she works.
 
-**Playing with her:** her eyes follow your cursor around the screen. Click a cheek to squish it, double-click for a hop, and wiggle the cursor back and forth over her to tickle her. The menu has **Give her a cookie 🍪** (three bites, crumbs, heart eyes; it also ends a sulk) and **Wear glasses**. Even without that toggle she sometimes puts her glasses on to read for a while, pushing them up with a glint.
+**Playing with her:** her eyes follow your cursor around the screen. Click a cheek to squish it, double-click for a hop, and wiggle the cursor back and forth over her to tickle her. The **Give her…** menu has a cookie 🍪, coffee ☕ (puts her in glasses mode), boba 🧋, matcha 🍵 and milk 🥛 (milk mustache), held in both hands; any treat ends a sulk. There's also and **Wear glasses**. Even without that toggle she sometimes puts her glasses on to read for a while, pushing them up with a glint.
 
 Drag her anywhere and let go to toss her (she falls with gravity); grab her mid-air to catch her. Click her body to poke her. Right-click her, or click her tray icon, for the menu (dance, do a trick, nap, toggle wandering, show in taskbar, quit). In the tray and taskbar she goes by **clawde chan**. On Windows 11 the tray icon starts in the hidden-icons overflow (^); drag it onto the taskbar to keep it visible.
 
