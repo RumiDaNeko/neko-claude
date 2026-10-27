@@ -915,13 +915,25 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 #char.snack #snack { display: inline; }
 .cookie { display: none; }
 #char.snack .cookie { display: inline; }
-/* both hands up to her mouth, nibbling hamster-style */
-#char.snack #armL { animation: snackArmL 3.2s ease-in-out both; }
-#char.snack #armR { animation: snackArmR 3.2s ease-in-out both; }
-@keyframes snackArmL { 0% { transform: rotate(14deg) scaleY(1); } 10%, 76% { transform: rotate(-159deg) scaleY(0.62); } 90%, 100% { transform: rotate(14deg) scaleY(1); } }
-@keyframes snackArmR { 0% { transform: rotate(-14deg) scaleY(1); } 10%, 76% { transform: rotate(159deg) scaleY(0.62); } 90%, 100% { transform: rotate(-14deg) scaleY(1); } }
-#char.snack #head, #char.snack #puffs { animation: nibble 0.3s ease-in-out infinite alternate; }
-@keyframes nibble { from { transform: none; } to { transform: translateY(1.6px) rotate(0.6deg); } }
+/* eating: normal arms swap for jointed ones; elbows bend down and out, hands hold the cookie under her mouth */
+.snack-arm { display: none; }
+#char.snack .snack-arm { display: inline; }
+#char.snack #armL, #char.snack #armR { display: none; }
+#snArmL .upper { transform-box: view-box; transform-origin: 83px 146px; }
+#char.snack #snArmL .upper { animation: snUpL 3.2s ease-in-out both; }
+#snArmL .fore { transform-box: view-box; transform-origin: 83px 156px; }
+#char.snack #snArmL .fore { animation: snForeL 3.2s ease-in-out both; }
+#snArmR .upper { transform-box: view-box; transform-origin: 117px 146px; }
+#char.snack #snArmR .upper { animation: snUpR 3.2s ease-in-out both; }
+#snArmR .fore { transform-box: view-box; transform-origin: 117px 156px; }
+#char.snack #snArmR .fore { animation: snForeR 3.2s ease-in-out both; }
+@keyframes snUpL { 0% { transform: rotate(14deg); } 10%, 76% { transform: rotate(20deg); } 90%, 100% { transform: rotate(14deg); } }
+@keyframes snUpR { 0% { transform: rotate(-14deg); } 10%, 76% { transform: rotate(-20deg); } 90%, 100% { transform: rotate(-14deg); } }
+@keyframes snForeL { 0% { transform: rotate(0deg) scaleY(0.71); } 10%, 76% { transform: rotate(-160deg) scaleY(0.73); } 90%, 100% { transform: rotate(0deg) scaleY(0.71); } }
+@keyframes snForeR { 0% { transform: rotate(0deg) scaleY(0.71); } 10%, 76% { transform: rotate(160deg) scaleY(0.73); } 90%, 100% { transform: rotate(0deg) scaleY(0.71); } }
+/* she leans down to take each bite */
+#char.snack #head, #char.snack #puffs { animation: biteDip 3.2s ease-in-out both; }
+@keyframes biteDip { 0%, 22%, 31%, 42%, 51%, 62%, 71%, 100% { transform: none; } 26%, 27% { transform: translateY(4px) rotate(1deg); } 46%, 47% { transform: translateY(4px) rotate(-1deg); } 66%, 67% { transform: translateY(4px) rotate(1deg); } }
 .cookie-dough { fill: #e0a35e; stroke: #9a6233; stroke-width: 1.2; }
 .chip { fill: #5a3420; }
 .cookie-bites { transform-origin: 50% 50%; }
@@ -929,9 +941,10 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 @keyframes munch {
   0% { transform: scale(0); }
   10% { transform: scale(1); }
-  30% { transform: scale(0.8); }
-  50% { transform: scale(0.6); }
-  70%, 100% { transform: scale(0); }
+  27% { transform: scale(0.8); }
+  47% { transform: scale(0.6); }
+  67% { transform: scale(0.35); }
+  74%, 100% { transform: scale(0); }
 }
 .crumbs circle { fill: #c98a4e; }
 .crumbs { opacity: 0; }
