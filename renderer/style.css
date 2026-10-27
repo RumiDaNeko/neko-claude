@@ -1578,3 +1578,7 @@ body.toasting #bubble { top: 48px; }
 #char.carrying.walk #sArmF { animation: none !important; transform: rotate(-58deg) !important; }
 #char.carrying:not(.walk) #armL { animation: none !important; transform: rotate(-13deg) !important; }
 #char.carrying:not(.walk) #armR { animation: none !important; transform: rotate(13deg) !important; }
+
+/* a poke while she sleeps in bed: the blanket shifts as she stirs */
+#blanket { transition: translate 0.15s ease-out; }
+#char.stir #blanket { translate: 0 -2.5px; }

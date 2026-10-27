@@ -54,7 +54,7 @@ const state = {
   glassesUntil: 0, alwaysGlasses: false,
   asleepSince: 0,
   lastBoop: 0, chinAt: 0, chinCount: 0, tailAt: 0, earsUntil: 0, dizzyUntil: 0,
-  handHold: false, laser: false, laserPounceAt: 0, fetch: null, highFive: 0, juice: null, upsetUntil: 0,
+  handHold: false, laser: false, laserPounceAt: 0, fetch: null, highFive: 0, juice: null, upsetUntil: 0, sleepPokes: 0, sleepPokeAt: 0,
   lastActivity: Date.now(),
   nextIdeaAt: Date.now() + 4000,
 };
@@ -1370,6 +1370,19 @@ function wakeFromNap() {
   say(new Date().getHours() < 11 ? pick(['Good morning~ ☀️ *stretch*', 'Ohayo~ ☀️']) : pick(['*stretch* …what a nice nap~', 'Mmh~ I feel refreshed ✨']), 2600);
 }
 
+// in bed it takes five pokes (each within a few seconds of the last) to wake her; the first four just make her stir
+const asleepInBed = () => !!state.asleepSince && bedHours();
+const SLEEP_POKES = 5;
+const STIR_LINES = ['zzz…', '*mumbles* …mmh…', '…five more minutes… zzz', '*rolls over* …nnn… 😾 zzz'];
+function sleepPoke() {
+  const now = Date.now();
+  state.sleepPokes = now - state.sleepPokeAt < 6000 ? state.sleepPokes + 1 : 1;
+  state.sleepPokeAt = now;
+  if (state.sleepPokes >= SLEEP_POKES) { state.sleepPokes = 0; wake(); return; }
+  flash('stir', 350);
+  say(STIR_LINES[state.sleepPokes - 1], 1600);
+}
+
 // fromClaude: Claude needs her, so she gets up properly even at night
 function wake(fromClaude = false) {
   const wasAsleep = !!state.asleepSince;
@@ -1662,6 +1675,7 @@ hit.addEventListener('pointerenter', () => { hovering = true; setIgnore(false); 
 hit.addEventListener('pointerleave', () => { hovering = false; if (!drag) setIgnore(true); });
 
 hit.addEventListener('dblclick', () => {
+  if (asleepInBed()) return; // each click already counted as a poke
   pokes.splice(-2);
   if (sulking() || state.leaving) return;
   setFace('cat', 1000);
@@ -1677,7 +1691,9 @@ hit.addEventListener('pointerdown', (e) => {
   drag = { ox: e.screenX - state.x, oy: e.screenY - state.y, sx: e.screenX, sy: e.screenY, moved: false, hist: [], revs: [], turns: [] };
   // press and hold on her hand (without moving): she holds yours and walks along
   if (onHand(e)) drag.handTimer = setTimeout(() => { if (drag && !drag.moved) startHandHold(); }, 380);
-  wake();
+  // asleep in bed: a click is just a poke (it takes five to wake her); picking her up wakes her for real
+  drag.sleeping = asleepInBed();
+  if (!drag.sleeping) wake();
   if (state.falling) catchHer();
 });
 
@@ -1686,6 +1702,7 @@ hit.addEventListener('pointermove', (e) => {
   if (drag.hand) { state.walkTarget = clampX(e.screenX - drag.ox); return; } // walking hand in hand
   if (!drag.moved && Math.hypot(e.screenX - drag.sx, e.screenY - drag.sy) > 5) {
     clearTimeout(drag.handTimer);
+    if (drag.sleeping) { drag.sleeping = false; wake(); }
     drag.moved = true;
     state.dragging = true;
     state.walkTarget = null;
@@ -1718,6 +1735,7 @@ hit.addEventListener('pointerup', async (e) => {
   if (!hovering) setIgnore(true);
   if (!d.moved && state.offering) return takeWater();
   if (!d.moved && state.hideSeek) return found();
+  if (!d.moved && d.sleeping) return sleepPoke();
   if (!d.moved && state.highFive) return highFive();
   if (!d.moved) return onNose(e) ? boop() : onChin(e) ? chin() : onCheek(e) ? cheek() : onTail(e) ? tailGrab() : onHead(e) ? pat() : poke();
 
@@ -2112,6 +2130,7 @@ function onBody(e) {
   return p.y > 138 && p.y < 214 && p.x > 62 && p.x < 138;
 }
 function wiggle(e) {
+  if (asleepInBed()) return; // fast asleep: tickles and ear rubs don't reach her
   if (rubEars(e)) return;
   if (!onBody(e)) { lastWiggleX = null; return; } // tickles only work on her body
   const x = e.screenX;

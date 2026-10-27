@@ -89,7 +89,7 @@ Right-click her (or click the tray icon) for the menu.
 - Leave your cursor near her feet and she crouches, wiggles and pounces on it. Leave it still for a while and she may sit on it and ride along when you move it (your clicks go straight through her); flick it fast and she flies off.
 - A little grey kitty dashes past sometimes. She chases it. She never catches it.
 - After 5 idle minutes she sits and stares into space; after an hour she drags her cushion over and naps. Half an hour in she lies down on it, and half an hour after that she wakes up on her own with a big stretch.
-- After 23:00 she's in pajamas and a nightcap and gets sleepy sooner. At bedtime a little bed pops up and she sleeps in it, tucked under a starry blanket, until 8 am, then gets up with a stretch ("Ohayo~ ☀️"). Claude working doesn't wake her (she might mumble "…git push… zzz" in her sleep); only you can. Wake her and she's grumpy ("Five more minutes… 😾"), or between 6 and 8 am "Too early… the sun's barely up… 😾", and she goes straight back to bed.
+- After 23:00 she's in pajamas and a nightcap and gets sleepy sooner. At bedtime a little bed pops up and she sleeps in it, tucked under a starry blanket, until 8 am, then gets up with a stretch ("Ohayo~ ☀️"). Claude working doesn't wake her (she might mumble "…git push… zzz" in her sleep); only you can, and it takes five pokes in a row: the first four just make her stir and mumble ("…five more minutes… zzz"). Wake her and she's grumpy ("Five more minutes… 😾"), or between 6 and 8 am "Too early… the sun's barely up… 😾", and she goes straight back to bed.
 - Seasonal hats: a witch hat around Halloween (Oct 20 – Nov 2), a Santa hat in December.
 
 ### Window climbing (Windows only)
