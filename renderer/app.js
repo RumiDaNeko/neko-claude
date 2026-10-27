@@ -480,6 +480,7 @@ function tick(t) {
   updateHearts(t);
   updatePat(t);
   updateWorkHead(t, dt);
+  updateTickle(Date.now());
 
   if (state.falling) {
     state.vy += 0.9 * dt;
@@ -625,16 +626,49 @@ function wiggle(e) {
   } else if (lastWiggleX === null) lastWiggleX = x;
   const now = Date.now();
   while (wiggles.length && now - wiggles[0] > 1200) wiggles.shift();
+  if (tickling) { if (wiggles.length && wiggles[wiggles.length - 1] === now) lastTickleAt = now; return; }
   if (wiggles.length >= 6 && now > tickleUntil) { wiggles.length = 0; tickle(); }
 }
 
+// she keeps laughing for as long as you keep wiggling; the lines escalate the longer it goes
+const TICKLE_LINES = [
+  ['Ahaha! S-stop~!', 'Kyahaha! That tickles!', 'Hehehe~ no fair!'],
+  ['Ahahaha! Okay okay!', 'N-not there! Kyaa~!', 'Hehehehe— stooop~'],
+  ['I c-can\'t breathe! Ahaha!', 'Mercy! MERCY! >///<', 'Hyaa— I give up! I give up!'],
+];
+let tickling = false;
+let tickleStart = 0;
+let lastTickleAt = 0;
+let tickleLineAt = 0;
 function tickle() {
   tickleUntil = Date.now() + 3000;
   if (sulking()) { say('…pff— no! Hmph!', 1500); flash('huff', 400); return; }
   wake();
-  flash('giggle', 1500);
-  setFace('laugh', 1800);
-  say(pick(['Ahaha! S-stop~!', 'Kyahaha! That tickles!', 'Hehehe~ no fair!']), 1800);
+  tickling = true;
+  tickleStart = lastTickleAt = Date.now();
+  tickleLineAt = 0;
+  charEl.classList.add('giggling');
+  setFace('laugh');
+}
+// runs every frame from tick()
+function updateTickle(now) {
+  if (!tickling) return;
+  // stopped wiggling: catch her breath
+  if (now - lastTickleAt > 700) {
+    tickling = false;
+    tickleUntil = now + 1200;
+    charEl.classList.remove('giggling');
+    const long = now - tickleStart > 6000;
+    setFace(long ? 'cry' : 'blush', 2000);
+    say(long ? pick(['Haa… haa… tears… meanie~', '*wheeze*… you\'re evil~']) : pick(['Haa… haa… meanie~', 'Phew… you got me~']), 2200);
+    return;
+  }
+  if (now >= tickleLineAt) {
+    const stage = Math.min(TICKLE_LINES.length - 1, Math.floor((now - tickleStart) / 3000));
+    say(pick(TICKLE_LINES[stage]), 1900);
+    if (!charEl.classList.contains('face-laugh')) setFace('laugh');
+    tickleLineAt = now + 1800;
+  }
 }
 
 // grabbed mid-air: she stops dead in your hand

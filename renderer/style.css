@@ -1112,3 +1112,7 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 @keyframes squashSeated { 0% { transform: translateY(16px) scale(1.08, 0.9); } 60% { transform: translateY(16px) scale(0.98, 1.03); } 100% { transform: translateY(16px); } }
 #char.work.giggle #body, #char.lounge.giggle #body { animation: giggleSeated 0.16s linear 9 !important; }
 @keyframes giggleSeated { 0%, 100% { transform: translateY(16px); } 25% { transform: translateY(16px) rotate(-3deg); } 75% { transform: translateY(16px) rotate(3deg); } }
+
+/* continuous tickle: giggles for as long as the cursor keeps wiggling */
+#char.giggling #body { animation: giggle 0.16s linear infinite !important; }
+#char.work.giggling #body, #char.lounge.giggling #body { animation: giggleSeated 0.16s linear infinite !important; }
