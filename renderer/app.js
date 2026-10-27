@@ -560,14 +560,33 @@ function updatePerch() {
   if (w.min) return fallOff('min');
   if (w.max) return fallOff('max');
   const now = Date.now();
+  if (p.slip) {
+    // the window got pulled out from under her: she hangs in mid-air (cartoon style) until you let go of it
+    if (Math.abs(w.x - p.slip.x) > 1 || Math.abs(w.y - p.slip.y) > 1) p.slip = { x: w.x, y: w.y, at: now };
+    else if (now - p.slip.at > 350) fallOff('drag');
+    return;
+  }
   const moved = Math.abs(w.x - p.wx) > 1 || Math.abs(w.y - p.wy) > 1;
+  const from = p.moving ? p.from : { x: p.wx, y: p.wy }; // where the window was before this drag
+  if (moved) {
+    // dragged down or sideways: she doesn't follow it (only an upward drag carries her along)
+    const dx = w.x - from.x;
+    const dy = w.y - from.y;
+    if (dy > 6 || (Math.abs(dx) > 12 && Math.abs(dx) * 0.6 > -dy)) {
+      p.slip = { x: w.x, y: w.y, at: now };
+      p.moving = true; // legs kick (quake) while she hangs there
+      setFace('shock', 60000);
+      say(pick(['W-wait!! 😱', 'Eh? Where\'d my seat go…', 'Uh oh…', 'Don\'t look down… 😰']), 60000);
+      return;
+    }
+  }
   p.wx = w.x;
   p.wy = w.y;
   p.ww = w.w;
   if (moved) {
-    // you're dragging her window around: hold on for dear life
+    // carried upward: hold on for dear life
     if (!p.moving) {
-      p.from = { x: w.x, y: w.y };
+      p.from = from;
       if (!p.climb) { setFace('shock', 60000); say(pick(['W-wait!! 😱', 'Whoa whoa whoa—!', 'Don\'t shake it!!', 'Earthquake?!']), 60000); }
     }
     p.moving = true;
@@ -808,19 +827,20 @@ const MOONWALK_LINES = ['Shamone~! 🕺', '*Smooth Criminal mode* 🎶', 'Billie
 function moonwalk() {
   if (state.leaving || state.dragging || state.falling || state.perch || state.leap || claudeStatus().status !== 'idle') return;
   const a = state.area;
-  // face whichever way leaves room to glide backwards
-  state.dir = a && state.x - a.x > a.x + a.width - (state.x + state.w) ? -1 : 1;
+  // she glides backwards, so she faces away from the side with more room (dir is where she faces; she moves -dir)
+  state.dir = a && state.x - a.x > a.x + a.width - (state.x + state.w) ? 1 : -1;
   if (Math.random() < 0.5 && a && Math.min(state.x - a.x, a.x + a.width - state.x - state.w) > 250) state.dir = -state.dir;
   doAction('moonwalk', 3000);
   setFace('smug', 3000);
   say(season() === 'halloween' && Math.random() < 0.4 ? 'It\'s Thriller night~ 🎃' : pick(MOONWALK_LINES), 2400);
-  setTimeout(() => {
-    if (state.action !== 'moonwalk') return;
-    state.action = null;
-    spin(1);
-    // ...and up onto her toes, hand on the brim
-    setTimeout(() => { doAction('toestand', 1500); setFace('wink', 1600); say(pick(['Hee-hee! ✨', 'Hoo! ✨', 'Ow! 🕺']), 1800); }, 700);
-  }, 3000);
+  setTimeout(endMoonwalk, 3000);
+}
+function endMoonwalk() {
+  if (state.action !== 'moonwalk') return;
+  state.action = null;
+  spin(1);
+  // ...and up onto her toes, hand on the brim
+  setTimeout(() => { doAction('toestand', 1500); setFace('wink', 1600); say(pick(['Hee-hee! ✨', 'Hoo! ✨', 'Ow! 🕺']), 1800); }, 700);
 }
 
 // ---------- too many treats ----------
@@ -1333,6 +1353,7 @@ function tick(t) {
     // facing one way, gliding the other
     const x = clampX(state.x - state.dir * 1.5 * dt);
     if (x !== state.x) { state.x = x; api.setPos(state.x, state.y); }
+    else endMoonwalk(); // reached the edge of the screen: finish with the spin right there
   } else if (!state.dragging && state.walkTarget != null && !state.action && claudeStatus().status === 'idle') {
     const d = state.walkTarget - state.x;
     state.dir = Math.sign(d) || state.dir;
