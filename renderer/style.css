@@ -1394,3 +1394,21 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 #char.moonwalk #sHead { animation: mwNod 0.75s ease-in-out infinite !important; }
 @keyframes mwNod { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-3deg); } }
 #char.moonwalk #shadow { animation: none; }
+
+/* ---------- michael clawdeson: fedora, one sparkly glove, the toe-stand ---------- */
+#fedora, .fedora-side, .fedora-back, #glove { display: none; }
+#char.mj #fedora, #char.mj .fedora-side, #char.mj .fedora-back, #char.mj #glove { display: inline; }
+/* the fedora replaces any other hat while she performs */
+#char.mj #nightcap, #char.mj .nightcap-side, #char.mj .nightcap-back,
+#char.mj #witchhat, #char.mj .witchhat-side, #char.mj .witchhat-back,
+#char.mj #santahat, #char.mj .santahat-side, #char.mj .santahat-back { display: none !important; }
+.fedora-brim, .fedora-crown { fill: #23202a; stroke: #111; stroke-width: 1.1; stroke-linejoin: round; }
+.fedora-band { fill: #f2f0ea; }
+.glove { fill: #ffffff; stroke: #c9c4d4; stroke-width: 1; }
+.glove-sparkle { stroke: #9fd8ff; stroke-width: 1.2; stroke-linecap: round; }
+#char.toestand #body { transform-origin: 50% 100%; animation: toeUp 1.5s ease-out both; }
+@keyframes toeUp { 0% { transform: none; } 25%, 85% { transform: translateY(-6px) scale(0.98, 1.04); } 100% { transform: none; } }
+#char.toestand #legL { transform: rotate(4deg) scaleY(1.05); }
+#char.toestand #legR { transform: rotate(-4deg) scaleY(1.05); }
+#char.toestand #armR { transform: rotate(-158deg); }
+#char.toestand #armL { transform: rotate(-30deg); }

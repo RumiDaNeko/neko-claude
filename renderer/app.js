@@ -8,7 +8,7 @@ const hit = document.getElementById('hit');
 const bubble = document.getElementById('bubble');
 const bubbleText = document.getElementById('bubble-text');
 
-const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk', 'hop', 'snack', 'megane', 'peek', 'pullout', 'stalk', 'pounce', 'perch', 'stuffed', 'hang', 'climb'];
+const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk', 'hop', 'snack', 'megane', 'peek', 'pullout', 'stalk', 'pounce', 'perch', 'stuffed', 'hang', 'climb', 'toestand'];
 
 // Goofy tricks she does now and then: [pose, duration ms, lines]
 const TRICKS = [
@@ -419,17 +419,17 @@ function morningCoffee() {
 }
 // the cap rides along on the walking (3/4) head too
 (function hatsToSide() {
-  for (const id of ['nightcap', 'witchhat', 'santahat']) {
+  for (const id of ['nightcap', 'witchhat', 'santahat', 'fedora']) {
     const hat = document.getElementById(id).cloneNode(true);
     hat.removeAttribute('id');
     hat.setAttribute('class', id + '-side');
-    hat.setAttribute('transform', 'matrix(0.771 0 0 1 35.4 0)');
+    hat.setAttribute('transform', 'matrix(0.771 0 0 1 35.4 0)' + (id === 'fedora' ? ' rotate(-8 100 50)' : ''));
     document.getElementById('sHead').appendChild(hat);
     // ...and on the back of her head (mirrored: seen from behind the tip flops the other way)
     const back = document.getElementById(id).cloneNode(true);
     back.removeAttribute('id');
     back.setAttribute('class', id + '-back');
-    back.setAttribute('transform', 'translate(200 0) scale(-1 1)');
+    back.setAttribute('transform', 'translate(200 0) scale(-1 1)' + (id === 'fedora' ? ' rotate(-8 100 50)' : ''));
     document.querySelector('#backBody > g[transform^="translate(100 140)"]').appendChild(back);
   }
 })();
@@ -802,7 +802,9 @@ document.addEventListener('drop', async (e) => {
   say(`${kind} ${f.name}: ${info}`, 5000);
 });
 
-// ---------- michele clawdeson: the moonwalk ----------
+// ---------- michael clawdeson: the moonwalk ----------
+// what she says while gliding (song titles only; add your own lines here)
+const MOONWALK_LINES = ['Shamone~! 🕺', '*Smooth Criminal mode* 🎶', 'Billie Jean~ ♪', 'Beat it! 🕺', '*adjusts fedora*', '♪ dun dun dun dun ♪'];
 function moonwalk() {
   if (state.leaving || state.dragging || state.falling || state.perch || state.leap || claudeStatus().status !== 'idle') return;
   const a = state.area;
@@ -811,13 +813,13 @@ function moonwalk() {
   if (Math.random() < 0.5 && a && Math.min(state.x - a.x, a.x + a.width - state.x - state.w) > 250) state.dir = -state.dir;
   doAction('moonwalk', 3000);
   setFace('smug', 3000);
-  say(pick(['Shamone~! 🕺', '*smooth criminal intensifies*', 'Annie, are you okay? 🎶']), 2400);
+  say(season() === 'halloween' && Math.random() < 0.4 ? 'It\'s Thriller night~ 🎃' : pick(MOONWALK_LINES), 2400);
   setTimeout(() => {
     if (state.action !== 'moonwalk') return;
     state.action = null;
     spin(1);
-    setFace('wink', 1600);
-    say(pick(['Hee-hee! ✨', 'Hoo! ✨', 'Ow! 🕺']), 1800);
+    // ...and up onto her toes, hand on the brim
+    setTimeout(() => { doAction('toestand', 1500); setFace('wink', 1600); say(pick(['Hee-hee! ✨', 'Hoo! ✨', 'Ow! 🕺']), 1800); }, 700);
   }, 3000);
 }
 
@@ -1157,6 +1159,7 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('airwait', extra.includes('airwait'));
   charEl.classList.toggle('quake', extra.includes('quake'));
   charEl.classList.toggle('moonwalk', extra.includes('moonwalk'));
+  charEl.classList.toggle('mj', state.action === 'moonwalk' || state.action === 'toestand'); // fedora + glove
   charEl.classList.toggle('flip', state.dir < 0 && pose === 'walk');
   if (!spinning) charEl.classList.toggle('view-back', pose === 'sulk' || (pose === 'exit' && !!state.exitBack));
   charEl.classList.toggle('specs', state.alwaysGlasses || Date.now() < state.glassesUntil);
