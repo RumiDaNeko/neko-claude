@@ -5,7 +5,7 @@ const hit = document.getElementById('hit');
 const bubble = document.getElementById('bubble');
 const bubbleText = document.getElementById('bubble-text');
 
-const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit'];
+const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk'];
 
 // Goofy tricks she does now and then: [pose, duration ms, lines]
 const TRICKS = [
@@ -30,6 +30,7 @@ const state = {
   action: null, actionUntil: 0, happyUntil: 0, // short one-off pose (cheer, hello, dance, poke)
   napping: false,
   leaving: false,
+  sulkUntil: 0, sulkPats: 0,
   asleepSince: 0,
   lastActivity: Date.now(),
   nextIdeaAt: Date.now() + 4000,
@@ -254,6 +255,7 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('thinking', extra.includes('thinking'));
   charEl.classList.toggle('happy', extra.includes('happy'));
   charEl.classList.toggle('flip', state.dir < 0 && pose === 'walk');
+  if (!spinning) charEl.classList.toggle('view-back', pose === 'sulk');
 }
 
 function flash(cls, ms) {
@@ -277,6 +279,7 @@ function choosePose(now) {
     return ['work', claude.tool ? [] : ['thinking']];
   }
   if (bubbleSticky) hideBubble();
+  if (now < state.sulkUntil) return ['sulk'];
 
   if (state.napping || now - state.lastActivity > SLEEP_AFTER_MS) {
     if (!state.asleepSince) state.asleepSince = now;
@@ -299,7 +302,7 @@ function clampX(x) { return Math.min(Math.max(x, state.area.x - 20), state.area.
 function think(now) {
   if (now < state.nextIdeaAt) return;
   state.nextIdeaAt = now + 5000 + Math.random() * 9000;
-  if (!state.wander || state.dragging || state.falling || state.action || state.napping) return;
+  if (!state.wander || state.dragging || state.falling || state.action || state.napping || now < state.sulkUntil) return;
   if (claudeStatus().status !== 'idle') return;
   if (now - state.lastActivity > LOUNGE_AFTER_MS) {
     if (Math.random() < 0.15) say(pick(['…', 'Hmm…', '*stares at the ceiling*', 'Bored~', 'Still there?']), 2500);
@@ -485,7 +488,22 @@ function updatePat(now) {
   charEl.style.setProperty('--pat-hy', (223 - (140 - 67 * (1 - j * 0.035))) / 150);
 }
 
+function sulking() { return Date.now() < state.sulkUntil; }
+
 function pat() {
+  if (sulking()) {
+    if (state.action === 'yeet') return;
+    patStart = performance.now();
+    charEl.classList.add('patting');
+    if (++state.sulkPats < 3) { say(pick(['Hmph…', '…', '*pouts*']), 1400); return; }
+    // made up: turns back around
+    state.sulkUntil = 0;
+    doAction('hello', 1500);
+    setFace('blush', 2600);
+    say(pick(['…fine. Forgiven ♡', 'Mou… okay ♡', '…don\'t do it again ♡']), 2600);
+    for (let i = 0; i < 3; i++) setTimeout(spawnHeart, i * 120);
+    return;
+  }
   wake();
   const now = Date.now();
   pats.push(now);
@@ -507,16 +525,25 @@ function pat() {
 // teased too much: up goes the laptop, and it's coming at you
 function yeet() {
   pokes.length = 0;
+  state.sulkUntil = Date.now() + 1800 + 25000;
+  state.sulkPats = 0;
   doAction('yeet', 1800);
   setFace('pout', 3200);
   say('THAT\'S IT!! 💢', 900);
   setTimeout(() => say(pick(['Take THIS!', 'Hmph!! 💢', '*yeet*']), 1300), 900);
-  setTimeout(() => say(pick(['…oops. That was my laptop.', 'Hmph. Serves you right.', 'I\'m not sorry!']), 2600), 2200);
+  setTimeout(() => say(pick(['Hmph. Not talking to you.', 'Hmph! 💢', '…I\'m not sorry!']), 2600), 2200);
 }
 
 function poke() {
   if (claudeStatus().status === 'waiting') {
     say('Go check the terminal! 👉', 2500);
+    return;
+  }
+  if (sulking()) {
+    if (state.action === 'yeet') return; // mid-throw: no
+    flash('huff', 400);
+    say(pick(['Hmph.', '…', 'Not talking to you.', '💢', '*ignores you*']), 1500);
+    state.sulkUntil = Math.max(state.sulkUntil, Date.now() + 8000); // poking only makes it worse
     return;
   }
   flash('poke', 350);
