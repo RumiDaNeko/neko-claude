@@ -185,6 +185,7 @@ function menuTemplate() {
     { label: 'Wave hello', click: () => send('command', 'hello') },
     { label: 'Dance', click: () => send('command', 'dance') },
     { label: 'Do a trick', click: () => send('command', 'trick') },
+    { label: 'Moonwalk 🕺', click: () => send('command', 'moonwalk') },
     { label: 'Take a nap', click: () => send('command', 'sleep') },
     { label: 'Play hide and seek 🙈', click: () => send('command', 'hide') },
     { label: 'Climb onto a window 🪟', click: () => send('command', 'perch') },

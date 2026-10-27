@@ -1377,3 +1377,20 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 #char.night .nightcap-back { display: inline; }
 #char.season-halloween:not(.night) .witchhat-back { display: inline; }
 #char.season-xmas:not(.night) .santahat-back { display: inline; }
+
+/* ---------- the moonwalk: heel-toe, gliding backwards ---------- */
+#char.moonwalk #sideBody { animation: none !important; transform: rotate(-3deg); transform-origin: 50% 100%; }
+#char.moonwalk #sLegF { animation: mwFront 0.75s ease-in-out infinite !important; }
+#char.moonwalk #sLegB { animation: mwFront 0.75s ease-in-out -0.375s infinite !important; }
+@keyframes mwFront {
+  0% { transform: translateX(6px) rotate(-4deg); }
+  45% { transform: translateX(-6px) rotate(0deg); }
+  50% { transform: translateX(-6px) translateY(-3px) rotate(14deg); }
+  95% { transform: translateX(6px) translateY(-3px) rotate(14deg); }
+  100% { transform: translateX(6px) rotate(-4deg); }
+}
+#char.moonwalk #sArmF { animation: none !important; transform: rotate(-8deg); }
+#char.moonwalk #sArmB { animation: none !important; transform: rotate(8deg); }
+#char.moonwalk #sHead { animation: mwNod 0.75s ease-in-out infinite !important; }
+@keyframes mwNod { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-3deg); } }
+#char.moonwalk #shadow { animation: none; }

@@ -15,6 +15,7 @@ const TRICKS = [
   ['flop', 2800, ['Waah—!', '*trips over nothing*', 'I meant to do that…']],
   ['twirl', 1300, ['Weee~!', 'Spin spin~', 'Ta-daa!']],
   ['backflip', 1300, ['Hup!', 'Backflip!', 'Watch this!']],
+  ['moonwalk', 3000, []],
   ['achoo', 1800, ['Ha… ha… HACHOO!', 'Hachoo! Sorry~', '*sniff*']],
 ];
 const LOUNGE_AFTER_MS = 5 * 60 * 1000; // sits down and spaces out
@@ -801,6 +802,25 @@ document.addEventListener('drop', async (e) => {
   say(`${kind} ${f.name}: ${info}`, 5000);
 });
 
+// ---------- michele clawdeson: the moonwalk ----------
+function moonwalk() {
+  if (state.leaving || state.dragging || state.falling || state.perch || state.leap || claudeStatus().status !== 'idle') return;
+  const a = state.area;
+  // face whichever way leaves room to glide backwards
+  state.dir = a && state.x - a.x > a.x + a.width - (state.x + state.w) ? -1 : 1;
+  if (Math.random() < 0.5 && a && Math.min(state.x - a.x, a.x + a.width - state.x - state.w) > 250) state.dir = -state.dir;
+  doAction('moonwalk', 3000);
+  setFace('smug', 3000);
+  say(pick(['Shamone~! 🕺', '*smooth criminal intensifies*', 'Annie, are you okay? 🎶']), 2400);
+  setTimeout(() => {
+    if (state.action !== 'moonwalk') return;
+    state.action = null;
+    spin(1);
+    setFace('wink', 1600);
+    say(pick(['Hee-hee! ✨', 'Hoo! ✨', 'Ow! 🕺']), 1800);
+  }, 3000);
+}
+
 // ---------- too many treats ----------
 function stuffed() {
   if (state.dragging || state.leaving) return;
@@ -911,6 +931,7 @@ api.onCommand((cmd) => {
   if (cmd === 'hello') { doAction('hello', 2500); say('Hello hello~!', 2500); }
   if (cmd === 'dance') { doAction('dance', 6000); }
   if (cmd === 'trick') doTrick();
+  if (cmd === 'moonwalk') moonwalk();
   if (cmd === 'sleep') { state.napping = true; say('Good night…', 2000); }
   if (cmd === 'wander-on') state.wander = true;
   if (cmd === 'wander-off') { state.wander = false; state.walkTarget = null; }
@@ -1041,6 +1062,7 @@ const TRIP_PROPS = ['banana', 'pebble', 'cable'];
 
 function doTrick() {
   const [pose, ms, lines] = pick(TRICKS);
+  if (pose === 'moonwalk') return moonwalk();
   doAction(pose, ms);
   if (pose === 'flop') {
     const cause = pick(['banana', 'pebble', 'cable', 'tail', 'nothing']);
@@ -1134,6 +1156,7 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('airwork', extra.includes('airwork'));
   charEl.classList.toggle('airwait', extra.includes('airwait'));
   charEl.classList.toggle('quake', extra.includes('quake'));
+  charEl.classList.toggle('moonwalk', extra.includes('moonwalk'));
   charEl.classList.toggle('flip', state.dir < 0 && pose === 'walk');
   if (!spinning) charEl.classList.toggle('view-back', pose === 'sulk' || (pose === 'exit' && !!state.exitBack));
   charEl.classList.toggle('specs', state.alwaysGlasses || Date.now() < state.glassesUntil);
@@ -1169,6 +1192,7 @@ function choosePose(now) {
   if (state.leap || (state.falling && state.pouncing)) return ['pounce'];
   if (state.falling) return ['fall'];
   if (state.chase) return [state.chase.phase === 'run' ? 'walk' : 'idle'];
+  if (state.action === 'moonwalk' && now < state.actionUntil) return ['walk', ['moonwalk']];
   if (state.action && now < state.actionUntil) return [state.action, now < state.happyUntil ? ['happy'] : []];
   state.action = null;
 
@@ -1302,6 +1326,10 @@ function tick(t) {
       if (state.hideAfterLanding) { state.hideAfterLanding = false; setTimeout(startHideSeek, 350); }
     }
     api.setPos(state.x, state.y);
+  } else if (state.action === 'moonwalk' && !state.dragging) {
+    // facing one way, gliding the other
+    const x = clampX(state.x - state.dir * 1.5 * dt);
+    if (x !== state.x) { state.x = x; api.setPos(state.x, state.y); }
   } else if (!state.dragging && state.walkTarget != null && !state.action && claudeStatus().status === 'idle') {
     const d = state.walkTarget - state.x;
     state.dir = Math.sign(d) || state.dir;
@@ -1439,7 +1467,13 @@ let lastWiggleX = null;
 let wiggleDir = 0;
 const wiggles = [];
 let tickleUntil = 0;
+// her torso and skirt, in SVG coordinates
+function onBody(e) {
+  const p = svgPoint(e);
+  return p.y > 138 && p.y < 214 && p.x > 62 && p.x < 138;
+}
 function wiggle(e) {
+  if (!onBody(e)) { lastWiggleX = null; return; } // tickles only work on her body
   const x = e.screenX;
   if (lastWiggleX !== null && Math.abs(x - lastWiggleX) > 3) {
     const dir = Math.sign(x - lastWiggleX);
