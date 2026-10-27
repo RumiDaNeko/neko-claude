@@ -954,3 +954,7 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 #char.face-nom #mouth-cat { transform-box: fill-box; transform-origin: center; animation: chew 0.32s ease-in-out infinite alternate; }
 @keyframes chew { from { transform: scaleY(1); } to { transform: scaleY(0.55); } }
 #char.track .rig .lidpos { transform: translateY(var(--ly, 0px)) !important; }
+
+/* caught mid-air: a little squish in your hand */
+#char.caught #body { animation: caught 0.4s ease-out !important; }
+@keyframes caught { 0%, 100% { transform: none; } 35% { transform: scale(1.08, 0.9); } 70% { transform: scale(0.97, 1.04); } }

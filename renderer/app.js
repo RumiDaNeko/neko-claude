@@ -451,6 +451,7 @@ hit.addEventListener('pointerdown', (e) => {
   hit.setPointerCapture(e.pointerId);
   drag = { ox: e.screenX - state.x, oy: e.screenY - state.y, sx: e.screenX, sy: e.screenY, moved: false, hist: [] };
   wake();
+  if (state.falling) catchHer();
 });
 
 hit.addEventListener('pointermove', (e) => {
@@ -556,6 +557,28 @@ function tickle() {
   flash('giggle', 1500);
   setFace('laugh', 1800);
   say(pick(['Ahaha! S-stop~!', 'Kyahaha! That tickles!', 'Hehehe~ no fair!']), 1800);
+}
+
+// grabbed mid-air: she stops dead in your hand
+function catchHer() {
+  const fast = state.vy > 14;
+  state.falling = false;
+  state.vx = state.vy = 0;
+  state.dragging = true;
+  state.walkTarget = null;
+  state.action = null;
+  drag.moved = true;
+  drag.since = Date.now();
+  flash('caught', 400);
+  if (fast) {
+    setFace('shock', 900);
+    say(pick(['That was close!!', 'M-my life flashed before my eyes…']), 1800);
+    setTimeout(() => setFace('blush', 1200), 900);
+  } else {
+    setFace(pick(['star', 'blush', 'uwu']), 1500);
+    say(pick(['Nice catch! ✨', 'Kyaa— caught me ♡', 'Phew… thanks!', 'Again! Again!']), 1600);
+  }
+  spawnHeart();
 }
 
 function onHead(e) {

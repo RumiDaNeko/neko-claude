@@ -157,6 +157,10 @@
           
 
           <!-- round, wide-set chibi eyes: mostly iris, thin soft lids -->
+          <!-- soft blush: drawn before the eyes so it never covers them -->
+          <ellipse cx="62" cy="128" rx="11" ry="5.5" class="blush" />
+          <ellipse cx="138" cy="128" rx="11" ry="5.5" class="blush" />
+          <path class="hatch" d="M58,130 L60,126 M62,130 L64,126 M66,130 L68,126 M134,130 L136,126 M138,130 L140,126 M142,130 L144,126" />
           <g id="eyes-open" class="face-part">
             <g class="eye rig">
               <ellipse cx="76" cy="114" rx="13" ry="13.5" class="sclera" />
@@ -343,10 +347,6 @@
           </g></g>
 
           <!-- faces: huge glossy chibi eyes, set low -->
-          <!-- soft blush right under the eyes -->
-          <ellipse cx="62" cy="128" rx="11" ry="5.5" class="blush" />
-          <ellipse cx="138" cy="128" rx="11" ry="5.5" class="blush" />
-          <path class="hatch" d="M58,130 L60,126 M62,130 L64,126 M66,130 L68,126 M134,130 L136,126 M138,130 L140,126 M142,130 L144,126" />
 
           <!-- tiny mouth -->
           <path id="mouth-smile" class="face-part line mouth" d="M98,130 Q100,131.8 102,130" />
@@ -492,6 +492,10 @@
             <!-- hair over the ear on the back side -->
             <path class="hair" d="M58,76 C48,104 52,132 58,156 C66,152 72,140 74,128 C72,112 72,96 76,84 Z" />
             <!-- near eye (full) + far eye (narrower) -->
+            <!-- blush under the eyes -->
+            <ellipse cx="86" cy="128.5" rx="9" ry="4.8" class="blush" />
+            <ellipse cx="139" cy="128" rx="6" ry="4" class="blush" />
+            <path class="hatch" d="M82,130.5 L84,126.5 M86,130.5 L88,126.5 M90,130.5 L92,126.5" />
             <g id="sEye" class="eye">
               <ellipse cx="94" cy="113" rx="11.5" ry="13.5" class="sclera" />
               <ellipse cx="95" cy="113.5" rx="10.6" ry="12.6" class="iris" />
@@ -537,9 +541,6 @@
               <rect x="9.6" y="8" width="1.6" height="3.2" class="clawd-body" /><rect x="12.8" y="8" width="1.6" height="3.2" class="clawd-body" />
               <g class="clawd-bow"><rect x="9.6" y="-3.2" width="3.2" height="3.2" /><rect x="12.8" y="-1.6" width="1.6" height="1.6" class="knot" /><rect x="14.4" y="-3.2" width="3.2" height="3.2" /><rect x="10.4" y="-4" width="1.6" height="0.8" /><rect x="15.2" y="-4" width="1.6" height="0.8" /></g>
             </g></g>
-            <ellipse cx="86" cy="128.5" rx="9" ry="4.8" class="blush" />
-            <ellipse cx="139" cy="128" rx="6" ry="4" class="blush" />
-            <path class="hatch" d="M82,130.5 L84,126.5 M86,130.5 L88,126.5 M90,130.5 L92,126.5" />
             <path class="line mouth" d="M114,131 Q116,132.6 118,131" />
           </g>
         </g>

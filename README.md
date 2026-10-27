@@ -49,7 +49,7 @@ When Claude is idle:
 
 **Playing with her:** her eyes follow your cursor around the screen. Click a cheek to squish it, double-click for a hop, and wiggle the cursor back and forth over her to tickle her. The menu has **Give her a cookie 🍪** (three bites, crumbs, heart eyes; it also ends a sulk) and **Wear glasses**. Even without that toggle she sometimes puts her glasses on to read for a while, pushing them up with a glint.
 
-Drag her anywhere and let go to toss her (she falls with gravity). Click her body to poke her. Right-click her, or click her tray icon, for the menu (dance, do a trick, nap, toggle wandering, show in taskbar, quit). In the tray and taskbar she goes by **clawde chan**. On Windows 11 the tray icon starts in the hidden-icons overflow (^); drag it onto the taskbar to keep it visible.
+Drag her anywhere and let go to toss her (she falls with gravity); grab her mid-air to catch her. Click her body to poke her. Right-click her, or click her tray icon, for the menu (dance, do a trick, nap, toggle wandering, show in taskbar, quit). In the tray and taskbar she goes by **clawde chan**. On Windows 11 the tray icon starts in the hidden-icons overflow (^); drag it onto the taskbar to keep it visible.
 
 The icon lives in `assets/icon.svg`; `npm run build:icon` regenerates `icon.png`, `tray.png` and the multi-size `icon.ico`.
 
