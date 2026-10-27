@@ -43,7 +43,9 @@ On Windows 11 the tray icon starts in the hidden-icons overflow (^); drag it ont
 | Finished | star eyes and sparkles: "Done! ✨" |
 | Session ends | waves bye; after the last one, out through the EXIT door to the tray |
 
-A thought bubble beside her shows what Claude is up to, with a little animated icon (terminal, book, notepad, magnifier, spinning globe, a squad of mini Clawds for subagents, a checklist, a gear), the tool count and the elapsed time. It turns into a red **?** when Claude needs you and a green ✓ with the totals when it's done.
+A thought bubble beside her shows what Claude is up to, with a little animated icon (terminal, book, notepad, magnifier, spinning globe, a squad of mini Clawds for subagents, a checklist, a gear), the tool count and the elapsed time. While Claude is still thinking it stretches wider and cycles through little words with a spinning ✻ (*Pondering…*, *Noodling…*, *Clauding…*), the way Claude Code's own spinner does. It turns into a red **?** when Claude needs you and a green ✓ with the totals when it's done.
+
+**She's a little Claude.** Now and then she thinks out loud the way Claude works: reading before touching anything, making small careful changes, running things to check they really work, looking things up instead of guessing. She'd rather ask than guess when Claude needs permission, and she's honest at the finish: if something still failed, she says so instead of just cheering. In quiet moments she muses a bit too ("If I don't know, I'll say so~").
 
 - **Long runs:** after 3 minutes she takes a coffee break; after an hour of coding she holds out a glass of water and tells you to take a break (click her to take it, or she drinks it herself).
 - **Mid-air:** if you're holding her when Claude changes status she reacts anyway: typing while dangling, wriggling to be put down when Claude needs you, cheering when it's done.

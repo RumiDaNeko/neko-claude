@@ -680,7 +680,7 @@
       <!-- Claude status: what Claude is doing right now -->
       <g id="status-badge"><g class="badge-pop">
         <circle cx="146" cy="57" r="2" class="badge-bg" /><circle cx="151" cy="51" r="3" class="badge-bg" />
-        <rect x="150" y="4" width="46" height="44" rx="13" class="badge-bg" />
+        <rect id="badge-box" x="150" y="4" width="46" height="44" rx="13" class="badge-bg" />
         <g class="tk tk-think"><circle cx="164" cy="21" r="2.4" class="dot d1" /><circle cx="172" cy="21" r="2.4" class="dot d2" /><circle cx="180" cy="21" r="2.4" class="dot d3" /></g>
         <g class="tk tk-term"><rect x="161" y="11" width="22" height="18" rx="2.5" class="ic-dark" /><path d="M164.5,16 L167.5,19 L164.5,22" class="ic-green" /><rect x="169" y="21" width="6" height="1.8" class="ic-green-fill blink" /><rect x="164" y="25" width="12" height="1.2" class="ic-dim scroll" /></g>
         <g class="tk tk-read"><path d="M161,14 Q166,12 172,14 L172,29 Q166,27 161,29 Z" class="ic-page" /><path d="M183,14 Q178,12 172,14 L172,29 Q178,27 183,29 Z" class="ic-page" /><path d="M163.5,17.5 L170,17 M163.5,20.5 L170,20 M163.5,23.5 L169,23" class="ic-line" /><path class="pageflip ic-page" d="M172,14 Q178,12 183,14 L183,29 Q178,27 172,29 Z" /></g>
@@ -693,6 +693,8 @@
         <g class="tk tk-ask"><text x="172" y="28" class="ic-q">?</text></g>
         <g class="tk tk-done"><path d="M163,20 L169.5,26.5 L181.5,13" class="ic-check" /></g>
         <text x="173" y="41.5" id="badge-text" class="badge-text"></text>
+        <!-- while Claude thinks: a spinning ✻ next to the word, like Claude Code's spinner -->
+        <text x="143" y="41.8" id="badge-star" class="badge-star">✻</text>
       </g></g>
       <g id="fx-sweat" class="fx"><path d="M152,70 Q146,82 152,86 Q158,82 152,70 Z" /></g>
       <g id="fx-sparkle" class="fx">

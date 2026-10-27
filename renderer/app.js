@@ -84,7 +84,21 @@ const TOOL_KINDS = [
 const BADGE_KINDS = ['think', 'term', 'read', 'search', 'edit', 'web', 'agent', 'plan', 'gear', 'ask', 'done'];
 const toolKind = (tool) => (tool ? (TOOL_KINDS.find(([re]) => re.test(tool)) || [, 'gear'])[1] : 'think');
 // the current Claude turn, for the badge's tool count and timer
-const turn = { start: 0, tools: 0, doneUntil: 0, doneText: '' };
+const turn = { start: 0, tools: 0, doneUntil: 0, doneText: '', spin: 0 };
+// she's a little Claude: while Claude thinks, her badge cycles through the same kind of whimsical words
+// Claude Code's spinner uses
+const SPIN_WORDS = ['Pondering', 'Musing', 'Noodling', 'Cogitating', 'Percolating', 'Ruminating', 'Brewing', 'Clauding',
+  'Mulling', 'Tinkering', 'Untangling', 'Puzzling', 'Simmering', 'Scheming', 'Doodling', 'Wondering'];
+// ...and now and then she thinks out loud the way Claude works: read first, change carefully, verify
+const THINK_ALOUD = {
+  read: ['Reading before I touch anything~ 📖', 'Let me understand this first…', 'Context first, code second!'],
+  search: ['Where else is this used… 🔍', 'Making sure I don\'t miss a spot…', 'Let me look around first~'],
+  edit: ['Small, careful change~ ✏️', 'Matching the code around it…', 'Just what you asked, nothing extra~'],
+  term: ['Let\'s see if it actually works…', 'Trust, but verify~ 🧪', 'Checking it for real…'],
+  web: ['Looking it up, not guessing~ 🌐', 'Let me check the docs…'],
+  agent: ['Sending helpers out! 🫡', 'Divide and conquer~'],
+  plan: ['Plan first, then code 📝', 'Making a little checklist~'],
+};
 const toolLine = (tool) => (TOOL_LINES.find(([re]) => re.test(tool || '')) || [, 'Working on it…'])[1];
 
 function claudeStatus() {
@@ -135,20 +149,24 @@ api.onClaude((ev) => {
       turn.start = Date.now();
       turn.tools = 0;
       turn.errors = 0;
+      turn.spin = Math.floor(Math.random() * SPIN_WORDS.length);
       turn.doneUntil = 0;
       if (Math.random() < 0.4) {
         setFace('fired', 2000);
         say(pick(['Let\'s go! 🔥', 'Leave it to me! 🔥', 'Yosh!']), 2500);
       } else {
         setFace('think', 1800);
-        say(pick(['On it!', 'Okay~ thinking…', 'Hmm, let me see…']), 2500);
+        say(pick(['On it!', 'Okay~ thinking…', 'Hmm, let me see…', 'Let me think this through…', 'Ooh, good one~ let me look']), 2500);
       }
       break;
     case 'PreToolUse':
       sessions.set(id, { status: 'working', tool: ev.tool, at: Date.now() });
       if (!turn.start) turn.start = Date.now();
       turn.tools++;
-      if (!prev || prev.tool !== ev.tool || prev.status !== 'working') say(toolLine(ev.tool), 4000);
+      if (!prev || prev.tool !== ev.tool || prev.status !== 'working') {
+        const aloud = THINK_ALOUD[toolKind(ev.tool)];
+        say(aloud && Math.random() < 0.35 ? pick(aloud) : toolLine(ev.tool), 4000);
+      }
       if (!reactToCommand('pre', ev) && /^(Grep|Glob)$/.test(ev.tool || '') && Math.random() < 0.25) {
         setFace('think', 1800);
         say(pick(['Where is it… 🔍', 'Hmm, somewhere in here…', 'Searching searching~']), 2200);
@@ -170,7 +188,7 @@ api.onClaude((ev) => {
     case 'Notification': {
       sessions.set(id, { status: 'waiting', tool: prev?.tool, at: Date.now() });
       const msg = String(ev.message || '');
-      const line = /permission/i.test(msg) ? 'Can I do this? Need your OK!'
+      const line = /permission/i.test(msg) ? pick(['Can I do this? Need your OK!', 'I\'d rather ask than guess~ OK?', 'Your call! Can I go ahead?'])
         : /waiting|idle/i.test(msg) ? 'Psst… your turn~'
         : msg.slice(0, 60) || 'Hey! I need you 👋';
       say(line, 0, true);
@@ -193,9 +211,10 @@ api.onClaude((ev) => {
         changeMood(2);
         const f = Math.random();
         if (f < 0.4) setFace('star', 2200); else if (f < 0.6) setFace('uwu', 2200);
-        say(turn.errors ? pick(['Done! We beat those errors ✨', 'Finished… after a fight! 💪', 'Ta-da~ bugs defeated!'])
+        say(state.bugTool ? pick(['Done… but something still failed. Being upfront about it 🙇', 'Finished, though one thing didn\'t work. Take a look? 🙏'])
+          : turn.errors ? pick(['Done! We beat those errors ✨', 'Finished… after a fight! 💪', 'Ta-da~ bugs defeated!'])
           : isNight() && Math.random() < 0.35 ? pick(['Done! …now go to sleep? 🌙', 'All finished~ it\'s late, you know 🌙'])
-          : pick(['Done! ✨', 'All finished!', 'Ta-da~!', 'Your turn!']), 5000);
+          : pick(['Done! ✨', 'All finished!', 'Ta-da~!', 'Your turn!', 'Done! Tell me if anything looks off~']), 5000);
         state.bugTool = null;
         // an hour of this: time for a water break
         if (state.codingSince && Date.now() - state.codingSince > BREAK_AFTER_MS) { state.codingSince = Date.now(); setTimeout(breakReminder, 2800); }
@@ -837,6 +856,11 @@ document.addEventListener('drop', async (e) => {
   say(`${kind} ${f.name}: ${info}`, 5000);
 });
 
+// little thoughts of a little Claude
+const CLAUDE_MUSINGS = ['I wonder what we\'ll build next~ ✨', 'I like reading code before I touch it~', 'Helpful, honest, and a little bit fluffy~',
+  'If I don\'t know, I\'ll say so~', 'Tiny commits, happy life~', 'Have you tested it? Just asking~ 🧪', 'I\'m a little Claude made of SVG ✨',
+  '*doodles a tiny Clawd*', 'I don\'t remember yesterday… but I\'m glad you\'re here ♡', 'Asking is better than guessing~'];
+
 // ---------- a real backflip: side-on, crouch, jump, tuck, land ----------
 const FLIP_MS = 1500;     // keep in step with the bflip keyframes in style.css
 const FLIP_HEIGHT = 90;   // px her window rises at the top of the jump
@@ -1061,13 +1085,19 @@ function updateBadge(pose) {
   if (claude.status === 'waiting') { kind = 'ask'; text = 'your turn!'; }
   else if (claude.status === 'working') {
     kind = toolKind(claude.tool);
-    text = (turn.tools ? '⚙' + turn.tools + ' · ' : '') + clock(turn.start ? now - turn.start : 0);
+    text = kind === 'think' ? SPIN_WORDS[(turn.spin + Math.floor(now / 2800)) % SPIN_WORDS.length] + '…'
+      : (turn.tools ? '⚙' + turn.tools + ' · ' : '') + clock(turn.start ? now - turn.start : 0);
   } else if (now < turn.doneUntil) { kind = 'done'; text = turn.doneText; }
   // the badge steps aside for poses that fill the top-right corner
   if (['sulk', 'exit', 'sleep', 'topple', 'yeet'].includes(pose)) kind = null;
   charEl.classList.toggle('badge', !!kind);
   for (const k of BADGE_KINDS) charEl.classList.toggle('tk-' + k, k === kind);
-  if (kind && badgeText.textContent !== text) badgeText.textContent = text;
+  if (kind && badgeText.textContent !== text) {
+    badgeText.textContent = text;
+    // each new spinner word hops in
+    if (kind === 'think') { badgeText.classList.remove('word-in'); void badgeText.getBBox(); badgeText.classList.add('word-in'); }
+  }
+  badgeText.classList.toggle('spin-word', kind === 'think'); // words run longer than the counter
 }
 
 // ---------- glasses ----------
@@ -1357,6 +1387,7 @@ function think(now) {
   }
 
   // late at night she gets sleepy and says so
+  if (Math.random() < 0.05) { setFace(pick(['uwu', 'think', 'cat']), 2600); say(pick(CLAUDE_MUSINGS), 2800); return; }
   if (isNight() && Math.random() < 0.08) { setFace('yawn', 2200); say(pick(['It\'s late… 🌙', 'Shouldn\'t you sleep? 🌙', '*yawn* …so late~']), 2600); return; }
   // mood shows: humming and dancing when happy, moping when neglected
   if (mood > 80 && Math.random() < 0.12) { setFace('uwu', 2400); say(pick(['♪~ ♫', 'Hmm hmm hmm~ ♪', 'La la la~']), 2400); doAction('dance', 2600); return; }

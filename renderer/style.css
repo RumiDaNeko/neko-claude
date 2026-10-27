@@ -1499,3 +1499,16 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 #toast-text { font-size: 12px; font-weight: 600; }
 /* the speech bubble steps down while a toast is up */
 body.toasting #bubble { top: 48px; }
+
+/* the spinner words while Claude thinks are longer than the tool counter */
+.badge-text.spin-word { font-size: 6px; transform: translateX(1.5px); }
+.badge-text.spin-word.word-in { animation: wordIn 0.45s ease-out; }
+@keyframes wordIn { 0% { opacity: 0; transform: translate(1.5px, 2.5px); } 100% { opacity: 1; transform: translateX(1.5px); } }
+/* the box stretches left to fit the word */
+#badge-box { transition: x 0.3s ease-out, width 0.3s ease-out; }
+#char.tk-think #badge-box { x: 132px; width: 66px; }
+#char.tk-think .tk-think { transform: translateX(-6.5px); } /* dots back to the middle of the wider box */
+#badge-star { display: none; font: bold 8px sans-serif; text-anchor: middle; fill: #e8906e; transform-box: fill-box; transform-origin: 50% 55%; }
+#char.tk-think #badge-star { display: inline; animation: starSpin 2s linear infinite, starPulse 1.4s ease-in-out infinite; }
+@keyframes starSpin { to { rotate: 360deg; } }
+@keyframes starPulse { 0%, 100% { fill: #e8906e; scale: 1; } 50% { fill: #c4532f; scale: 1.25; } }
