@@ -360,9 +360,26 @@ function setFace(name, ms = 0) {
 const pokes = [];
 
 // ---------- actions & poses ----------
+// what she trips over (sometimes, classically, nothing at all)
+const TRIP_CAUSES = {
+  banana: ['Who left a banana here?!', 'A banana peel?! Classic…'],
+  pebble: ['Ow— a pebble?!', 'This rock came out of nowhere!'],
+  cable: ['Stupid cable…!', 'Who runs cables across the floor?!'],
+  tail: ['*steps on her own tail*', 'Nyaa— my tail!'],
+  nothing: ['*trips over nothing*', 'I meant to do that…', 'The floor moved!'],
+};
+const TRIP_PROPS = ['banana', 'pebble', 'cable'];
+
 function doTrick() {
   const [pose, ms, lines] = pick(TRICKS);
   doAction(pose, ms);
+  if (pose === 'flop') {
+    const cause = pick(['banana', 'pebble', 'cable', 'tail', 'nothing']);
+    for (const p of TRIP_PROPS) charEl.classList.toggle('prop-' + p, p === cause);
+    charEl.classList.toggle('trip-tail', cause === 'tail');
+    say(pick(TRIP_CAUSES[cause]), ms);
+    return;
+  }
   say(pick(lines), ms);
   if (pose === 'twirl') spin(2);
 }

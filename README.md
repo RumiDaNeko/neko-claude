@@ -41,7 +41,7 @@ While Claude works, a thought bubble next to her shows what it's doing with a li
 When Claude is idle:
 
 - she wanders along the taskbar, turning to a 3/4 view as she walks (keeping whatever face she's making)
-- she dances, and every so often does something goofy: trips and faceplants, does a full 360° twirl, backflips, or sneezes her hairclip off
+- she dances, and every so often does something goofy: trips and faceplants (over a banana peel, a pebble, a stray cable, her own tail… or, classically, nothing at all), does a full 360° twirl, backflips, or sneezes her hairclip off
 - after 5 idle minutes she sits on the floor and stares into space; after an hour she drags her cushion over and falls asleep on it
 - if she sleeps for half an hour she nods off sideways, tips off her cushion onto the floor (her hair spilling down), and wakes up with a start
 

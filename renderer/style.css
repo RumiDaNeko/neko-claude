@@ -1142,3 +1142,20 @@ body.grip-right #grip-right, body.grip-left #grip-left { animation: gripSqueeze 
 body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite; }
 @keyframes gripSqueeze { 0%, 40%, 100% { transform: none; } 55%, 75% { transform: translateY(-1px); } }
 @keyframes gripSqueezeUp { 0%, 55%, 100% { transform: none; } 65%, 82% { transform: translateY(1px); } }
+
+/* ---------- trip props: the banana / pebble / cable she trips over ---------- */
+.prop { display: none; }
+#char.flop.prop-banana .prop-banana, #char.flop.prop-pebble .prop-pebble, #char.flop.prop-cable .prop-cable { display: inline; animation: propShow 2.8s ease-out both; }
+@keyframes propShow { 0% { opacity: 0; } 6%, 82% { opacity: 1; } 100% { opacity: 0; } }
+/* the banana peel shoots off when she steps on it */
+.prop-banana { transform-box: fill-box; transform-origin: 50% 100%; }
+#char.flop.prop-banana .prop-banana { animation: propShow 2.8s ease-out both, peelSlide 2.8s ease-out both; }
+@keyframes peelSlide { 0%, 10% { transform: none; } 22%, 100% { transform: translateX(26px) rotate(25deg); } }
+.banana { fill: #ffd84a; stroke: #b8902a; stroke-width: 1; }
+.banana-line { fill: none; stroke: #b8902a; stroke-width: 1; stroke-linecap: round; }
+.pebble { fill: #a9a3ad; stroke: #6e6872; stroke-width: 1; }
+.pebble-hl { fill: #d8d3dc; }
+.cable { fill: none; stroke: #4a4652; stroke-width: 2.4; stroke-linecap: round; }
+/* her own tail: it flicks out under her feet */
+#char.flop.trip-tail #cattail { animation: tailTrip 2.8s ease-out both !important; }
+@keyframes tailTrip { 0% { transform: none; } 10%, 30% { transform: rotate(38deg) translateY(10px); } 100% { transform: none; } }
