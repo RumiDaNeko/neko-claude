@@ -517,8 +517,10 @@ hit.addEventListener('pointerleave', () => { hovering = false; if (!drag) api.ig
 hit.addEventListener('dblclick', () => {
   pokes.splice(-2);
   if (sulking() || state.leaving) return;
-  doAction('hop', 900);
   setFace('cat', 1000);
+  // no hopping off the cushion mid-work
+  if (claudeStatus().status === 'working') return say(pick(['Hehe~ not now!', 'Working~ ♪']), 1000);
+  doAction('hop', 900);
   say(pick(['Hop!', 'Boing~', 'Wheee!']), 1000);
 });
 
@@ -779,6 +781,14 @@ function poke() {
   if (pokes.length >= 3) {
     setFace('blush', 2000);
     say(pick(['E-eh?!', 'S-stop that~', 'Th-that tickles…']), 2000);
+    return;
+  }
+  // busy at the laptop: she stays seated and just looks up at you
+  if (claudeStatus().status === 'working') {
+    charEl.classList.add('glance');
+    setTimeout(() => charEl.classList.remove('glance'), 1400);
+    setFace(Math.random() < 0.5 ? 'wink' : 'cat', 1200);
+    say(pick(['Hm? I\'m working~', 'Busy busy~ ✨', 'Almost done, hold on!', 'Hehe, hi~']), 1800);
     return;
   }
   doAction('hello', 900);
