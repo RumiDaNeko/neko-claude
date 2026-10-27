@@ -17,6 +17,66 @@ let sister = null;
 let tray;
 let wander = true;
 let inTaskbar = false;
+// achievements: what unlocks them (an event the renderer reports, how many times or how many kinds) and what they're called
+const ACHIEVEMENTS = [
+  { id: 'hello', on: 'hello', icon: '👋', name: 'Hello, World', desc: 'Meet clawde chan' },
+  { id: 'done', on: 'done', icon: '✅', name: 'First Task', desc: 'Claude finishes a task while she watches' },
+  { id: 'done100', on: 'done', need: 100, icon: '💯', name: 'Centurion', desc: '100 finished tasks' },
+  { id: 'marathon', on: 'marathon', icon: '🏃', name: 'Marathon', desc: 'Claude works 10+ minutes in one go' },
+  { id: 'nightowl', on: 'nightowl', icon: '🦉', name: 'Night Owl', desc: 'Prompt Claude between 2 and 5 am' },
+  { id: 'error', on: 'error', icon: '😱', name: 'It Broke', desc: 'A tool run fails' },
+  { id: 'error25', on: 'error', need: 25, icon: '🐛', name: 'Bug Magnet', desc: '25 failed tool runs' },
+  { id: 'fixed', on: 'fixed', icon: '🔧', name: 'Fixed It', desc: 'A failing command passes again' },
+  { id: 'tests', on: 'tests', icon: '🟢', name: 'All Green', desc: 'Tests pass' },
+  { id: 'commit', on: 'commit', icon: '💾', name: 'Saved to History', desc: 'git commit' },
+  { id: 'push', on: 'push', icon: '🚀', name: 'Shipped', desc: 'git push' },
+  { id: 'pat', on: 'pat', need: 10, icon: '🤚', name: 'Head Pats', desc: 'Pat her 10 times' },
+  { id: 'pat100', on: 'pat', need: 100, icon: '💞', name: 'Certified Head-Patter', desc: 'Pat her 100 times' },
+  { id: 'tickle', on: 'tickle', icon: '🤭', name: 'Ticklish', desc: 'Tickle her' },
+  { id: 'yeet', on: 'yeet', icon: '💻', name: 'Incoming Laptop', desc: 'Poke her until she throws her laptop' },
+  { id: 'madeup', on: 'madeup', icon: '🤝', name: 'Made Up', desc: 'Pat her out of a sulk' },
+  { id: 'bestie', on: 'bestie', icon: '🌸', name: 'Best Friends', desc: 'Max out her mood' },
+  { id: 'gourmet', on: 'treat', kinds: 6, icon: '🍱', name: 'Full Menu', desc: 'Give her every treat' },
+  { id: 'stuffed', on: 'stuffed', icon: '🎈', name: 'Food Coma', desc: 'Overfeed her' },
+  { id: 'found', on: 'found', icon: '🙈', name: 'Gotcha', desc: 'Find her in hide and seek' },
+  { id: 'foundfast', on: 'found-fast', icon: '🔍', name: 'Eagle Eye', desc: 'Find her within 3 seconds' },
+  { id: 'kitty', on: 'kitty', icon: '🐈', name: 'Cat Chaser', desc: 'She chases the kitty' },
+  { id: 'backflip', on: 'backflip', icon: '🤸', name: 'Stuck the Landing', desc: 'See her backflip' },
+  { id: 'moonwalk', on: 'moonwalk', icon: '🕺', name: 'Smooth Criminal', desc: 'See her moonwalk' },
+  { id: 'perch', on: 'perch', icon: '🪟', name: 'Window Seat', desc: 'She sits on a window' },
+  { id: 'elevator', on: 'elevator', icon: '🛗', name: 'Elevator Ride', desc: 'Carry her up on a window' },
+  { id: 'slip', on: 'slip', icon: '🪂', name: 'Don\'t Look Down', desc: 'Pull a window out from under her' },
+  { id: 'climb', on: 'climb', icon: '🧗', name: 'Pool Exit', desc: 'She catches a window edge and climbs up' },
+  { id: 'ride', on: 'ride', icon: '🖱️', name: 'Hitchhiker', desc: 'She rides your cursor' },
+  { id: 'file', on: 'file', icon: '📄', name: 'Bookworm', desc: 'Drop a file on her' },
+  { id: 'sister', on: 'sister', icon: '👯', name: 'Sisters', desc: 'Her little sister shows up' },
+  { id: 'nap', on: 'nap', icon: '😴', name: 'Power Nap', desc: 'She sleeps her fill and wakes up on her own' },
+  { id: 'bed', on: 'bed', icon: '🛏️', name: 'Lights Out', desc: 'She goes to bed at night' },
+  { id: 'grumpy', on: 'grumpy', icon: '😾', name: 'Five More Minutes', desc: 'Wake her up in the middle of the night' },
+];
+let ach = { got: {}, counts: {}, kinds: {} };
+const achFile = () => path.join(app.getPath('userData'), 'achievements.json');
+function loadAchievements() {
+  try { ach = { got: {}, counts: {}, kinds: {}, ...JSON.parse(fs.readFileSync(achFile(), 'utf8')) }; } catch { /* first run */ }
+}
+// one event from her: count it, unlock whatever it completes, and tell her which ones are new (for the toast)
+function recordAchievement(event, variant) {
+  if (typeof event !== 'string' || !ACHIEVEMENTS.some((a) => a.on === event)) return [];
+  ach.counts[event] = (ach.counts[event] || 0) + 1;
+  if (typeof variant === 'string') ach.kinds[event] = [...new Set([...(ach.kinds[event] || []), variant])];
+  const fresh = ACHIEVEMENTS.filter((a) => a.on === event && !ach.got[a.id]
+    && (a.kinds ? (ach.kinds[event] || []).length >= a.kinds : ach.counts[event] >= (a.need || 1)));
+  for (const a of fresh) ach.got[a.id] = Date.now();
+  try { fs.writeFileSync(achFile(), JSON.stringify(ach)); } catch { /* not fatal */ }
+  if (fresh.length) refreshTrayMenu();
+  return fresh.map(({ icon, name, desc }) => ({ icon, name, desc }));
+}
+function achievementsMenu() {
+  const n = ACHIEVEMENTS.filter((a) => ach.got[a.id]).length;
+  return { label: `Achievements 🏆 ${n}/${ACHIEVEMENTS.length}`, submenu: ACHIEVEMENTS.map((a) => (ach.got[a.id]
+    ? { label: `✓  ${a.icon} ${a.name}: ${a.desc}` }
+    : { label: `🔒  ${a.name}: ${a.desc}`, enabled: false })) };
+}
 let away = false; // her last session ended: she's hidden, waiting in the tray
 let glasses = false;
 let sounds = false;
@@ -151,6 +211,7 @@ function callBack() {
   send('command', 'back');
   refreshTrayMenu();
 }
+ipcMain.handle('achieve', (_e, event, variant) => recordAchievement(event, variant));
 ipcMain.handle('windows', () => windows);
 ipcMain.on('menu', (e) => {
   const c = charOf(e);
@@ -214,6 +275,7 @@ function menuTemplate() {
     { label: 'Call the kitty 🐈', click: () => send('command', 'kitty') },
     { label: 'How are you feeling?', click: () => send('command', 'mood') },
     { label: 'Give her…', submenu: treats((cmd) => send('command', cmd)) },
+    achievementsMenu(),
     { label: 'Wear glasses', type: 'checkbox', checked: glasses, click: (i) => { glasses = i.checked; send('command', glasses ? 'glasses-on' : 'glasses-off'); savePrefs(); refreshTrayMenu(); } },
     { type: 'separator' },
     { label: 'Let her wander', type: 'checkbox', checked: wander, click: (i) => { wander = i.checked; sendAll('command', wander ? 'wander-on' : 'wander-off'); savePrefs(); refreshTrayMenu(); } },
@@ -293,6 +355,7 @@ if (!app.requestSingleInstanceLock()) {
 } else {
   app.whenReady().then(() => {
     loadPrefs();
+    loadAchievements();
     main = createChar(false);
     startBridge();
     startWindowScan();

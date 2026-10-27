@@ -21,7 +21,9 @@ const TRICKS = [
 const LOUNGE_AFTER_MS = 5 * 60 * 1000; // sits down and spaces out
 const GLASSES = 'round'; // work glasses: 'round' | 'half' | 'square'
 const SLEEP_AFTER_MS = 60 * 60 * 1000; // falls asleep
-const TOPPLE_AFTER_MS = 30 * 60 * 1000; // asleep this long: tips over and wakes up
+const LIE_DOWN_MS = 30 * 60 * 1000;  // daytime nap: this long sitting up, then she lies down on her cushion
+const NAP_WAKE_MS = 60 * 60 * 1000;  // ...and wakes up on her own after this long
+const BACK_TO_BED_MS = 8000;          // woken up at night: grumbles, then back to bed after this
 const STALE_SESSION_MS = 15 * 60 * 1000;
 const NIGHT_SLEEP_AFTER_MS = 20 * 60 * 1000; // after 23:00 she nods off sooner
 const BREAK_AFTER_MS = 60 * 60 * 1000; // an hour of coding: water break
@@ -112,7 +114,7 @@ api.onClaude((ev) => {
   if (state.hideSeek && /UserPromptSubmit|Notification/.test(ev.event)) endHideSeek();
   if (state.dragging) queueMicrotask(() => airReact(ev.event));
   const prev = sessions.get(id);
-  wake();
+  wake(true);
   switch (ev.event) {
     case 'SessionStart':
       if (state.leaving) cancelLeave();
@@ -120,6 +122,7 @@ api.onClaude((ev) => {
       doAction('hello', 2500);
       say(SISTER ? 'Hi! I\'m her little sister~ I\'ll help with this one ✨' : 'Hi! Let\'s build something ✨', 3000);
       if (!SISTER) morningCoffee();
+      achieve(SISTER ? 'sister' : 'hello');
       break;
     case 'Adopt': // her sister went home; this session is hers now
       sessions.set(id, { status: 'idle', at: Date.now() });
@@ -127,6 +130,7 @@ api.onClaude((ev) => {
       say('Sis went home~ I\'ll take over! ✨', 2800);
       break;
     case 'UserPromptSubmit':
+      { const h = new Date().getHours(); if (h >= 2 && h < 5) achieve('nightowl'); }
       sessions.set(id, { status: 'working', tool: null, at: Date.now() });
       turn.start = Date.now();
       turn.tools = 0;
@@ -181,6 +185,8 @@ api.onClaude((ev) => {
         turn.doneText = (turn.tools ? '⚙' + turn.tools + ' · ' : '') + clock(took);
         turn.start = 0;
         // long run: she's earned a coffee
+        achieve('done');
+        if (took > 10 * 60 * 1000) achieve('marathon');
         if (took > 3 * 60 * 1000) setTimeout(() => { if (claudeStatus().status === 'idle' && !state.action) snack('coffee', 'Phew… coffee break ☕'); }, 2600);
         doAction('cheer', 2200);
         sfx('chime');
@@ -231,6 +237,7 @@ function snack(item = 'cookie', line) {
     state.pendingTreat = [item, line];
     return;
   }
+  achieve('treat', item);
   const t = TREATS[item] || TREATS.cookie;
   const now = Date.now();
   if (item !== 'water') {
@@ -310,6 +317,8 @@ function found() {
   endHideSeek();
   doAction('cheer', 1600);
   setFace('star', 2000);
+  achieve('found');
+  if (secs <= 3) achieve('found-fast');
   say(secs <= 3 ? 'Eh?! Already?! 😳' : `You found me! ✨ (${secs}s)`, 2600);
 }
 function endHideSeek() {
@@ -323,6 +332,7 @@ function endHideSeek() {
 
 // ---------- Claude hit an error / fixed it ----------
 function oops(n, cmd = '') {
+  achieve('error');
   state.panicUntil = Date.now() + 8000;
   changeMood(-1.5);
   sfx('uhoh');
@@ -339,6 +349,7 @@ function oops(n, cmd = '') {
     : pick(['Eek! An error! 😱', 'Uh-oh… red text!', 'Th-that\'s not supposed to happen!', 'Huh?! It broke?!']), 2600);
 }
 function fixedIt() {
+  achieve('fixed');
   changeMood(3);
   sfx('chime');
   state.bugTool = null;
@@ -498,6 +509,7 @@ function updateLeap(now) {
 function sitOn(w, climb = false) {
   state.perch = { id: w.id, dx: state.x - w.x, wx: w.x, wy: w.y, ww: w.w, until: Date.now() + 40000 + Math.random() * 50000,
     moving: false, movedAt: 0, climb: climb ? { t0: Date.now(), stage: 'hang' } : null };
+  achieve(w.id === 'cursor' ? 'ride' : climb ? 'climb' : 'perch');
   state.falling = false;
   state.vx = state.vy = 0;
   placeOnPerch(Date.now());
@@ -574,6 +586,7 @@ function updatePerch() {
     const dy = w.y - from.y;
     if (dy > 6 || (Math.abs(dx) > 12 && Math.abs(dx) * 0.6 > -dy)) {
       p.slip = { x: w.x, y: w.y, at: now };
+      achieve('slip');
       p.moving = true; // legs kick (quake) while she hangs there
       setFace('shock', 60000);
       say(pick(['W-wait!! 😱', 'Eh? Where\'d my seat go…', 'Uh oh…', 'Don\'t look down… 😰']), 60000);
@@ -598,6 +611,7 @@ function updatePerch() {
     if (dy < -15 && -dy >= Math.abs(dx) * 0.6) {
       p.moving = false;
       setFace('uwu', 2000);
+      achieve('elevator');
       say(pick(['Phew… a free elevator ride~', 'Going up~ ♪', 'Ooh, higher! Nice view~']), 2400);
     } else {
       fallOff('drag');
@@ -725,6 +739,7 @@ let lastInteraction = Date.now();
 function changeMood(d) {
   mood = Math.max(0, Math.min(100, mood + d));
   try { localStorage.setItem('mood', String(Math.round(mood))); } catch { /* not saved */ }
+  if (mood >= 100) achieve('bestie');
 }
 function interacted() { lastInteraction = Date.now(); }
 // left alone for a long time, she gets a bit lonely
@@ -753,9 +768,9 @@ function reactToCommand(phase, ev) {
     if (/\bgit\s+commit\b/.test(cmd)) { say('Committing~ 📝', 2000); return true; }
     return false;
   }
-  if (TESTS.test(cmd)) { setFace('star', 2400); flash('sparkle', 1400); sfx('chime'); changeMood(3); say(pick(['Tests pass! 👍✨', 'All green! 🟢', 'Yatta~ the tests pass!']), 2800); }
-  else if (/\bgit\s+commit\b/.test(cmd)) { setFace('uwu', 2000); popHearts(2); changeMood(2); say(pick(['Committed! ✨', 'Saved to history~ 📜']), 2400); }
-  else if (/\bgit\s+push\b/.test(cmd)) { setFace('star', 2200); flash('sparkle', 1200); changeMood(2); say(pick(['Shipped! 🚀', 'Pushed~ off it goes! 🚀']), 2400); }
+  if (TESTS.test(cmd)) { setFace('star', 2400); flash('sparkle', 1400); sfx('chime'); changeMood(3); achieve('tests'); say(pick(['Tests pass! 👍✨', 'All green! 🟢', 'Yatta~ the tests pass!']), 2800); }
+  else if (/\bgit\s+commit\b/.test(cmd)) { setFace('uwu', 2000); popHearts(2); changeMood(2); achieve('commit'); say(pick(['Committed! ✨', 'Saved to history~ 📜']), 2400); }
+  else if (/\bgit\s+push\b/.test(cmd)) { setFace('star', 2200); flash('sparkle', 1200); changeMood(2); achieve('push'); say(pick(['Shipped! 🚀', 'Pushed~ off it goes! 🚀']), 2400); }
   return true;
 }
 
@@ -798,6 +813,7 @@ document.addEventListener('dragover', (e) => {
 document.addEventListener('drop', async (e) => {
   e.preventDefault();
   const f = e.dataTransfer && e.dataTransfer.files[0];
+  if (f) achieve('file');
   if (!f || state.leaving) return;
   interacted();
   changeMood(1);
@@ -827,6 +843,7 @@ const FLIP_HEIGHT = 90;   // px her window rises at the top of the jump
 function backflip(lines) {
   if (state.leaving || state.dragging || state.falling || state.perch || state.leap) return;
   state.flipAt = Date.now();
+  achieve('backflip');
   doAction('backflip', FLIP_MS);
   say(pick(lines), 900);
   setTimeout(() => {
@@ -846,6 +863,7 @@ function moonwalk() {
   state.dir = a && state.x - a.x > a.x + a.width - (state.x + state.w) ? 1 : -1;
   if (Math.random() < 0.5 && a && Math.min(state.x - a.x, a.x + a.width - state.x - state.w) > 250) state.dir = -state.dir;
   doAction('moonwalk', 3000);
+  achieve('moonwalk');
   setFace('smug', 3000);
   say(season() === 'halloween' && Math.random() < 0.4 ? 'It\'s Thriller night~ 🎃' : pick(MOONWALK_LINES), 2400);
   setTimeout(endMoonwalk, 3000);
@@ -864,6 +882,7 @@ function stuffed() {
   state.fullUntil = Date.now() + FULL_FOR_MS;
   state.treats = [];
   doAction('stuffed', 7000);
+  achieve('stuffed');
   setFace('drowsy', 3800);
   say(pick(['Ugh… so full~ I can\'t move…', 'I ate too much… 😵', '*flops* …so… full…']), 3400);
   setTimeout(() => { setFace('blush', 2200); say('*hic* …excuse me! 😳', 2200); }, 4000);
@@ -881,6 +900,7 @@ function startKitty(asked) {
   state.action = null;
   state.walkTarget = null;
   state.chase = { dir, kx: dir > 0 ? state.x - 40 : state.x + state.w + 40, phase: 'pass', until: 0 };
+  achieve('kitty');
   kittyEl.classList.add('on');
   kittyEl.classList.toggle('left', dir < 0);
 }
@@ -993,6 +1013,29 @@ api.onCommand((cmd) => {
 // ---------- speech bubble ----------
 let bubbleTimer;
 let bubbleSticky = false;
+// ---------- achievements (the list and progress live in main.js) ----------
+const toastEl = document.getElementById('toast');
+const toastText = document.getElementById('toast-text');
+const toastQueue = [];
+let toastBusy = false;
+function achieve(event, variant) {
+  if (!api.achieve) return;
+  api.achieve(event, variant).then((list) => { for (const a of list || []) toastQueue.push(a); nextToast(); }).catch(() => {});
+}
+function nextToast() {
+  if (toastBusy || !toastQueue.length) return;
+  const a = toastQueue.shift();
+  toastBusy = true;
+  toastText.textContent = a.icon + ' ' + a.name;
+  document.body.classList.add('toasting');
+  toastEl.classList.remove('hidden');
+  sfx('chime');
+  setTimeout(() => {
+    toastEl.classList.add('hidden');
+    setTimeout(() => { document.body.classList.remove('toasting'); toastBusy = false; nextToast(); }, 400);
+  }, 3600);
+}
+
 function say(text, ms = 3000, sticky = false) {
   clearTimeout(bubbleTimer);
   bubbleText.textContent = text;
@@ -1154,19 +1197,32 @@ function doAction(name, ms) {
   state.walkTarget = null;
 }
 
-// slept too long: tips off the cushion and wakes up with a start
-function topple() {
+// slept her fill (an hour's nap, or the night's over): stretches and gets up
+function wakeFromNap() {
   wake();
-  state.asleepSince = 0;
-  doAction('topple', 3600);
-  setTimeout(() => { setFace('surprised', 1300); say(pick(['Hwah?!', 'Nya?!', '!!']), 1300); }, 1900);
-  setTimeout(() => { setFace('yawn', 1800); say(pick(['…I fell asleep?', 'Ouch… *rubs eyes*', 'I wasn\'t sleeping!']), 2400); }, 3200);
+  achieve('nap');
+  doAction('cheer', 1800);
+  setFace('yawn', 2000);
+  say(new Date().getHours() < 11 ? pick(['Good morning~ ☀️ *stretch*', 'Ohayo~ ☀️']) : pick(['*stretch* …what a nice nap~', 'Mmh~ I feel refreshed ✨']), 2600);
 }
 
-function wake() {
+// fromClaude: Claude needs her, so she gets up properly even at night
+function wake(fromClaude = false) {
+  const wasAsleep = !!state.asleepSince;
   state.asleepSince = 0;
   state.lastActivity = Date.now();
   state.napping = false;
+  if (fromClaude) { state.grumpyNight = false; return; }
+  if (isNight() && (wasAsleep || state.grumpyNight)) {
+    // woken up in the middle of the night: grumpy, and she heads back to bed in a few seconds
+    state.lastActivity = Date.now() - NIGHT_SLEEP_AFTER_MS + BACK_TO_BED_MS;
+    if (wasAsleep) {
+      state.grumpyNight = true;
+      achieve('grumpy');
+      setFace('pout', 3000);
+      say(pick(['Mmh… it\'s the middle of the night… 💢', 'Five more minutes… 😾', 'Nooo… I was sleeping… 💢', '*grumble* …it\'s so late…']), 2800);
+    }
+  }
 }
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -1199,6 +1255,8 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('quake', extra.includes('quake'));
   charEl.classList.toggle('moonwalk', extra.includes('moonwalk'));
   charEl.classList.toggle('bflip', extra.includes('bflip'));
+  charEl.classList.toggle('lie', extra.includes('lie'));     // asleep lying down (cushion, or bed)
+  charEl.classList.toggle('inbed', extra.includes('inbed')); // night: the bed
   charEl.classList.toggle('mj', state.action === 'moonwalk' || state.action === 'toestand'); // fedora + glove
   charEl.classList.toggle('flip', state.dir < 0 && pose === 'walk');
   if (!spinning) charEl.classList.toggle('view-back', pose === 'sulk' || (pose === 'exit' && !!state.exitBack));
@@ -1257,12 +1315,16 @@ function choosePose(now) {
   if (state.perch) return [state.perch.climb ? state.perch.climb.stage : 'perch', state.perch.moving ? ['quake'] : []];
 
   if (state.napping || now - state.lastActivity > (isNight() ? NIGHT_SLEEP_AFTER_MS : SLEEP_AFTER_MS)) {
-    if (!state.asleepSince) state.asleepSince = now;
-    if (now - state.asleepSince > TOPPLE_AFTER_MS) {
-      topple();
-      return [state.action];
+    if (!state.asleepSince) {
+      state.asleepSince = now;
+      state.grumpyNight = false;
+      if (isNight()) { achieve('bed'); say(pick(['Bedtime~ 🛏️', 'Good night… 🌙', '*yawn* …off to bed~']), 2200); }
     }
-    return ['sleep'];
+    // after 23:00 a little bed pops up and she sleeps in it till morning
+    if (isNight()) return ['sleep', ['lie', 'inbed']];
+    const slept = now - state.asleepSince;
+    if (slept > NAP_WAKE_MS) { wakeFromNap(); return ['idle']; }
+    return ['sleep', slept > LIE_DOWN_MS ? ['lie'] : []];
   }
   state.asleepSince = 0;
   if (now - state.lastActivity > LOUNGE_AFTER_MS) return ['lounge'];
@@ -1547,6 +1609,7 @@ let lastTickleAt = 0;
 let tickleLineAt = 0;
 function tickle() {
   tickleUntil = Date.now() + 3000;
+  achieve('tickle');
   if (sulking()) { say('…pff— no! Hmph!', 1500); flash('huff', 400); return; }
   wake();
   tickling = true;
@@ -1652,6 +1715,7 @@ function updatePat(now) {
 function sulking() { return Date.now() < state.sulkUntil; }
 
 function pat() {
+  achieve('pat');
   if (sulking()) {
     if (state.action === 'yeet') return;
     patStart = performance.now();
@@ -1659,6 +1723,7 @@ function pat() {
     if (++state.sulkPats < 3) { say(pick(['Hmph…', '…', '*pouts*']), 1400); return; }
     // made up: turns back around
     state.sulkUntil = 0;
+    achieve('madeup');
     // no standing up from the cushion mid-work
     if (claudeStatus().status === 'idle') doAction('hello', 1500);
     setFace('blush', 2600);
@@ -1704,6 +1769,7 @@ function yeet() {
   changeMood(-20);
   state.laptopGone = true;
   state.yeetAt = Date.now();
+  achieve('yeet');
   state.sulkUntil = Date.now() + 1800 + 25000;
   state.sulkPats = 0;
   doAction('yeet', 1800);

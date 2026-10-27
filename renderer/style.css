@@ -1458,3 +1458,44 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 #char.bflip #shadow { animation: bflipShadow 1.5s linear both; }
 /* the shadow rides up with her window, so it is hidden while she is in the air */
 @keyframes bflipShadow { 0%, 29% { opacity: 1; } 32%, 75% { opacity: 0; } 78%, 100% { opacity: 1; } }
+
+/* ---------- asleep lying down: on her cushion (long daytime nap) or in bed (night) ---------- */
+#char.sleep.lie #body { transform-box: view-box; transform-origin: 100px 150px; animation: lieDown 1.6s ease-in-out both !important; }
+@keyframes lieDown {
+  0% { transform: translateY(16px); }
+  100% { transform: translate(12px, 18px) rotate(-90deg) scale(0.78); }
+}
+/* the bed pops in first, then she lies down and the blanket comes up */
+#char.sleep.inbed #body { animation-name: bedLie !important; animation-duration: 2.2s !important; }
+@keyframes bedLie {
+  0%, 30% { transform: translateY(16px); }
+  75%, 100% { transform: translate(12px, 18px) rotate(-90deg) scale(0.78); }
+}
+#bed, #blanket { display: none; }
+#char.sleep.inbed #bed, #char.sleep.inbed #blanket { display: inline; }
+#char.inbed #cushion, #char.inbed #shadow { display: none !important; }
+#char.sleep.inbed #bed { transform-box: fill-box; transform-origin: 50% 100%; animation: bedIn 0.6s cubic-bezier(.3,1.5,.6,1) both; }
+@keyframes bedIn { 0% { transform: scale(0.2); opacity: 0; } 100% { transform: none; opacity: 1; } }
+#char.sleep.inbed #blanket { animation: blanketIn 2.2s ease-out both; }
+@keyframes blanketIn { 0%, 72% { opacity: 0; transform: translateY(14px); } 100% { opacity: 1; transform: none; } }
+.bed-wood { fill: #d29a72; stroke: #9c6a4c; stroke-width: 1.2; }
+.bed-knob { fill: #f0c49c; }
+.bed-sheet { fill: #fffaf3; stroke: #d9cfc6; stroke-width: 1; }
+.bed-pillow { fill: #ffffff; stroke: #d9cfc6; stroke-width: 1.2; }
+.blanket { fill: #93a3ea; stroke: #6d7cc6; stroke-width: 1.3; stroke-linejoin: round; }
+.blanket-fold { fill: none; stroke: #7c8bd6; stroke-width: 1.2; stroke-linecap: round; }
+.blanket-stars circle { fill: #fff3b8; }
+
+/* ---------- achievement toast ---------- */
+#toast {
+  position: absolute; left: 50%; top: 4px; transform: translateX(-50%);
+  padding: 3px 12px 4px; border-radius: 10px; text-align: center; white-space: nowrap;
+  background: linear-gradient(#fff8dd, #ffe6a0); border: 2px solid #d9a53a; box-shadow: 0 2px 6px rgba(120, 80, 0, 0.25);
+  font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif; color: #6b4a00;
+  transition: opacity 0.35s, transform 0.35s; pointer-events: none; z-index: 5;
+}
+#toast.hidden { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+.toast-head { font-size: 9px; font-weight: 700; letter-spacing: 0.3px; color: #a6740c; }
+#toast-text { font-size: 12px; font-weight: 600; }
+/* the speech bubble steps down while a toast is up */
+body.toasting #bubble { top: 48px; }

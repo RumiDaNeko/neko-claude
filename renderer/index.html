@@ -9,6 +9,7 @@
 <body>
 <div id="stage">
   <div id="bubble" class="hidden"><span id="bubble-text"></span></div>
+  <div id="toast" class="hidden"><div class="toast-head">🏆 Achievement unlocked!</div><div id="toast-text"></div></div>
 
   <!-- hide and seek: her fingers curled around the screen edge (fixed to the window, not to her) -->
   <svg id="grip" viewBox="0 0 240 300" width="240" height="300">
@@ -92,6 +93,17 @@
         <path class="cushion-top" d="M52,211 Q100,200 148,211" />
       </g></g>
       <!-- the tiny exit door she backs into when Claude closes -->
+      <!-- night: her little bed (she lies down in it; the blanket is drawn over her further down) -->
+      <g id="bed" filter="url(#soften)">
+        <path class="bed-wood" d="M4,233 L4,150 Q4,138 13,138 Q22,138 22,150 L22,233 Z" />
+        <path class="bed-wood" d="M178,233 L178,182 Q178,174 186,174 Q194,174 194,182 L194,233 Z" />
+        <rect x="10" y="212" width="6" height="21" rx="2" class="bed-wood" />
+        <rect x="182" y="212" width="6" height="21" rx="2" class="bed-wood" />
+        <rect x="14" y="206" width="172" height="10" rx="3" class="bed-wood" />
+        <rect x="16" y="192" width="166" height="17" rx="6" class="bed-sheet" />
+        <ellipse cx="44" cy="188" rx="25" ry="10" class="bed-pillow" />
+        <circle cx="13" cy="150" r="2.4" class="bed-knob" />
+      </g>
       <g id="exit-door">
         <g class="door-sign"><rect x="146" y="139" width="34" height="11" rx="2" class="exit-sign" /><text x="163" y="147.6" class="exit-text">EXIT</text></g>
         <rect x="148" y="152" width="30" height="50" rx="2" class="door-frame" />
@@ -493,6 +505,11 @@
 
       </g>
       <!-- things she trips over, left on the floor in front of her feet -->
+      <g id="blanket" filter="url(#soften)">
+        <path class="blanket" d="M86,142 Q94,132 112,134 L176,138 Q190,140 190,154 L190,206 Q190,214 182,214 L90,214 Q80,214 80,204 L80,152 Q80,146 86,142 Z" />
+        <path class="blanket-fold" d="M86,142 Q98,150 114,146 Q118,170 112,212" />
+        <g class="blanket-stars"><circle cx="134" cy="160" r="2" /><circle cx="160" cy="176" r="2" /><circle cx="140" cy="194" r="1.6" /><circle cx="172" cy="152" r="1.6" /><circle cx="124" cy="184" r="1.4" /></g>
+      </g>
       <g id="trip-props">
         <g class="prop prop-banana"><g transform="translate(117 231) scale(1.7) translate(-117 -231)"><path d="M108,229 Q116,224 124,229 Q118,227 116,231 Q114,227 108,229 Z" class="banana" /><path d="M116,231 Q113,234 109,235 M116,231 Q119,234 124,234" class="banana-line" /><path d="M115.5,224.6 L116.8,222.4" class="banana-line" /></g></g>
         <g class="prop prop-pebble"><g transform="translate(117 231) scale(1.7) translate(-117 -231)"><ellipse cx="117" cy="230" rx="5.5" ry="3.6" class="pebble" /><ellipse cx="115.6" cy="228.9" rx="1.8" ry="0.9" class="pebble-hl" /></g></g>

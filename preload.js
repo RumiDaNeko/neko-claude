@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('chan', {
   openMenu: () => ipcRenderer.send('menu'),
   quit: () => ipcRenderer.send('quit'),
   away: () => ipcRenderer.send('away'),
+  achieve: (event, variant) => ipcRenderer.invoke('achieve', event, variant),
   onClaude: (fn) => ipcRenderer.on('claude', (_e, ev) => fn(ev)),
   onCommand: (fn) => ipcRenderer.on('command', (_e, cmd) => fn(cmd)),
   onCursor: (fn) => ipcRenderer.on('cursor', (_e, p) => fn(p)),

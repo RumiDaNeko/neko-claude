@@ -61,7 +61,11 @@ Right-click her (or click the tray icon) for the menu.
 - **Drop a file on her** from Explorer: glasses on, she reads it and tells you its name, line count, size and what she thinks of it. She only counts lines; nothing is shown or sent anywhere.
 - **Hide and seek 🙈:** she hides behind a screen edge or ducks behind the taskbar with her ears poking up, giggling now and then as a hint. Click her to find her; she gives up after 90 s, and pops out if Claude needs you.
 - **Michael Clawdeson 🕺:** black fedora, black vest and one sparkly white glove. She moonwalks with her chin down and her hand on the brim (always gliding toward open space), spins, and goes up on her toes: "Hee-hee! ✨". Her lines live in `MOONWALK_LINES` in `renderer/app.js` if you want to add your own.
-- **Also in the menu:** wave, dance, do a trick, nap, climb onto a window, call the kitty, *How are you feeling?*, wear glasses, let her wander, sounds, show in taskbar.
+- **Also in the menu:** achievements, wave, dance, do a trick, nap, climb onto a window, call the kitty, *How are you feeling?*, wear glasses, let her wander, sounds, show in taskbar.
+
+## Achievements 🏆
+
+34 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in  in the app's user-data folder; the list lives in  in .
 
 **Mood:** pats, treats, finding her, finished work and passing tests cheer her up; teasing, errors and being ignored wear her down. A happy clawde chan hums and dances more; a grumpy one mopes and has a shorter fuse. Her mood and the menu toggles are remembered across restarts.
 
@@ -71,8 +75,8 @@ Right-click her (or click the tray icon) for the menu.
 - She dances, and now and then does a trick: trips and faceplants (over a banana peel, a pebble, a stray cable, her own tail, or nothing at all), a 360° twirl, a real backflip (side-on crouch, jump, tuck, stuck landing), a sneeze that sends her hairclip flying, or a Michael Clawdeson moonwalk.
 - Leave your cursor near her feet and she crouches, wiggles and pounces on it. Leave it still for a while and she may sit on it and ride along when you move it (your clicks go straight through her); flick it fast and she flies off.
 - A little grey kitty dashes past sometimes. She chases it. She never catches it.
-- After 5 idle minutes she sits and stares into space; after an hour she drags her cushion over and sleeps. Half an hour into that she nods off sideways, tips off the cushion and wakes with a start.
-- After 23:00 she's in pajamas and a nightcap and gets sleepy sooner.
+- After 5 idle minutes she sits and stares into space; after an hour she drags her cushion over and naps. Half an hour in she lies down on it, and half an hour after that she wakes up on her own with a big stretch.
+- After 23:00 she's in pajamas and a nightcap and gets sleepy sooner. At bedtime a little bed pops up and she sleeps in it, tucked under a starry blanket, till morning. Wake her up in the night and she's grumpy ("Five more minutes… 😾") and goes straight back to bed; only Claude needing her gets her up for real.
 - Seasonal hats: a witch hat around Halloween (Oct 20 – Nov 2), a Santa hat in December.
 
 ### Window climbing (Windows only)
