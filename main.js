@@ -161,6 +161,13 @@ function startBridge() {
       });
       return;
     }
+    // same commands as her menu (handy for scripts and testing): POST /command with the command as the body
+    if (req.method === 'POST' && req.url === '/command') {
+      let body = '';
+      req.on('data', (c) => { body += c; if (body.length > 200) req.destroy(); });
+      req.on('end', () => { send('command', body.trim()); res.writeHead(204).end(); });
+      return;
+    }
     if (req.method === 'GET' && req.url === '/ping') return void res.writeHead(200).end('claude-chan');
     res.writeHead(404).end();
   });

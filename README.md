@@ -23,7 +23,7 @@ node install-hooks.mjs --remove [--global]
 
 When a Claude Code session starts and she isn't running, the hook launches her (set `CLAUDE_CHAN_AUTOSTART=0` to turn that off). When the last session ends, a tiny **EXIT** door pops up, she waves and backs into it, and the app closes until Claude opens again.
 
-The hooks run `hook.mjs`, which forwards each event to `127.0.0.1:47321` with a 400 ms timeout. If she isn't running, nothing happens and Claude Code is unaffected. Set `CLAUDE_CHAN_PORT` to change the port.
+The hooks run `hook.mjs`, which forwards each event to `127.0.0.1:47321` with a 400 ms timeout. The same bridge takes her menu commands too, for scripts and testing: `curl -X POST --data perch http://127.0.0.1:47321/command` (`hello`, `dance`, `trick`, `hide`, `perch`, `kitty`, `treat:cookie`…). If she isn't running, nothing happens and Claude Code is unaffected. Set `CLAUDE_CHAN_PORT` to change the port.
 
 ## What she does
 
