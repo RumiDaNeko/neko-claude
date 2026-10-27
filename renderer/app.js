@@ -388,11 +388,16 @@ let wins = [];
   // quick while she's up on a window or in the air, so she rides along smoothly
   setTimeout(pollWindows, state.perch || state.falling || state.leap ? 120 : 500);
 })();
-// how far below the top of her window her seat (sitting) and her hands (arms straight up) are
+// how far below the top of her window her seat (sitting) and her chin (hanging from an edge) are
 function seatOffset() { const m = svgRoot.getScreenCTM(); return m.d * 214 + m.f; }
-function handOffset() { const m = svgRoot.getScreenCTM(); return m.d * 108 + m.f; }
-const HANG_MS = 900; // dangling from the edge after catching it
-const CLIMB_MS = 1100; // pulling herself up
+function handOffset() { const m = svgRoot.getScreenCTM(); return m.d * EDGE_HANG + m.f; }
+const HANG_MS = 1000; // hanging behind the window, peeking over its edge
+const CLIMB_MS = 1300; // pulling herself up and over, like out of a pool
+const EDGE_HANG = 134; // svg y of the window edge while she hangs (just under her chin)
+const EDGE_SIT = 214; // ...and once she's sitting on it
+const ledgeEl = document.getElementById('ledge');
+const ledgeL = document.getElementById('ledgeL');
+const ledgeR = document.getElementById('ledgeR');
 const frontOf = (i, x, y) => wins.slice(0, i).some((o) => x > o.x && x < o.x + o.w && y > o.y && y < o.y + o.h);
 function perchSpot() {
   const a = state.area;
@@ -448,21 +453,41 @@ function placeOnPerch(now) {
   let off = seatOffset();
   if (p.climb) {
     const t = now - p.climb.t0;
-    if (t < HANG_MS) off = handOffset();
-    else if (t < HANG_MS + CLIMB_MS) {
-      p.climb.stage = 'climb';
-      const k = (t - HANG_MS) / CLIMB_MS;
-      off = handOffset() + (off - handOffset()) * k * k * (3 - 2 * k);
-    } else {
+    let edge = EDGE_HANG;
+    if (t >= HANG_MS + CLIMB_MS) {
       p.climb = null;
+      showLedge(null);
       flash('land', 350);
       setFace('uwu', 1800);
       say(pick(['Phew… made it! 😅', '*climbs up* …ta-da~', 'Hehe, nailed it~']), 2200);
+    } else {
+      if (t >= HANG_MS) {
+        p.climb.stage = 'climb';
+        const k = (t - HANG_MS) / CLIMB_MS;
+        edge = EDGE_HANG + (EDGE_SIT - EDGE_HANG) * k * k * (3 - 2 * k);
+      }
+      const m = svgRoot.getScreenCTM();
+      off = m.d * edge + m.f;
+      showLedge(edge, m);
     }
   }
   const x = Math.min(Math.max(p.wx + p.dx, p.wx - state.w / 2 + 30), p.wx + p.ww - state.w / 2 - 30);
   const y = p.wy - off;
   if (Math.abs(x - state.x) > 0.3 || Math.abs(y - state.y) > 0.3) { state.x = x; state.y = y; api.setPos(x, y); }
+}
+function showLedge(edge, m) {
+  if (edge == null) {
+    svgRoot.style.clipPath = '';
+    ledgeEl.classList.remove('on');
+    return;
+  }
+  const b = svgRoot.getBoundingClientRect();
+  svgRoot.style.clipPath = `inset(0 0 ${Math.max(0, b.height * (1 - (edge + 0.5) / 240))}px 0)`;
+  // her own arms take over once the edge is down at hand height
+  ledgeEl.classList.toggle('on', edge < 166);
+  const y = m.d * edge + m.f;
+  ledgeL.setAttribute('transform', `translate(${m.a * 78 + m.e} ${y})`);
+  ledgeR.setAttribute('transform', `translate(${m.a * 122 + m.e} ${y})`);
 }
 // each window scan: did her window move, vanish, shrink away or fill the screen?
 function updatePerch() {
@@ -478,17 +503,30 @@ function updatePerch() {
   p.ww = w.w;
   if (moved) {
     // you're dragging her window around: hold on for dear life
-    if (!p.moving && !p.climb) { setFace('shock', 60000); say(pick(['W-wait!! 😱', 'Whoa whoa whoa—!', 'Don\'t shake it!!', 'Earthquake?!']), 60000); }
+    if (!p.moving) {
+      p.from = { x: w.x, y: w.y };
+      if (!p.climb) { setFace('shock', 60000); say(pick(['W-wait!! 😱', 'Whoa whoa whoa—!', 'Don\'t shake it!!', 'Earthquake?!']), 60000); }
+    }
     p.moving = true;
     p.movedAt = now;
   } else if (p.moving && now - p.movedAt > 350) {
-    fallOff('drag'); // you let go of the window: she doesn't hold on
+    // you let go of the window. Carried up: she's fine. Down or sideways: she slips off
+    const dx = w.x - p.from.x;
+    const dy = w.y - p.from.y;
+    if (dy < -15 && -dy >= Math.abs(dx) * 0.6) {
+      p.moving = false;
+      setFace('uwu', 2000);
+      say(pick(['Phew… a free elevator ride~', 'Going up~ ♪', 'Ooh, higher! Nice view~']), 2400);
+    } else {
+      fallOff('drag');
+    }
   }
 }
 async function fallOff(kind) {
   const p = state.perch;
   if (!p) return;
   state.perch = null;
+  showLedge(null);
   state.noCatchId = p.id; // she won't grab the window she just fell off
   state.pouncing = false;
   state.area = await api.workAreaAt(state.x + state.w / 2, state.y + state.h);
@@ -520,6 +558,7 @@ async function hopDown() {
   if (!state.perch) return;
   state.noCatchId = state.perch.id;
   state.perch = null;
+  showLedge(null);
   state.area = await api.workAreaAt(state.x + state.w / 2, state.y + state.h);
   state.pouncing = false;
   state.vx = state.dir * 2.5;
@@ -1038,6 +1077,7 @@ hit.addEventListener('pointermove', (e) => {
     state.action = null;
     if (state.hideSeek) endHideSeek();
     state.perch = null;
+    showLedge(null);
     state.leap = null;
     state.pouncing = false;
     say(pick(['Waah!', 'Eek!', 'Wheee~', 'Where are we going?']), 1500);

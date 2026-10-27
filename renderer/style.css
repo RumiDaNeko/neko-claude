@@ -1046,7 +1046,7 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 .cup { fill: #fff8ef; fill-opacity: 0.55; stroke: #b9a08c; stroke-width: 1; }
 .boba-tea { fill: #d9a77a; }
 .pearl { fill: #3a2620; }
-.lid { fill: #ffffff; fill-opacity: 0.7; stroke: #b9a08c; stroke-width: 1; }
+.cup-lid { fill: #ffffff; fill-opacity: 0.7; stroke: #b9a08c; stroke-width: 1; }
 .straw { stroke: #ff8fa8; stroke-width: 2.6; stroke-linecap: round; }
 .tea-cup { fill: #f3efe3; stroke: #8a7c60; stroke-width: 1.2; }
 .matcha { fill: #8cc152; }
@@ -1186,7 +1186,7 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 
 /* ---------- typing: hands rest on the keyboard in front of the lid ---------- */
 #type-hands { display: none; }
-#char.work #type-hands, #char.drag.airwork #type-hands { display: inline; }
+/* (the lid is solid, so her arms simply disappear behind it to the keyboard; these stay hidden) */
 #char.work .thL { animation: tapKey 0.24s ease-in-out infinite alternate; }
 #char.work .thR { animation: tapKey 0.24s ease-in-out -0.12s infinite alternate; }
 @keyframes tapKey { from { transform: translateY(0); } to { transform: translateY(-2.4px); } }
@@ -1282,21 +1282,20 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 .belly-dot { fill: #c98a72; }
 .belly-shine { stroke: #f3d9cc; }
 
-/* ---------- caught a window's edge: dangling by her hands, then pulling herself up ---------- */
+/* ---------- caught a window's edge: hanging behind it, then climbing out over the top ---------- */
+/* (app.js clips away everything below the edge and draws her hands on it) */
 #char.hang #shadow, #char.climb #shadow, #char.hang #cushion, #char.climb #cushion { display: none; }
-#char.hang #armL { transform: rotate(172deg); }
-#char.hang #armR { transform: rotate(-172deg); }
-#char.hang #body { transform-origin: 50% 46%; animation: hangSway 1.1s ease-in-out infinite alternate; }
-@keyframes hangSway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
-#char.hang #legL { animation: dangle 0.35s ease-in-out infinite alternate; }
-#char.hang #legR { animation: dangle 0.35s ease-in-out -0.17s infinite alternate; }
-#char.climb #armL { animation: climbArmL 0.55s ease-in-out infinite alternate; }
-#char.climb #armR { animation: climbArmR 0.55s ease-in-out -0.27s infinite alternate; }
-@keyframes climbArmL { from { transform: rotate(172deg); } to { transform: rotate(140deg); } }
-@keyframes climbArmR { from { transform: rotate(-172deg); } to { transform: rotate(-140deg); } }
-#char.climb #legL { transform: rotate(-38deg); }
-#char.climb #legR { animation: dangle 0.3s ease-in-out infinite alternate; }
-#char.climb #body { transform-origin: 50% 46%; animation: hangSway 0.55s ease-in-out infinite alternate; }
+#char.hang #armL, #char.hang #armR { display: none; }
+#char.hang #head, #char.hang #puffs { animation: hangStrain 0.5s ease-in-out infinite alternate; }
+@keyframes hangStrain { from { transform: translateY(0); } to { transform: translateY(1.5px); } }
+#char.climb #armL { transform: rotate(6deg); }
+#char.climb #armR { transform: rotate(-6deg); }
+#char.climb #legL { transform: rotate(-70deg); }
+#char.climb #body { transform-origin: 50% 80%; animation: climbHeave 0.65s ease-in-out infinite alternate; }
+@keyframes climbHeave { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+#ledge { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 4; display: none; overflow: visible; }
+#ledge.on { display: block; }
+.ledge-finger { fill: none; stroke: var(--line); stroke-width: 1; stroke-linecap: round; }
 /* her window is being dragged: clinging on, shaking */
 #char.perch.quake #body { animation: quakeSeated 0.12s linear infinite; }
 @keyframes quakeSeated { 0%, 100% { transform: translateY(16px); } 25% { transform: translate(-1.5px, 15px) rotate(-2deg); } 75% { transform: translate(1.5px, 17px) rotate(2deg); } }
