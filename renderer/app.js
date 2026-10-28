@@ -140,9 +140,11 @@ api.onClaude((ev) => {
       if (state.leaving) cancelLeave();
       sessions.set(id, { status: 'idle', at: Date.now() });
       doAction('hello', 2500);
-      say(SISTER ? 'Hi! I\'m her little sister~ I\'ll help with this one ✨' : 'Hi! Let\'s build something ✨', 3000);
+      if (ev.cowork) say(SISTER ? 'Hi! I\'ll keep you company on this Cowork task~ ✨' : pick(['Cowork time! Let\'s get it done~ 🤝', 'Ooh, a Cowork task! I\'m on it~ ✨', 'Coworking with you~ 🤝']), 3000);
+      else say(SISTER ? 'Hi! I\'m her little sister~ I\'ll help with this one ✨' : 'Hi! Let\'s build something ✨', 3000);
       if (!SISTER) morningCoffee();
       achieve(SISTER ? 'sister' : 'hello');
+      if (ev.cowork) achieve('cowork');
       break;
     case 'Adopt': // her sister went home; this session is hers now
       sessions.set(id, { status: 'idle', at: Date.now() });
@@ -236,6 +238,7 @@ api.onClaude((ev) => {
       break;
     case 'SessionEnd':
       sessions.delete(id);
+      if (ev.quiet) break;
       if (sessions.size === 0) { leave(!SISTER); break; } // she waits in the tray (her sister just goes home)
       say('Bye bye~', 2500);
       doAction('hello', 1800);

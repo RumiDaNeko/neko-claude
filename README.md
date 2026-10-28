@@ -27,6 +27,10 @@ From then on, starting a Claude Code session launches her if she isn't running (
 
 On Windows 11 the tray icon starts in the hidden-icons overflow (^); drag it onto the taskbar to keep it handy.
 
+### Claude Cowork 🤝
+
+She works with Cowork too, no setup needed: while she's running she watches the Cowork sessions the Claude desktop app keeps on this machine and reacts to them like to Claude Code (tool calls, tests, "Done!", running out of quota). A Cowork task opens with "Cowork time! Let's get it done~ 🤝" (and the **Coworkers** achievement). A Cowork session that's been quiet for 20 minutes is simply forgotten, without the goodbye walk. Cowork can't launch her, so start her yourself (or have a Claude Code session do it).
+
 ## While Claude works
 
 | Claude Code | clawde chan |
@@ -78,7 +82,7 @@ Right-click her (or click the tray icon) for the menu.
 
 ## Achievements 🏆
 
-51 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in `achievements.json` in the app's user-data folder; the list lives in `ACHIEVEMENTS` in `main.js`.
+52 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in `achievements.json` in the app's user-data folder; the list lives in `ACHIEVEMENTS` in `main.js`.
 
 **Mood:** pats, treats, finding her, finished work and passing tests cheer her up; teasing, errors and being ignored wear her down. A happy clawde chan hums and dances more; a grumpy one mopes and has a shorter fuse. Her mood and the menu toggles are remembered across restarts.
 
@@ -108,6 +112,7 @@ Now and then she leaps onto a window's title bar and sits there swinging her leg
 | What | Where |
 | --- | --- |
 | Don't launch with Claude | `CLAUDE_CHAN_AUTOSTART=0` |
+| Ignore Claude Cowork | `CLAUDE_CHAN_COWORK=0` |
 | No window climbing | `CLAUDE_CHAN_PERCH=0` |
 | Bridge port (default 47321) | `CLAUDE_CHAN_PORT` |
 | Sounds (synthesized blips, no audio files; off by default) | menu → **Sounds** |
@@ -118,6 +123,8 @@ Now and then she leaps onto a window's title bar and sits there swinging her leg
 ## How it works
 
 The hooks run `hook.mjs`, which forwards each Claude Code event to `127.0.0.1:47321` with a 400 ms timeout. If she isn't running, nothing happens and Claude Code is unaffected.
+
+Cowork runs Claude's code in a VM where those hooks can't reach her, so `cowork.js` reads Cowork's session transcripts instead: every 1.5 s it looks under the desktop app's `local-agent-mode-sessions` folder for `.jsonl` transcripts that grew, and turns the new entries into the same events (a prompt, a tool call, a tool result, the end of a turn). Transcripts already there when she starts are left alone. The transcript format isn't a public API, so a Claude desktop update could quietly break this part.
 
 The same bridge takes her menu commands, handy for scripts and testing:
 
@@ -140,6 +147,7 @@ Parses every script, makes sure no class that `app.js` puts on her (poses, state
 - `renderer/style.css`: art styling and every pose and animation
 - `renderer/app.js`: behavior: Claude reactions, wandering, physics, tricks, window climbing, idle timers
 - `hook.mjs`, `install-hooks.mjs`: the Claude Code side
+- `cowork.js`: the Claude Cowork side (tails its session transcripts)
 - `scripts/check.js`: the checks above
 - `scripts/windows.ps1`: lists open windows for perching (Windows)
 

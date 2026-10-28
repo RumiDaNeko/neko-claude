@@ -5,6 +5,7 @@ const http = require('http');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { startCowork } = require('./cowork');
 
 const PORT = Number(process.env.CLAUDE_CHAN_PORT || 47321);
 const WIN_W = 240;
@@ -21,6 +22,7 @@ let laserOn = false; // a toy, not a setting: not saved
 // achievements: what unlocks them (an event the renderer reports, how many times or how many kinds) and what they're called
 const ACHIEVEMENTS = [
   { id: 'hello', on: 'hello', icon: '👋', name: 'Hello, World', desc: 'Meet clawde chan' },
+  { id: 'cowork', on: 'cowork', icon: '🤝', name: 'Coworkers', desc: 'Work with her through Claude Cowork' },
   { id: 'done', on: 'done', icon: '✅', name: 'First Task', desc: 'Claude finishes a task while she watches' },
   { id: 'done100', on: 'done', need: 100, icon: '💯', name: 'Centurion', desc: '100 finished tasks' },
   { id: 'marathon', on: 'marathon', icon: '🏃', name: 'Marathon', desc: 'Claude works 10+ minutes in one go' },
@@ -396,6 +398,8 @@ if (!app.requestSingleInstanceLock()) {
     loadAchievements();
     main = createChar(false);
     startBridge();
+    // Cowork sessions in the Claude desktop app (CLAUDE_CHAN_COWORK=0 turns this off)
+    if (process.env.CLAUDE_CHAN_COWORK !== '0') startCowork(routeClaude);
     startWindowScan();
     try { createTray(); } catch (e) { console.error('[claude-chan] tray:', e.message); }
     let last = '';

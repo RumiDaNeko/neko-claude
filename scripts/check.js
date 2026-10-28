@@ -13,7 +13,7 @@ let failed = 0;
 const fail = (msg) => { failed++; console.error('✗ ' + msg); };
 const ok = (msg) => console.log('✓ ' + msg);
 
-for (const f of ['main.js', 'preload.js', 'renderer/app.js', 'hook.mjs', 'install-hooks.mjs', 'scripts/check.js']) {
+for (const f of ['main.js', 'cowork.js', 'preload.js', 'renderer/app.js', 'hook.mjs', 'install-hooks.mjs', 'scripts/check.js']) {
   try { execFileSync(process.execPath, ['--check', path.join(root, f)], { stdio: 'pipe' }); } catch (e) { fail(`${f} does not parse:\n${e.stderr}`); }
 }
 ok('scripts parse');
