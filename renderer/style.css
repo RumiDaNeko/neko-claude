@@ -548,8 +548,15 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 /* lounge: half lids, looking up to the side */
 #char.lounge #eyes-open { display: inline; }
 #char.lounge #eyes-bored { display: none; }
-#char.lounge .rig .gaze { transform: translate(3px, -3px); }
-#char.lounge .rig .lidpos { transform: translateY(9px); }
+#char.lounge .rig .gaze { transform: translate(3.5px, 1px); }
+#char.lounge .rig .lidpos { transform: translateY(8px); }
+/* flat, heavy lids (the normal lid edge arches up, which reads sleepy instead of bored) */
+#char.lounge .rig:nth-child(1) .eyelid { d: path('M58,70 L94,70 L94,100.5 Q76,102 58,101.5 Z'); }
+#char.lounge .rig:nth-child(2) .eyelid { d: path('M106,70 L142,70 L142,101.5 Q124,102 106,100.5 Z'); }
+#char.lounge .rig:nth-child(1) .lashblink .lash:not(.thin) { d: path('M61,101.5 Q76,102.5 91,100.5'); }
+#char.lounge .rig:nth-child(2) .lashblink .lash:not(.thin) { d: path('M109,100.5 Q124,102.5 139,101.5'); }
+#char.lounge .rig:nth-child(1) .lashblink .lash.thin { d: path('M61,101.5 L58,100.5'); }
+#char.lounge .rig:nth-child(2) .lashblink .lash.thin { d: path('M139,101.5 L142,100.5'); }
 #char.lounge .rig .lidblink { animation-duration: 7s; }
 
 /* wait: eyes wide */
