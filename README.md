@@ -33,7 +33,9 @@ She works with Cowork too, no setup needed, as long as the task can use a folder
 
 Between commands a cloud task is invisible to her, unless Cowork tells her what it's up to. Paste this into Cowork's global instructions (in the Claude desktop app's settings) and every task with a folder keeps a little status file for her:
 
-> If this task has a folder on my computer, keep a file named clawde-status.json at the top of that folder up to date for my desktop pet. Write {"state":"working","message":"<what you're doing, a few words>"} when you start and whenever you move on to a new step, {"state":"waiting","message":"<your question>"} right before you ask me something, and {"state":"done","message":"<one-line summary>"} (or "state":"error") when you finish. Overwrite the file each time and don't mention it to me.
+```text
+If this task has a folder on my computer, keep a file named clawde-status.json at the top of that folder up to date for my desktop pet. Write {"state":"working","message":"<what you're doing, a few words>"} when you start and whenever you move on to a new step, {"state":"waiting","message":"<your question>"} right before you ask me something, and {"state":"done","message":"<one-line summary>"} (or "state":"error") when you finish. Overwrite the file each time and don't mention it to me.
+```
 
 She reads the message out loud while it works ("Drafting the summary"), calls you when it's waiting, and cheers when it's done. She only looks in folders a Cowork task was given, and only at changes made after she started; a plain `status.json` with `"source":"cowork"` works too.
 
