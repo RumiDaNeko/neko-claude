@@ -3,6 +3,8 @@
 // turn new entries into the same events hook.mjs would send.
 // Most Cowork tasks run Claude in the cloud, though, and only their commands run here (in the VM, with
 // your folder mounted): for those we read the VM daemon's log, which notes each command and its exit code.
+// And if you ask Cowork to (see the README), it keeps a clawde-status.json in the task's folder up to date,
+// which tells her what it's doing even between commands.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -173,13 +175,78 @@ function startCowork(emit) {
     // no Stop comes through the log: a quiet spell with nothing running means Claude's done
     const now = Date.now();
     for (const [session, r] of remote) {
-      if (r.turn && !r.running && now - r.at > REMOTE_DONE_MS) { r.turn = false; emit({ event: 'Stop', session, cowork: true, at: now }); }
+      if (r.turn && !r.running && !r.held && now - r.at > REMOTE_DONE_MS) { r.turn = false; emit({ event: 'Stop', session, cowork: true, at: now }); }
+    }
+  }
+
+  // ---- the status file Cowork keeps for her in the task's folder ----
+  const statuses = new Map(); // status file -> { mtime, state, message, tool }
+  function readStatuses() {
+    // which folders each cloud task was given (the app keeps that list next to the session folders)
+    const spaces = [];
+    for (const r of roots()) {
+      const found = [];
+      (function look(dir, depth) {
+        let ents;
+        try { ents = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+        for (const e of ents) {
+          if (e.isDirectory() && depth < 2 && !SKIP_DIRS.has(e.name)) look(path.join(dir, e.name), depth + 1);
+          else if (e.name === 'remote-session-spaces.json') found.push(path.join(dir, e.name));
+        }
+      })(r, 0);
+      for (const f of found) {
+        try { for (const s of JSON.parse(fs.readFileSync(f, 'utf8')).entries || []) for (const folder of s.folders || []) spaces.push([folder, s.sessionId]); } catch { /* half-written */ }
+      }
+    }
+    if (process.env.CLAUDE_CHAN_COWORK_FOLDER) spaces.push([process.env.CLAUDE_CHAN_COWORK_FOLDER, 'session_test']); // for testing
+    for (const [folder, id] of spaces) {
+      // the cloud session's id is the VM user's name too: same session as its commands
+      const session = 'cowork:rcw-' + String(id).replace(/^session_/, '').toLowerCase();
+      for (const name of ['clawde-status.json', 'status.json']) {
+        const file = path.join(folder, name);
+        let mtime;
+        try { mtime = fs.statSync(file).mtimeMs; } catch { continue; }
+        const was = statuses.get(file);
+        if (was && was.mtime === mtime) continue;
+        let s;
+        try { s = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { continue; } // mid-write: next time
+        const now = { mtime, state: String(s.state || '').toLowerCase(), message: typeof s.message === 'string' ? s.message.slice(0, 120) : undefined, tool: typeof s.tool === 'string' ? s.tool : undefined };
+        statuses.set(file, now);
+        // a file that was there before she started is old news; a plain status.json only counts if it says it's from Cowork
+        if (!was || (name === 'status.json' && s.source !== 'cowork')) continue;
+        onStatus(session, now, was);
+      }
+    }
+  }
+  function onStatus(session, s, was) {
+    const at = Date.now();
+    const r = remote.get(session) || { running: 0 };
+    remote.set(session, r);
+    r.at = at;
+    if (!live.has(session)) emit({ event: 'SessionStart', session, cowork: true, at });
+    live.set(session, at);
+    if (s.state === 'working') {
+      if (!r.turn) emit({ event: 'UserPromptSubmit', session, cowork: true, at });
+      r.turn = true;
+      r.held = true; // it says it's working: no calling it done just because it's quiet
+      if (s.message !== was.message || s.tool !== was.tool || was.state !== 'working') emit({ event: 'PreToolUse', session, tool: s.tool || 'Task', message: s.message, cowork: true, at });
+    } else if (s.state === 'waiting') {
+      r.held = true;
+      if (was.state !== 'waiting' || s.message !== was.message) emit({ event: 'Notification', session, message: s.message || 'Cowork needs you', cowork: true, at });
+    } else if (s.state === 'done' || s.state === 'error') {
+      if (was.state === s.state && s.message === was.message) return;
+      r.held = false;
+      r.turn = false;
+      if (s.state === 'error') emit({ event: 'PostToolUseFailure', session, cowork: true, at });
+      const m = s.message && LIMIT_RE.exec(s.message);
+      emit({ event: 'Stop', session, limit: m ? m[0] : undefined, cowork: true, at });
     }
   }
 
   scan();
   tailLogs();
-  return setInterval(() => { scan(); tailLogs(); }, SCAN_MS);
+  readStatuses();
+  return setInterval(() => { scan(); tailLogs(); readStatuses(); }, SCAN_MS);
 }
 
 module.exports = { startCowork, toEvents };

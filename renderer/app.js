@@ -172,7 +172,9 @@ api.onClaude((ev) => {
       sessions.set(id, { status: 'working', tool: ev.tool, at: Date.now() });
       if (!turn.start) turn.start = Date.now();
       turn.tools++;
-      if (!prev || prev.tool !== ev.tool || prev.status !== 'working') {
+      // Cowork's status file says what it's up to: she reads it out
+      if (ev.cowork && ev.message) say(ev.message, 4000);
+      else if (!prev || prev.tool !== ev.tool || prev.status !== 'working') {
         const aloud = THINK_ALOUD[toolKind(ev.tool)];
         say(aloud && Math.random() < 0.35 ? pick(aloud) : toolLine(ev.tool), 4000);
       }
