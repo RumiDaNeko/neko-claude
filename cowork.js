@@ -14,6 +14,7 @@ const QUIET_END_MS = 20 * 60 * 1000; // no activity this long: the session is ov
 const MAX_DEPTH = 9;
 const SKIP_DIRS = new Set(['skills-plugin', 'node_modules', '.git', 'vm_bundles']);
 const LIMIT_RE = /You['’]ve hit your [^\n"]*?limit[^\n"]*/;
+const STATUS_TALK_MS = 10 * 1000; // a status message that keeps changing (a counter, say): she reads out one every this often
 const REMOTE_DONE_MS = 30 * 1000; // a cloud task we only see through its commands: this long without one and the turn's over
 
 function logFiles() {
@@ -198,8 +199,11 @@ function startCowork(emit) {
         try { for (const s of JSON.parse(fs.readFileSync(f, 'utf8')).entries || []) for (const folder of s.folders || []) spaces.push([folder, s.sessionId]); } catch { /* half-written */ }
       }
     }
-    if (process.env.CLAUDE_CHAN_COWORK_FOLDER) spaces.push([process.env.CLAUDE_CHAN_COWORK_FOLDER, 'session_test']); // for testing
-    for (const [folder, id] of spaces) {
+    if (process.env.CLAUDE_CHAN_COWORK_FOLDER) spaces.push([process.env.CLAUDE_CHAN_COWORK_FOLDER, process.env.CLAUDE_CHAN_COWORK_SESSION || 'session_test']); // for testing
+    // a folder given to several tasks belongs to the newest one (the list is oldest first)
+    const owners = new Map();
+    for (const [folder, id] of spaces) owners.set(path.resolve(folder).toLowerCase(), [folder, id]);
+    for (const [folder, id] of owners.values()) {
       // the cloud session's id is the VM user's name too: same session as its commands
       const session = 'cowork:rcw-' + String(id).replace(/^session_/, '').toLowerCase();
       for (const name of ['clawde-status.json', 'status.json']) {
@@ -229,7 +233,11 @@ function startCowork(emit) {
       if (!r.turn) emit({ event: 'UserPromptSubmit', session, cowork: true, at });
       r.turn = true;
       r.held = true; // it says it's working: no calling it done just because it's quiet
-      if (s.message !== was.message || s.tool !== was.tool || was.state !== 'working') emit({ event: 'PreToolUse', session, tool: s.tool || 'Task', message: s.message, cowork: true, at });
+      const fresh = was.state !== 'working' || s.tool !== was.tool;
+      if (fresh || (s.message !== was.message && at - (r.talked || 0) > STATUS_TALK_MS)) {
+        r.talked = at;
+        emit({ event: 'PreToolUse', session, tool: s.tool || 'Task', message: s.message, cowork: true, at });
+      }
     } else if (s.state === 'waiting') {
       r.held = true;
       if (was.state !== 'waiting' || s.message !== was.message) emit({ event: 'Notification', session, message: s.message || 'Cowork needs you', cowork: true, at });
