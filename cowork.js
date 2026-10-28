@@ -1,6 +1,8 @@
 // Claude Cowork (agent mode in the Claude desktop app) runs Claude Code inside a VM, where our hooks
 // can't reach her. Instead we tail the session transcripts the desktop app keeps on this machine and
 // turn new entries into the same events hook.mjs would send.
+// Most Cowork tasks run Claude in the cloud, though, and only their commands run here (in the VM, with
+// your folder mounted): for those we read the VM daemon's log, which notes each command and its exit code.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -10,6 +12,17 @@ const QUIET_END_MS = 20 * 60 * 1000; // no activity this long: the session is ov
 const MAX_DEPTH = 9;
 const SKIP_DIRS = new Set(['skills-plugin', 'node_modules', '.git', 'vm_bundles']);
 const LIMIT_RE = /You['’]ve hit your [^\n"]*?limit[^\n"]*/;
+const REMOTE_DONE_MS = 30 * 1000; // a cloud task we only see through its commands: this long without one and the turn's over
+
+function logFiles() {
+  const home = os.homedir();
+  const local = process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local');
+  return [
+    ...(process.env.CLAUDE_CHAN_COWORKD_LOG ? [process.env.CLAUDE_CHAN_COWORKD_LOG] : []), // for testing
+    path.join(local, 'Claude', 'logs', 'coworkd.log'),
+    path.join(home, 'Library', 'Logs', 'Claude', 'coworkd.log'),
+  ].filter((p) => fs.existsSync(p));
+}
 
 function roots() {
   const home = os.homedir();
@@ -115,8 +128,58 @@ function startCowork(emit) {
     }
   }
 
+  // ---- cloud tasks: their commands, from the VM daemon's log ----
+  const logs = new Map(); // log file -> bytes already read
+  const procs = new Map(); // VM process -> session
+  const remote = new Map(); // session -> { running, at } (for telling when the turn is over)
+  function logLine(line) {
+    let m = /\[process:(\S+)\] spawn: name=(\S+)/.exec(line);
+    if (m) {
+      const session = 'cowork:' + m[2];
+      procs.set(m[1], session);
+      if (!live.has(session)) emit({ event: 'SessionStart', session, cowork: true, at: Date.now() });
+      if (!remote.get(session)?.turn) emit({ event: 'UserPromptSubmit', session, cowork: true, at: Date.now() });
+      live.set(session, Date.now());
+      remote.set(session, { turn: true, running: (remote.get(session)?.running || 0) + 1, at: Date.now() });
+      emit({ event: 'PreToolUse', session, tool: 'Bash', cowork: true, at: Date.now() });
+      return;
+    }
+    m = /\[process:(\S+)\] direct child exited: code=(-?\d+)/.exec(line);
+    if (m && procs.has(m[1])) {
+      const session = procs.get(m[1]);
+      procs.delete(m[1]);
+      const r = remote.get(session);
+      if (r) { r.running = Math.max(0, r.running - 1); r.at = Date.now(); }
+      live.set(session, Date.now());
+      emit({ event: m[2] === '0' ? 'PostToolUse' : 'PostToolUseFailure', session, cowork: true, at: Date.now() });
+    }
+  }
+  function tailLogs() {
+    for (const file of logFiles()) {
+      let size;
+      try { size = fs.statSync(file).size; } catch { continue; }
+      let from = logs.get(file);
+      logs.set(file, size);
+      if (from === undefined) continue; // what was logged before she started is history
+      if (size < from) from = 0; // the log was rotated
+      if (size === from) continue;
+      try {
+        const buf = Buffer.alloc(size - from);
+        const fd = fs.openSync(file, 'r');
+        try { fs.readSync(fd, buf, 0, buf.length, from); } finally { fs.closeSync(fd); }
+        for (const line of buf.toString('utf8').split('\n')) logLine(line);
+      } catch { /* next time */ }
+    }
+    // no Stop comes through the log: a quiet spell with nothing running means Claude's done
+    const now = Date.now();
+    for (const [session, r] of remote) {
+      if (r.turn && !r.running && now - r.at > REMOTE_DONE_MS) { r.turn = false; emit({ event: 'Stop', session, cowork: true, at: now }); }
+    }
+  }
+
   scan();
-  return setInterval(scan, SCAN_MS);
+  tailLogs();
+  return setInterval(() => { scan(); tailLogs(); }, SCAN_MS);
 }
 
 module.exports = { startCowork, toEvents };

@@ -29,7 +29,7 @@ On Windows 11 the tray icon starts in the hidden-icons overflow (^); drag it ont
 
 ### Claude Cowork 🤝
 
-She works with Cowork too, no setup needed: while she's running she watches the Cowork sessions the Claude desktop app keeps on this machine and reacts to them like to Claude Code (tool calls, tests, "Done!", running out of quota). A Cowork task opens with "Cowork time! Let's get it done~ 🤝" (and the **Coworkers** achievement). A Cowork session that's been quiet for 20 minutes is simply forgotten, without the goodbye walk. Cowork can't launch her, so start her yourself (or have a Claude Code session do it).
+She works with Cowork too, no setup needed, as long as the task can use a folder on this computer. Most Cowork tasks run Claude in the cloud and only run their commands here, in the Cowork VM: she sees those commands (and whether they worked) and calls it done after 30 quiet seconds. Tasks whose whole session runs on this machine she follows like Claude Code (tool calls, tests, "Done!", running out of quota). Purely cloud tasks with no local folder never touch this PC, so she can't see them. A Cowork task opens with "Cowork time! Let's get it done~ 🤝" (and the **Coworkers** achievement). A Cowork session that's been quiet for 20 minutes is simply forgotten, without the goodbye walk. Cowork can't launch her, so start her yourself (or have a Claude Code session do it).
 
 ## While Claude works
 
@@ -124,7 +124,7 @@ Now and then she leaps onto a window's title bar and sits there swinging her leg
 
 The hooks run `hook.mjs`, which forwards each Claude Code event to `127.0.0.1:47321` with a 400 ms timeout. If she isn't running, nothing happens and Claude Code is unaffected.
 
-Cowork runs Claude's code in a VM where those hooks can't reach her, so `cowork.js` reads Cowork's session transcripts instead: every 1.5 s it looks under the desktop app's `local-agent-mode-sessions` folder for `.jsonl` transcripts that grew, and turns the new entries into the same events (a prompt, a tool call, a tool result, the end of a turn). Transcripts already there when she starts are left alone. The transcript format isn't a public API, so a Claude desktop update could quietly break this part.
+Cowork runs Claude's code in a VM where those hooks can't reach her, so `cowork.js` watches from outside, every 1.5 s. For cloud tasks it reads the VM daemon's log (`coworkd.log` in the desktop app's logs folder), which notes every command the task runs and its exit code. For sessions that run locally it reads the `.jsonl` transcripts under the app's `local-agent-mode-sessions` folder. Either way the new entries become the same events (a prompt, a tool call, a tool result, the end of a turn), and anything written before she started is left alone. Neither the log nor the transcripts are a public API, so a Claude desktop update could quietly break this part.
 
 The same bridge takes her menu commands, handy for scripts and testing:
 
