@@ -11,6 +11,8 @@ const path = require('path');
 
 const SCAN_MS = 1500;
 const QUIET_END_MS = 20 * 60 * 1000; // no activity this long: the session is over (quietly: she doesn't leave for it)
+// a task that finished and then stayed quiet this long is over for real: her sister heads home (or she goes back to the tray)
+const DONE_END_MS = Number(process.env.CLAUDE_CHAN_COWORK_DONE_MS) || 60 * 1000;
 const MAX_DEPTH = 9;
 const SKIP_DIRS = new Set(['skills-plugin', 'node_modules', '.git', 'vm_bundles']);
 const LIMIT_RE = /You['’]ve hit your [^\n"]*?limit[^\n"]*/;
@@ -83,7 +85,13 @@ function toEvents(entry) {
   return out;
 }
 
-function startCowork(emit) {
+function startCowork(send) {
+  const doneAt = new Map(); // session -> when its last turn ended
+  const emit = (ev) => {
+    if (ev.event === 'Stop') doneAt.set(ev.session, Date.now());
+    else if (ev.event !== 'SessionEnd') doneAt.delete(ev.session);
+    send(ev);
+  };
   const sizes = new Map(); // transcript -> bytes already read
   const partial = new Map(); // transcript -> an unfinished last line
   const live = new Map(); // session -> last activity
@@ -125,9 +133,13 @@ function startCowork(emit) {
     first = false;
     const now = Date.now();
     for (const [session, at] of live) {
-      if (now - at < QUIET_END_MS) continue;
+      const done = doneAt.get(session);
+      const finished = done && now - done > DONE_END_MS;
+      if (!finished && now - at < QUIET_END_MS) continue;
       live.delete(session);
-      emit({ event: 'SessionEnd', session, cowork: true, quiet: true, at: now });
+      remote.delete(session);
+      doneAt.delete(session);
+      emit({ event: 'SessionEnd', session, cowork: true, quiet: !finished, at: now });
     }
   }
 

@@ -39,7 +39,7 @@ If this task has a folder on my computer, keep a file named clawde-status.json a
 
 She reads the message out loud while it works ("Drafting the summary"), calls you when it's waiting, and cheers when it's done. She only looks in folders a Cowork task was given, and only at changes made after she started; a plain `status.json` with `"source":"cowork"` works too.
 
-A Cowork task opens with "Cowork time! Let's get it done~ 🤝" (and the **Coworkers** achievement). A Cowork session that's been quiet for 20 minutes is simply forgotten, without the goodbye walk. Cowork can't launch her, so start her yourself (or have a Claude Code session do it).
+A Cowork task opens with "Cowork time! Let's get it done~ 🤝" (and the **Coworkers** achievement). When a Cowork task is done and stays quiet for a minute, its session ends like a Claude Code one: if her sister was looking after it, she waves and goes home (and if it was the only thing going on, clawde chan heads back to the tray). Pick the task up again and she comes right back. A task that never says it's done is forgotten quietly after 20 minutes, without the goodbye walk. Cowork can't launch her, so start her yourself (or have a Claude Code session do it).
 
 ## While Claude works
 
