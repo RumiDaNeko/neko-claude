@@ -64,7 +64,7 @@ A thought bubble beside her shows what Claude is up to, with a little animated i
 - **Long runs:** after 3 minutes she takes a coffee break; after an hour of coding she holds out a glass of water and tells you to take a break (click her to take it, or she drinks it herself).
 - **Out of juice 🪫:** when Claude hits its usage limit she notices (via the `StopFailure` hook and the limit message) and her badge turns into a blinking battery with a countdown to the reset ("2h 14m"). She offers a game while you wait, nudges you to drink water or stretch, warns you not to even *think* about ChatGPT, then naps until the reset (wake her and she mumbles "…is the quota back yet?"). At the reset time she jumps up: "⏰ QUOTA'S BACK! ⚡ Let's gooo!". The countdown survives restarts. Re-run `npm run install-hooks:global` after updating to get the new hook.
 - **Mid-air:** if you're holding her when Claude changes status she reacts anyway: typing while dangling, wriggling to be put down when Claude needs you, cheering when it's done.
-- **Her little sister:** open a second Claude session while the first is still going and her little sister (blue hair) walks in for it, reacts to that session only, and waves at her big sister now and then. Only one sister at a time. When the sister's session ends she heads home; if clawde chan's session ends first, she takes over her sister's.
+- **Her little sister:** open a second Claude session while the first is still going and her little sister (blue hair) walks in for it, reacts to that session only, and waves at her big sister now and then. Only one sister at a time. When the sister's session ends she heads home; if clawde chan's session ends first, she takes over her sister's. Rather have just one? Untick **Little sister helps** in her menu: her sister goes home and clawde chan looks after every session herself.
 
 ## Playing with her
 
@@ -126,6 +126,7 @@ Now and then she leaps onto a window's title bar and sits there swinging her leg
 | No window climbing | `CLAUDE_CHAN_PERCH=0` |
 | Bridge port (default 47321) | `CLAUDE_CHAN_PORT` |
 | Sounds (synthesized blips, no audio files; off by default) | menu → **Sounds** |
+| No little sister (one clawde for every session) | menu → **Little sister helps**, or `CLAUDE_CHAN_SISTER=0` |
 | Glasses style: `round`, `half` or `square` | `GLASSES` in `renderer/app.js` |
 | Moonwalk lines | `MOONWALK_LINES` in `renderer/app.js` |
 | App icon | `assets/icon.svg`, then `npm run build:icon` (regenerates `icon.png`, `tray.png`, `icon.ico`) |

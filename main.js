@@ -108,6 +108,7 @@ function checkJealous() {
 }
 let glasses = false;
 let sounds = false;
+let sisterOn = process.env.CLAUDE_CHAN_SISTER !== '0'; // a second session brings her little sister along
 // menu toggles survive restarts
 const prefsFile = () => path.join(app.getPath('userData'), 'prefs.json');
 function loadPrefs() {
@@ -117,10 +118,11 @@ function loadPrefs() {
     if (typeof p.wander === 'boolean') wander = p.wander;
     if (typeof p.inTaskbar === 'boolean') inTaskbar = p.inTaskbar;
     if (typeof p.sounds === 'boolean') sounds = p.sounds;
+    if (typeof p.sister === 'boolean' && process.env.CLAUDE_CHAN_SISTER !== '0') sisterOn = p.sister;
   } catch { /* first run */ }
 }
 function savePrefs() {
-  try { fs.writeFileSync(prefsFile(), JSON.stringify({ glasses, wander, inTaskbar, sounds })); } catch { /* not fatal */ }
+  try { fs.writeFileSync(prefsFile(), JSON.stringify({ glasses, wander, inTaskbar, sounds, sister: sisterOn })); } catch { /* not fatal */ }
 }
 let windows = []; // other apps' windows, front to back (DIP), for perching on title bars
 
@@ -270,7 +272,7 @@ function routeClaude(ev) {
   if (!who) {
     const mainBusy = [...owner.values()].includes('main');
     // a second session opening while her first is still going: her little sister comes along for it
-    who = ev.event === 'SessionStart' && mainBusy && !alive(sister) ? 'sister' : 'main';
+    who = ev.event === 'SessionStart' && mainBusy && sisterOn && !alive(sister) ? 'sister' : 'main';
     if (who === 'sister') sister = createChar(true);
     owner.set(id, who);
   }
@@ -318,6 +320,7 @@ function menuTemplate() {
     { type: 'separator' },
     { label: 'Let her wander', type: 'checkbox', checked: wander, click: (i) => { wander = i.checked; sendAll('command', wander ? 'wander-on' : 'wander-off'); savePrefs(); refreshTrayMenu(); } },
     { label: 'Sounds', type: 'checkbox', checked: sounds, click: (i) => { sounds = i.checked; sendAll('command', sounds ? 'sound-on' : 'sound-off'); savePrefs(); refreshTrayMenu(); } },
+    { label: 'Little sister helps', type: 'checkbox', checked: sisterOn, click: (i) => { sisterOn = i.checked; if (!sisterOn) sendSisterHome(); savePrefs(); refreshTrayMenu(); } },
     { label: 'Show in taskbar', type: 'checkbox', checked: inTaskbar, click: (i) => { inTaskbar = i.checked; main.win.setSkipTaskbar(!inTaskbar); savePrefs(); refreshTrayMenu(); } },
     { label: 'Reset Claude status', click: () => sendAll('command', 'reset') },
     { label: 'I use ChatGPT… 👀', click: () => send('command', 'chatgpt') },
@@ -348,6 +351,17 @@ function treats(give) {
     { label: 'Water 💧', click: fn('treat:water') },
     { label: 'Fish 🐟', click: fn('treat:fish') },
   ];
+}
+
+// "Little sister helps" turned off: clawde chan takes over her sister's sessions and her sister heads home
+function sendSisterHome() {
+  if (!alive(sister)) return;
+  for (const [sid, w] of owner) {
+    if (w !== 'sister') continue;
+    owner.set(sid, 'main');
+    send('claude', { event: 'Adopt', session: sid });
+  }
+  sendTo(sister, 'command', 'leave');
 }
 
 // Claude Code hooks POST JSON here (see hook.mjs).
