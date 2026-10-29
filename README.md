@@ -47,8 +47,8 @@ A Cowork task opens with "Cowork time! Let's get it done~ 🤝" (and the **Cowor
 | --- | --- |
 | Session starts | waves hello (and has a coffee, if it's the first one of the morning) |
 | You send a prompt | sits on her cushion with the laptop, glasses on, fired up 🔥 |
-| A tool runs | types away, eyes on the screen, glancing up at you now and then. How she works follows the tool: reading, her eyes run along the lines; searching, she sweeps a magnifying glass over the screen; running a command, she clasps her hands under her chin and watches; thinking it over, she props her cheek on her fist |
-| A long turn | every so often she takes a big stretch, or cracks her knuckles and dives back in |
+| A tool runs | types away, eyes on the screen, glancing up at you now and then. How she works follows the tool: reading, her eyes run along the lines; searching, she sweeps a magnifying glass over the screen; running a command, she grips both sides of the laptop and leans in to watch; thinking it over, she props her cheek on her fist |
+| A long turn | every so often she takes a big stretch, or shakes out her hands and dives back in |
 | A tool fails | jolts, sweats and types twice as fast ("Eek! An error!"); a few in a row and she's in tears |
 | Something scary (`rm -rf`, `git push --force`, `git reset --hard`…) | "Are you sure about that?! 😰" |
 | Tests run / pass / fail | fingers crossed, then "All green! 🟢" or "Red tests… 😭" |

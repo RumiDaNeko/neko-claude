@@ -1190,6 +1190,7 @@ function say(text, ms = 3000, sticky = false) {
   clearTimeout(bubbleTimer);
   bubbleText.textContent = text;
   bubble.title = text;
+  bubble.classList.toggle('long', [...String(text)].length > 26);
   bubble.classList.toggle('urgent', sticky);
   bubble.classList.remove('hidden');
   bubbleSticky = sticky;
@@ -1222,7 +1223,7 @@ function updateWorkStyle(pose, kind, now) {
   if (want !== state.wkWant) { state.wkWant = want; state.wkSince = now; }
   if (now - state.wkSince > 600 || !want) state.wk = want;
   for (const w of WORK_STYLES) charEl.classList.toggle('wk-' + w, w === state.wk);
-  // a long turn: stretch, or crack her knuckles and dive back in
+  // a long turn: stretch, or shake out her hands and dive back in
   if (pose !== 'work' || !turn.start || now - turn.start < FIDGET_AFTER_MS) return;
   if (!state.nextFidget) state.nextFidget = now + 8000 + Math.random() * 20000;
   if (now < state.nextFidget || state.fidget) return;
@@ -1232,7 +1233,7 @@ function updateWorkStyle(pose, kind, now) {
   flash(stretch ? 'wk-stretch' : 'wk-crack', stretch ? 2400 : 1500);
   setTimeout(() => { state.fidget = false; }, stretch ? 2400 : 1500);
   if (stretch) { setFace('uwu', 2200); say(pick(['Mmmh~ *stretch* 🙆', 'Nnnn— okay, back to it!', '*stretches* …still going~']), 2200); }
-  else say(pick(['*cracks knuckles* Let\'s go! 💪', '*crack crack* …okay!', 'Warming up the fingers~']), 1800);
+  else say(pick(['*shakes out her hands* Okay, let\'s go! 💪', '*wiggles fingers* …warmed up!', 'Shake shake~ back to it!']), 1800);
 }
 
 function updateBadge(pose) {
