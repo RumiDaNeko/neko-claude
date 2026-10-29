@@ -1183,8 +1183,7 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 
 /* ---------- typing: hands rest on the keyboard in front of the lid ---------- */
 #type-hands { display: none; }
-/* her arms go behind the lid; her paws show on the keyboard edge, tapping away */
-#char.work #type-hands { display: inline; }
+/* (the lid is solid, so her arms simply disappear behind it to the keyboard; these stay hidden) */
 #char.work .thL { animation: tapKey 0.24s ease-in-out infinite alternate; }
 #char.work .thR { animation: tapKey 0.24s ease-in-out -0.12s infinite alternate; }
 @keyframes tapKey { from { transform: translateY(0); } to { transform: translateY(-2.4px); } }
@@ -1215,16 +1214,12 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 #char.work.wk-term #armL { animation: gripL 0.45s ease-in-out infinite alternate; }
 #char.work.wk-term #armR { animation: gripR 0.45s ease-in-out infinite alternate; }
 #char.work.wk-term .rig .gaze { transform: translate(0, 7.5px); }
-#char.work.wk-term .thL { animation: gripPawL 0.45s ease-in-out infinite alternate; }
-#char.work.wk-term .thR { animation: gripPawR 0.45s ease-in-out infinite alternate; }
-@keyframes gripPawL { from { transform: translate(-17px, -12px); } to { transform: translate(-16.4px, -12.6px); } }
-@keyframes gripPawR { from { transform: translate(17px, -12px); } to { transform: translate(16.4px, -12.6px); } }
 @keyframes gripL { from { transform: rotate(25deg); } to { transform: rotate(27deg); } }
 @keyframes gripR { from { transform: rotate(-25deg); } to { transform: rotate(-27deg); } }
 /* a long turn: now and then a big stretch, or shaking out her hands */
 #char.work.wk-stretch #armL { animation: none; transform: rotate(132deg); }
 #char.work.wk-stretch #armR { animation: none; transform: rotate(-132deg); }
-#char.work.wk-stretch #type-hands, #char.work.wk-crack #type-hands { visibility: hidden; }
+#char.work.wk-stretch #type-hands { visibility: hidden; }
 #char.work.wk-stretch #body { animation: stretchUp 2.4s ease-in-out both; }
 @keyframes stretchUp { 0%, 100% { transform: translateY(16px); } 30%, 70% { transform: translateY(13px) scale(0.98, 1.05); } }
 #char.work.wk-crack #armL { animation: shakeOutL 0.16s ease-in-out infinite alternate; }
