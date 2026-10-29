@@ -27,6 +27,8 @@ From then on, starting a Claude Code session launches her if she isn't running (
 
 On Windows 11 the tray icon starts in the hidden-icons overflow (^); drag it onto the taskbar to keep it handy.
 
+On macOS she lives in the menu bar instead: no Dock icon (turn it on with **Show in Dock**), and she follows you to every Space and over fullscreen apps. Window climbing is Windows-only, so on a Mac she sticks to the bottom of the screen. The macOS support hasn't been tested on a real Mac yet; reports welcome.
+
 ### Claude Cowork 🤝
 
 She works with Cowork too, no setup needed, as long as the task can use a folder on this computer. Most Cowork tasks run Claude in the cloud and only run their commands here, in the Cowork VM: she sees those commands (and whether they worked) and calls it done after 30 quiet seconds. Tasks whose whole session runs on this machine she follows like Claude Code (tool calls, tests, "Done!", running out of quota). Purely cloud tasks with no local folder never touch this PC, so she can't see them.
@@ -124,6 +126,7 @@ Now and then she leaps onto a window's title bar and sits there swinging her leg
 | --- | --- |
 | Don't launch with Claude | `CLAUDE_CHAN_AUTOSTART=0` |
 | Ignore Claude Cowork | `CLAUDE_CHAN_COWORK=0` |
+| Taskbar button (Windows) / Dock icon (macOS) | menu → **Show in taskbar** / **Show in Dock** |
 | No window climbing | `CLAUDE_CHAN_PERCH=0` |
 | Bridge port (default 47321) | `CLAUDE_CHAN_PORT` |
 | Sounds (synthesized blips, no audio files; off by default) | menu → **Sounds** |

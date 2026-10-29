@@ -12,6 +12,7 @@ const WIN_W = 240;
 const WIN_H = 300;
 // .ico carries every size Windows asks for (tray, taskbar, alt-tab); png elsewhere
 const ICON = path.join(__dirname, 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png');
+const MAC = process.platform === 'darwin';
 
 let main = null; // { win, ready, pending, sister }
 let sister = null;
@@ -192,6 +193,8 @@ function createChar(isSister) {
   });
   c.win.on('closed', () => { if (c === sister) dropSister(); });
   c.win.setAlwaysOnTop(true, 'screen-saver');
+  // macOS: follow you to every Space, over fullscreen apps too
+  if (MAC) c.win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   c.win.setIgnoreMouseEvents(true, { forward: true });
   c.win.loadFile(path.join(__dirname, 'renderer', 'index.html'), isSister ? { query: { sister: '1' } } : undefined);
   return c;
@@ -321,7 +324,7 @@ function menuTemplate() {
     { label: 'Let her wander', type: 'checkbox', checked: wander, click: (i) => { wander = i.checked; sendAll('command', wander ? 'wander-on' : 'wander-off'); savePrefs(); refreshTrayMenu(); } },
     { label: 'Sounds', type: 'checkbox', checked: sounds, click: (i) => { sounds = i.checked; sendAll('command', sounds ? 'sound-on' : 'sound-off'); savePrefs(); refreshTrayMenu(); } },
     { label: 'Little sister helps', type: 'checkbox', checked: sisterOn, click: (i) => { sisterOn = i.checked; if (!sisterOn) sendSisterHome(); savePrefs(); refreshTrayMenu(); } },
-    { label: 'Show in taskbar', type: 'checkbox', checked: inTaskbar, click: (i) => { inTaskbar = i.checked; main.win.setSkipTaskbar(!inTaskbar); savePrefs(); refreshTrayMenu(); } },
+    { label: MAC ? 'Show in Dock' : 'Show in taskbar', type: 'checkbox', checked: inTaskbar, click: (i) => { inTaskbar = i.checked; main.win.setSkipTaskbar(!inTaskbar); showInDock(); savePrefs(); refreshTrayMenu(); } },
     { label: 'Reset Claude status', click: () => sendAll('command', 'reset') },
     { label: 'I use ChatGPT… 👀', click: () => send('command', 'chatgpt') },
     { type: 'separator' },
@@ -390,8 +393,18 @@ function startBridge() {
   server.listen(PORT, '127.0.0.1', () => console.log(`[claude-chan] listening on 127.0.0.1:${PORT}`));
 }
 
+// macOS: the Dock icon follows "Show in Dock" (off by default, like the Windows taskbar)
+function showInDock() {
+  if (!MAC || !app.dock) return;
+  if (inTaskbar) app.dock.show(); else app.dock.hide();
+}
+
 function createTray() {
-  tray = new Tray(nativeImage.createFromPath(ICON));
+  // the macOS menu bar wants a 16pt icon: the 32px tray.png at 2x stays crisp on Retina
+  const img = MAC
+    ? nativeImage.createFromBuffer(fs.readFileSync(path.join(__dirname, 'assets', 'tray.png')), { scaleFactor: 2 })
+    : nativeImage.createFromPath(ICON);
+  tray = new Tray(img);
   tray.setToolTip('clawde chan');
   refreshTrayMenu();
   tray.on('click', () => (away && !jealous ? callBack() : tray.popUpContextMenu()));
@@ -409,6 +422,7 @@ if (!app.requestSingleInstanceLock()) {
 } else {
   app.whenReady().then(() => {
     loadPrefs();
+    showInDock();
     loadAchievements();
     main = createChar(false);
     startBridge();
