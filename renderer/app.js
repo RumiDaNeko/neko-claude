@@ -102,6 +102,10 @@ const THINK_ALOUD = {
   plan: ['Plan first, then code 📝', 'Making a little checklist~'],
 };
 const toolLine = (tool) => (TOOL_LINES.find(([re]) => re.test(tool || '')) || [, 'Working on it…'])[1];
+// how she works for each kind of tool (anything else: plain typing)
+const WORK_STYLE = { think: 'think', plan: 'think', agent: 'think', read: 'read', web: 'read', search: 'search', term: 'term' };
+const WORK_STYLES = ['think', 'read', 'search', 'term'];
+const FIDGET_AFTER_MS = 45 * 1000; // a turn this long: she stretches or cracks her knuckles now and then
 
 function claudeStatus() {
   const now = Date.now();
@@ -1212,6 +1216,25 @@ function fitBadge() {
   badgeEl.style.setProperty('--wx', (x + left + star + gap + tw / 2 - 173) + 'px');
   badgeEl.style.setProperty('--dx', (x + w / 2 - 172) + 'px');
 }
+// her working style follows the tool, but only once it's held a moment (Claude hops between tools fast)
+function updateWorkStyle(pose, kind, now) {
+  const want = pose === 'work' && !state.fidget ? WORK_STYLE[kind] || '' : '';
+  if (want !== state.wkWant) { state.wkWant = want; state.wkSince = now; }
+  if (now - state.wkSince > 600 || !want) state.wk = want;
+  for (const w of WORK_STYLES) charEl.classList.toggle('wk-' + w, w === state.wk);
+  // a long turn: stretch, or crack her knuckles and dive back in
+  if (pose !== 'work' || !turn.start || now - turn.start < FIDGET_AFTER_MS) return;
+  if (!state.nextFidget) state.nextFidget = now + 8000 + Math.random() * 20000;
+  if (now < state.nextFidget || state.fidget) return;
+  state.nextFidget = now + 35000 + Math.random() * 30000;
+  const stretch = Math.random() < 0.55;
+  state.fidget = true;
+  flash(stretch ? 'wk-stretch' : 'wk-crack', stretch ? 2400 : 1500);
+  setTimeout(() => { state.fidget = false; }, stretch ? 2400 : 1500);
+  if (stretch) { setFace('uwu', 2200); say(pick(['Mmmh~ *stretch* 🙆', 'Nnnn— okay, back to it!', '*stretches* …still going~']), 2200); }
+  else say(pick(['*cracks knuckles* Let\'s go! 💪', '*crack crack* …okay!', 'Warming up the fingers~']), 1800);
+}
+
 function updateBadge(pose) {
   const now = Date.now();
   const claude = claudeStatus();
@@ -1228,6 +1251,7 @@ function updateBadge(pose) {
   if (['sulk', 'exit', 'sleep', 'topple', 'yeet'].includes(pose) && kind !== 'battery') kind = null;
   charEl.classList.toggle('badge', !!kind);
   for (const k of BADGE_KINDS) charEl.classList.toggle('tk-' + k, k === kind);
+  updateWorkStyle(pose, claude.status === 'working' ? kind : null, now);
   badgeText.classList.toggle('spin-word', kind === 'think'); // words run longer than the counter
   if (kind && badgeText.textContent !== text) {
     badgeText.textContent = text;
