@@ -1,0 +1,14 @@
+name = "clawde-sync"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+# from https://discord.com/developers/applications -> your app -> OAuth2
+DISCORD_CLIENT_ID = "put-your-client-id-here"
+# DISCORD_CLIENT_SECRET is a secret: npx wrangler secret put DISCORD_CLIENT_SECRET
+
+[[d1_databases]]
+binding = "DB"
+database_name = "clawde-sync"
+# from: npx wrangler d1 create clawde-sync
+database_id = "put-your-database-id-here"

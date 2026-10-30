@@ -6,8 +6,11 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { startCowork } = require('./cowork');
+const { createSync } = require('./sync');
 
 const PORT = Number(process.env.CLAUDE_CHAN_PORT || 47321);
+// achievement sync server (server/worker.js); empty: sync is off
+const SYNC_API = process.env.CLAUDE_CHAN_SYNC_API || '';
 const WIN_W = 240;
 const WIN_H = 300;
 // .ico carries every size Windows asks for (tray, taskbar, alt-tab); png elsewhere
@@ -76,22 +79,45 @@ const ACHIEVEMENTS = [
   { id: 'limit', on: 'limit', icon: '🪫', name: 'Out of Juice', desc: 'Hit the usage limit with her' },
   { id: 'patience', on: 'patience', icon: '⏳', name: 'Patience', desc: 'Wait out a reset with her' },
 ];
-let ach = { got: {}, counts: {}, kinds: {} };
+// counts/kinds are this device's; others is what your other devices add (from the sync server)
+let ach = { got: {}, counts: {}, kinds: {}, others: { counts: {}, kinds: {} } };
 const achFile = () => path.join(app.getPath('userData'), 'achievements.json');
 function loadAchievements() {
-  try { ach = { got: {}, counts: {}, kinds: {}, ...JSON.parse(fs.readFileSync(achFile(), 'utf8')) }; } catch { /* first run */ }
+  try { ach = { ...ach, ...JSON.parse(fs.readFileSync(achFile(), 'utf8')) }; } catch { /* first run */ }
 }
+function saveAchievements() {
+  try { fs.writeFileSync(achFile(), JSON.stringify(ach)); } catch { /* not fatal */ }
+}
+const totalOf = (event) => (ach.counts[event] || 0) + (ach.others.counts[event] || 0);
+const kindsOf = (event) => new Set([...(ach.kinds[event] || []), ...(ach.others.kinds[event] || [])]);
+// everything that's now earned (on this device or all of them together) but not yet unlocked
+function unlockReady() {
+  const fresh = ACHIEVEMENTS.filter((a) => !ach.got[a.id]
+    && (a.kinds ? kindsOf(a.on).size >= a.kinds : totalOf(a.on) >= (a.need || 1)));
+  for (const a of fresh) ach.got[a.id] = Date.now();
+  return fresh.map(({ icon, name, desc }) => ({ icon, name, desc }));
+}
+// signed-in Discord account for sync, and this device's id (sync.json in the user-data folder)
+const syncFile = () => path.join(app.getPath('userData'), 'sync.json');
+const creds = { token: '', name: '', device: '' };
+function loadCreds() {
+  try { Object.assign(creds, JSON.parse(fs.readFileSync(syncFile(), 'utf8'))); } catch { /* not signed in */ }
+  if (!creds.device) { creds.device = require('crypto').randomUUID(); saveCreds(); }
+}
+function saveCreds() {
+  try { fs.writeFileSync(syncFile(), JSON.stringify(creds), { mode: 0o600 }); } catch { /* not fatal */ }
+}
+let sync = null;
 // one event from her: count it, unlock whatever it completes, and tell her which ones are new (for the toast)
 function recordAchievement(event, variant) {
   if (typeof event !== 'string' || !ACHIEVEMENTS.some((a) => a.on === event)) return [];
   ach.counts[event] = (ach.counts[event] || 0) + 1;
   if (typeof variant === 'string') ach.kinds[event] = [...new Set([...(ach.kinds[event] || []), variant])];
-  const fresh = ACHIEVEMENTS.filter((a) => a.on === event && !ach.got[a.id]
-    && (a.kinds ? (ach.kinds[event] || []).length >= a.kinds : ach.counts[event] >= (a.need || 1)));
-  for (const a of fresh) ach.got[a.id] = Date.now();
-  try { fs.writeFileSync(achFile(), JSON.stringify(ach)); } catch { /* not fatal */ }
+  const fresh = unlockReady();
+  saveAchievements();
   if (fresh.length) refreshTrayMenu();
-  return fresh.map(({ icon, name, desc }) => ({ icon, name, desc }));
+  if (sync) sync.soon(fresh.length ? 3000 : 60000);
+  return fresh;
 }
 function achievementsMenu() {
   const n = ACHIEVEMENTS.filter((a) => ach.got[a.id]).length;
@@ -320,6 +346,7 @@ function menuTemplate() {
     { label: 'How are you feeling?', click: () => send('command', 'mood') },
     { label: 'Give her…', submenu: treats((cmd) => send('command', cmd)) },
     achievementsMenu(),
+    sync ? sync.menu() : { label: 'Sync achievements', visible: false },
     { label: 'Wear glasses', type: 'checkbox', checked: glasses, click: (i) => { glasses = i.checked; send('command', glasses ? 'glasses-on' : 'glasses-off'); savePrefs(); refreshTrayMenu(); } },
     { type: 'separator' },
     { label: 'Let her wander', type: 'checkbox', checked: wander, click: (i) => { wander = i.checked; sendAll('command', wander ? 'wander-on' : 'wander-off'); savePrefs(); refreshTrayMenu(); } },
@@ -388,6 +415,13 @@ function startBridge() {
       return;
     }
     if (req.method === 'GET' && req.url === '/ping') return void res.writeHead(200).end('claude-chan');
+    // back from Discord sign-in (via the sync server): the browser lands here with the token
+    if (req.method === 'GET' && req.url.startsWith('/auth?') && sync) {
+      const problem = sync.onAuth(new URL(req.url, 'http://127.0.0.1').searchParams);
+      const msg = problem || 'Signed in! clawde chan syncs your achievements now. You can close this tab 🐾';
+      return void res.writeHead(problem ? 400 : 200, { 'content-type': 'text/html; charset=utf-8' })
+        .end(`<!doctype html><meta charset="utf-8"><title>clawde chan</title><body style="font:16px system-ui;display:grid;place-items:center;height:90vh;background:#fdf1ea;color:#6b4434"><p>${msg}</p>`);
+    }
     res.writeHead(404).end();
   });
   server.on('error', (err) => console.error('[claude-chan] bridge error:', err.message));
@@ -425,6 +459,14 @@ if (!app.requestSingleInstanceLock()) {
     loadPrefs();
     showInDock();
     loadAchievements();
+    loadCreds();
+    sync = createSync({
+      api: SYNC_API, port: PORT, creds, saveCreds,
+      getAch: () => ach, saveAch: saveAchievements, unlockReady,
+      onChange: refreshTrayMenu,
+      tell: (cmd) => sendTo(main, 'command', cmd),
+    });
+    sync.start();
     main = createChar(false);
     startBridge();
     // Cowork sessions in the Claude desktop app (CLAUDE_CHAN_COWORK=0 turns this off)

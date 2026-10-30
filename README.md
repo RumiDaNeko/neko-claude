@@ -98,6 +98,23 @@ Right-click her (or click the tray icon) for the menu.
 
 53 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in `achievements.json` in the app's user-data folder; the list lives in `ACHIEVEMENTS` in `main.js`.
 
+### Sync across devices (Discord sign-in)
+
+Running her on more than one computer? **Sync achievements: sign in with Discord…** in her menu opens Discord in your browser. Approve it, and she says hi with your Discord name. From then on, every device signed in to the same Discord account shares its achievements:
+- An unlock on one device shows up on the others, keeping the date you first got it.
+- Counts add up across devices, so 60 finished tasks here and 40 on your laptop unlock **Centurion**.
+- She syncs a few seconds after an unlock, a minute after other progress, and every 10 minutes.
+
+**Sign out** in the same menu forgets the token, and your achievements stay on that device. Discord only shares your user id, name and avatar ("identify" scope); the server stores those, a hash of each device's token, and your achievement progress.
+
+The menu item only shows up once the app knows a sync server (`CLAUDE_CHAN_SYNC_API`). To run your own on Cloudflare's free tier:
+
+1. **Discord app:** at https://discord.com/developers/applications, create an application. Under **OAuth2**, copy the Client ID and Client Secret, and add the redirect `https://<your-worker>.workers.dev/callback`.
+2. **Database:** in `server/`, run `npx wrangler d1 create clawde-sync` and put the `database_id` it prints into `wrangler.toml`, along with your Client ID.
+3. **Tables:** run `npx wrangler d1 execute clawde-sync --remote --file=schema.sql`.
+4. **Secret:** run `npx wrangler secret put DISCORD_CLIENT_SECRET`.
+5. **Deploy:** run `npx wrangler deploy`, then start her with `CLAUDE_CHAN_SYNC_API=https://<your-worker>.workers.dev`.
+
 **Mood:** pats, treats, finding her, finished work and passing tests cheer her up; teasing, errors and being ignored wear her down. A happy clawde chan hums and dances more; a grumpy one mopes and has a shorter fuse. Her mood and the menu toggles are remembered across restarts.
 
 ## When Claude is idle
@@ -130,6 +147,7 @@ Now and then she leaps onto a window's title bar and sits there swinging her leg
 | Taskbar button (Windows) / Dock icon (macOS) | menu → **Show in taskbar** / **Show in Dock** |
 | No window climbing | `CLAUDE_CHAN_PERCH=0` |
 | Bridge port (default 47321) | `CLAUDE_CHAN_PORT` |
+| Achievement sync server (see *Sync across devices*) | `CLAUDE_CHAN_SYNC_API` |
 | Sounds (synthesized blips, no audio files; off by default) | menu → **Sounds** |
 | No little sister (one clawde for every session) | menu → **Little sister helps**, or `CLAUDE_CHAN_SISTER=0` |
 | Glasses style: `round`, `half` or `square` | `GLASSES` in `renderer/app.js` |
@@ -163,6 +181,8 @@ Parses every script, makes sure no class that `app.js` puts on her (poses, state
 - `renderer/style.css`: art styling and every pose and animation
 - `renderer/app.js`: behavior: Claude reactions, wandering, physics, tricks, window climbing, idle timers
 - `hook.mjs`, `install-hooks.mjs`: the Claude Code side
+- `sync.js`: achievement sync (Discord sign-in through the bridge's `/auth`, upload and merge)
+- `server/`: the sync server, a Cloudflare Worker with a D1 database (`worker.js`, `schema.sql`, `wrangler.toml`)
 - `cowork.js`: the Claude Cowork side (tails its session transcripts)
 - `scripts/check.js`: the checks above
 - `scripts/windows.ps1`: lists open windows for perching (Windows)

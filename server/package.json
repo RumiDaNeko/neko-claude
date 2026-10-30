@@ -1,0 +1,8 @@
+{
+  "name": "clawde-sync",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  }
+}

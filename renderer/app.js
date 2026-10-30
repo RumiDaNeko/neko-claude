@@ -1155,6 +1155,9 @@ api.onCommand((cmd) => {
   if (cmd === 'kitty') startKitty(true);
   if (cmd === 'mood') tellMood();
   if (cmd === 'sound-on') soundOn = true;
+  // from the achievement sync: a line to say, or unlocks earned across your devices
+  if (cmd.startsWith('say:')) say(cmd.slice(4), 3400);
+  if (cmd.startsWith('toast:')) { try { for (const a of JSON.parse(cmd.slice(6))) toastQueue.push(a); nextToast(); } catch { /* ignore */ } }
   if (cmd === 'sound-off') soundOn = false;
   if (cmd.startsWith('treat:')) snack(cmd.slice(6));
   if (cmd === 'glasses-on') { state.alwaysGlasses = true; putOnGlasses(0); }
