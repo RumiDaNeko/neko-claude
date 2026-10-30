@@ -43,6 +43,17 @@ She reads the message out loud while it works ("Drafting the summary"), calls yo
 
 A Cowork task opens with "Cowork time! Let's get it done~ 🤝" (and the **Coworkers** achievement). When a Cowork task is done and stays quiet for a minute, its session ends like a Claude Code one: if her sister was looking after it, she waves and goes home (and if it was the only thing going on, clawde chan heads back to the tray). Pick the task up again and she comes right back. A task that never says it's done is forgotten quietly after 20 minutes, without the goodbye walk. Cowork can't launch her, so start her yourself (or have a Claude Code session do it).
 
+### Claude chat on claude.ai 💬
+
+She can follow normal chats on claude.ai too, on any plan including Free, through a small browser extension in `extension/`:
+
+1. **Chrome, Edge or Brave:** open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick the `extension` folder. (Chrome may warn about `background.scripts`; that key is there for Firefox and is harmless.)
+2. **Firefox:** open `about:debugging#/runtime/this-firefox` and choose **Load Temporary Add-on**, then pick `extension/manifest.json`. Temporary add-ons are removed when Firefox closes.
+
+While Claude writes a reply she thinks, then types along ("Writing you a reply~ ✍️"), and cheers when it's done. When the free plan runs out ("out of free messages until 3 PM") she shows her battery countdown. Each claude.ai tab counts as one session, so a chat next to a Claude Code task brings her little sister along.
+
+The extension only watches whether Claude is answering. It never reads or sends your messages or Claude's replies, and it only talks to her on `127.0.0.1`. She needs to be running already, because the extension can't start her. The Claude desktop app's own chat window has no way to plug in, so use claude.ai in the browser for this. If claude.ai changes its page and she stops reacting, the selectors to update are at the top of `extension/content.js`.
+
 ## While Claude works
 
 | Claude Code | clawde chan |
@@ -96,7 +107,7 @@ Right-click her (or click the tray icon) for the menu.
 
 ## Achievements 🏆
 
-53 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in `achievements.json` in the app's user-data folder; the list lives in `ACHIEVEMENTS` in `main.js`.
+54 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in `achievements.json` in the app's user-data folder; the list lives in `ACHIEVEMENTS` in `main.js`.
 
 ### Sync across devices (Discord sign-in)
 
@@ -181,6 +192,7 @@ Parses every script, makes sure no class that `app.js` puts on her (poses, state
 - `renderer/style.css`: art styling and every pose and animation
 - `renderer/app.js`: behavior: Claude reactions, wandering, physics, tricks, window climbing, idle timers
 - `hook.mjs`, `install-hooks.mjs`: the Claude Code side
+- `extension/`: the claude.ai browser extension (`content.js` watches the chat tab, `background.js` forwards to the bridge)
 - `sync.js`: achievement sync (Discord sign-in through the bridge's `/auth`, upload and merge)
 - `server/`: the sync server, a Cloudflare Worker with a D1 database (`worker.js`, `schema.sql`, `wrangler.toml`)
 - `cowork.js`: the Claude Cowork side (tails its session transcripts)

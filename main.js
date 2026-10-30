@@ -26,6 +26,7 @@ let laserOn = false; // a toy, not a setting: not saved
 // achievements: what unlocks them (an event the renderer reports, how many times or how many kinds) and what they're called
 const ACHIEVEMENTS = [
   { id: 'hello', on: 'hello', icon: '👋', name: 'Hello, World', desc: 'Meet clawde chan' },
+  { id: 'chat', on: 'chat', icon: '💬', name: 'Pen Pals', desc: 'Chat with Claude on claude.ai while she listens in' },
   { id: 'cowork', on: 'cowork', icon: '🤝', name: 'Coworkers', desc: 'Work with her through Claude Cowork' },
   { id: 'done', on: 'done', icon: '✅', name: 'First Task', desc: 'Claude finishes a task while she watches' },
   { id: 'done100', on: 'done', need: 100, icon: '💯', name: 'Centurion', desc: '100 finished tasks' },

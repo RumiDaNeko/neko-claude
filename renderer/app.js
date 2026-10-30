@@ -68,6 +68,7 @@ const TOOL_LINES = [
   [/^(Grep|Glob|LS)$/, 'Searching the code…'],
   [/^(Edit|MultiEdit|Write|NotebookEdit)$/, 'Writing code…'],
   [/^(WebFetch|WebSearch)$/, 'Browsing the web…'],
+  [/^Chat$/, 'Writing you a reply~ ✍️'],
   [/^(Agent|Task)$/, 'Calling in helpers…'],
   [/^(TodoWrite|.*update_plan)$/, 'Making a plan…'],
   [/browser|Browser|chrome/, 'Clicking around…'],
@@ -77,7 +78,7 @@ const TOOL_KINDS = [
   [/^(Bash|PowerShell)$/, 'term'],
   [/^(Read|NotebookRead)$/, 'read'],
   [/^(Grep|Glob|LS)$/, 'search'],
-  [/^(Edit|MultiEdit|Write|NotebookEdit)$/, 'edit'],
+  [/^(Edit|MultiEdit|Write|NotebookEdit|Chat)$/, 'edit'],
   [/^(WebFetch|WebSearch)$/, 'web'],
   [/browser|Browser|chrome|computer/, 'web'],
   [/^(Agent|Task)$/, 'agent'],
@@ -146,10 +147,12 @@ api.onClaude((ev) => {
       sessions.set(id, { status: 'idle', at: Date.now() });
       doAction('hello', 2500);
       if (ev.cowork) say(SISTER ? 'Hi! I\'ll keep you company on this Cowork task~ ✨' : pick(['Cowork time! Let\'s get it done~ 🤝', 'Ooh, a Cowork task! I\'m on it~ ✨', 'Coworking with you~ 🤝']), 3000);
+      else if (ev.chat) say(SISTER ? 'Hi! I\'ll sit in on this chat~ 💬' : pick(['Ooh, chatting with Claude? I\'ll listen in~ 💬', 'Chat time! 💬', 'What are we asking Claude? 👀']), 3000);
       else say(SISTER ? 'Hi! I\'m her little sister~ I\'ll help with this one ✨' : 'Hi! Let\'s build something ✨', 3000);
       if (!SISTER) morningCoffee();
       achieve(SISTER ? 'sister' : 'hello');
       if (ev.cowork) achieve('cowork');
+      if (ev.chat) achieve('chat');
       break;
     case 'Adopt': // her sister went home; this session is hers now
       sessions.set(id, { status: 'idle', at: Date.now() });
@@ -182,7 +185,7 @@ api.onClaude((ev) => {
       // Cowork's status file says what it's up to: she reads it out
       if (ev.cowork && ev.message) say(ev.message, 4000);
       else if (!prev || prev.tool !== ev.tool || prev.status !== 'working') {
-        const aloud = THINK_ALOUD[toolKind(ev.tool)];
+        const aloud = !ev.chat && THINK_ALOUD[toolKind(ev.tool)];
         say(aloud && Math.random() < 0.35 ? pick(aloud) : toolLine(ev.tool), 4000);
       }
       if (!reactToCommand('pre', ev) && /^(Grep|Glob)$/.test(ev.tool || '') && Math.random() < 0.25) {

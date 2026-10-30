@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "clawde chan for claude.ai",
+  "version": "1.0.0",
+  "description": "Lets clawde chan (the desktop companion) react while Claude answers you on claude.ai.",
+  "icons": { "128": "icon.png" },
+  "content_scripts": [{ "matches": ["https://claude.ai/*"], "js": ["content.js"], "run_at": "document_idle" }],
+  "background": { "service_worker": "background.js", "scripts": ["background.js"] },
+  "host_permissions": ["http://127.0.0.1:47321/*"],
+  "browser_specific_settings": { "gecko": { "id": "clawde-chan@rumidaneko", "strict_min_version": "121.0" } }
+}
