@@ -1191,7 +1191,6 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 @keyframes tapKey { from { transform: translateY(0); } to { transform: translateY(-2.4px); } }
 
 /* ---------- how she works depends on what Claude's doing ---------- */
-.arm-mag { display: none; }
 /* thinking it over (or planning, or waiting on helpers): cheek on her fist, eyes up, one hand idly tapping */
 #char.work.wk-think #armR { animation: none; transform: rotate(-122deg); }
 #char.work.wk-think .thR { display: none; }
@@ -1201,12 +1200,15 @@ body.grip-bottom #grip-bottom { animation: gripSqueezeUp 8s ease-in-out infinite
 /* reading: eyes run along the lines, then back to the start of the next */
 #char.work.wk-read .rig .gaze { animation: readScan 2.4s ease-in-out infinite; }
 @keyframes readScan { 0% { transform: translate(-3px, 5.5px); } 70% { transform: translate(3px, 6.5px); } 80% { transform: translate(3px, 6.5px); } 92%, 100% { transform: translate(-3px, 7px); } }
-/* searching: she lifts a magnifying glass and peers through it at the screen, sweeping it side to side */
-#char.work.wk-search .arm-mag { display: inline; }
-#char.work.wk-search #armR { animation: magPeer 2.2s ease-in-out infinite; }
+/* searching: elbow out, she holds a magnifying glass up to her eye and peers at the screen through it */
+.arm-mag { display: none; }
+#char.work.wk-search #armR { display: none; }
+#char.work.wk-search #snArmR, #char.work.wk-search .arm-mag { display: inline; }
+#char.work.wk-search #snArmR .upper { animation: magHold 2.2s ease-in-out infinite; }
+#char.work.wk-search #snArmR .fore { transform: rotate(220deg); }
 #char.work.wk-search .rig .gaze { animation: magFollow 2.2s ease-in-out infinite; }
-@keyframes magPeer { 0%, 100% { transform: rotate(-152deg); } 50% { transform: rotate(-144deg); } }
-@keyframes magFollow { 0%, 100% { transform: translate(1.5px, 6.5px); } 50% { transform: translate(-1.5px, 6.5px); } }
+@keyframes magHold { 0%, 100% { transform: rotate(-40deg); } 50% { transform: rotate(-34deg); } }
+@keyframes magFollow { 0%, 100% { transform: translate(1.5px, 5px); } 50% { transform: translate(-1px, 5px); } }
 .mag-handle { fill: none; stroke: #6b4434; stroke-width: 3.2; stroke-linecap: round; }
 .mag-lens { fill: rgba(205, 232, 255, 0.5); stroke: #6b4434; stroke-width: 2.2; }
 .mag-glint { fill: none; stroke: #fff; stroke-width: 1.3; stroke-linecap: round; opacity: 0.9; }
