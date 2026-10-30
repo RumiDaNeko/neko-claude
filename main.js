@@ -26,6 +26,7 @@ const ACHIEVEMENTS = [
   { id: 'cowork', on: 'cowork', icon: '🤝', name: 'Coworkers', desc: 'Work with her through Claude Cowork' },
   { id: 'done', on: 'done', icon: '✅', name: 'First Task', desc: 'Claude finishes a task while she watches' },
   { id: 'done100', on: 'done', need: 100, icon: '💯', name: 'Centurion', desc: '100 finished tasks' },
+  { id: 'coffeebreak', on: 'coffeebreak', icon: '☕', name: 'Coffee Break', desc: 'She fetches a coffee during a 5+ minute task' },
   { id: 'marathon', on: 'marathon', icon: '🏃', name: 'Marathon', desc: 'Claude works 10+ minutes in one go' },
   { id: 'nightowl', on: 'nightowl', icon: '🦉', name: 'Night Owl', desc: 'Prompt Claude between 2 and 5 am' },
   { id: 'error', on: 'error', icon: '😱', name: 'It Broke', desc: 'A tool run fails' },

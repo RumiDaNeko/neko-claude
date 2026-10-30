@@ -140,6 +140,8 @@ svg [transform] { transform-box: view-box; } /* keep attribute transforms (rotat
 #char.work #glow { animation: glow 2s ease-in-out infinite; }
 #char.work #clip { animation: spin 3s linear infinite; }
 #char.work #laptop .logo { animation: pulse 1.2s ease-in-out infinite; }
+#cafe .logo { transform-origin: center; animation: pulse 1.2s ease-in-out infinite; }
+#cafe .logo path { stroke: #e8906e; stroke-width: 2.6; stroke-linecap: round; fill: none; }
 #char.work.thinking #fx-think { display: inline; animation: float 2s ease-in-out infinite; }
 
 /* ---------- waiting for the user ---------- */
@@ -1636,3 +1638,36 @@ body.toasting #bubble { top: 48px; }
 /* a poke while she sleeps in bed: the blanket shifts as she stirs */
 #blanket { transition: translate 0.15s ease-out; }
 #char.stir #blanket { translate: 0 -2.5px; }
+
+/* ---------- coffee break: a task past 5 minutes; laptop on a little desk, off she goes, back with a mug ---------- */
+#cafe, .s-mug { display: none; }
+#char.brew #cafe { display: inline; }
+#char.brew #cushion, #char.brew #laptop { display: none; }
+.desk-front { opacity: 1; }
+.desk-line { stroke: rgba(80, 40, 20, 0.25); stroke-width: 1.2; fill: none; }
+.brb { display: none; }
+.brb-note { fill: #fff3a8; stroke: rgba(80, 60, 20, 0.35); stroke-width: 0.6; }
+.brb-text { font: 700 6.5px/1 system-ui, sans-serif; fill: #6b4434; text-anchor: middle; }
+#char.brew-out .brb, #char.brew-away .brb, #char.brew-back .brb { display: inline; }
+/* setting it down: the desk slides up under the laptop and she stands up from her cushion */
+#char.brew-set .cafe-desk { animation: deskIn 0.9s cubic-bezier(.3,.7,.4,1) both; }
+#char.brew-set .cafe-laptop { animation: laptopUp 1.2s ease-in-out both; }
+#char.brew-set #body { animation: standUp 1.4s ease-in-out both; }
+@keyframes deskIn { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes laptopUp { 0%, 30% { transform: translateY(16px); } 100% { transform: none; } }
+@keyframes standUp { 0%, 45% { transform: translateY(16px); } 100% { transform: none; } }
+/* off to the kitchen (walking left), and back with a mug (walking right) */
+#side { transform-box: view-box; transform-origin: 100px 200px; }
+#char.brew-out #side { animation: brewOut 2.4s linear both; }
+#char.brew-back #side { animation: brewBack 2.4s linear both; }
+#char.brew-away #body, #char.brew-away #side, #char.brew-away #shadow { display: none; }
+#char.brew-out #shadow, #char.brew-back #shadow { display: none; }
+@keyframes brewOut { from { transform: scaleX(-1); } to { transform: translateX(-170px) scaleX(-1); } }
+@keyframes brewBack { from { transform: translateX(-170px); } to { transform: none; } }
+#char.brew-back .s-mug { display: inline; }
+#char.brew-back #sArmF { animation: none !important; transform: rotate(-30deg); }
+/* back behind the desk: the mug sits by the laptop between sips */
+#char.brew .cafe-mug { display: none; }
+#char.brew-sip .cafe-mug { display: inline; }
+#char.brew-sip.snack .cafe-mug { display: none; }
+#char.brew-sip .rig .gaze { transform: translate(0, 6px); }

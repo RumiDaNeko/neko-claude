@@ -51,6 +51,7 @@ A Cowork task opens with "Cowork time! Let's get it done~ 🤝" (and the **Cowor
 | You send a prompt | sits on her cushion with the laptop, glasses on, fired up 🔥 |
 | A tool runs | types away, eyes on the screen, glancing up at you now and then. How she works follows the tool: reading, her eyes run along the lines; searching, she holds a magnifying glass up to her eye and peers at the screen; running a command, she grips both sides of the laptop and leans in to watch; thinking it over, she props her cheek on her fist |
 | A long turn | every so often she takes a big stretch, or shakes out her hands and dives back in |
+| A task past 5 minutes | coffee break: a little desk slides up under the laptop, she sticks a "brb" note on it, walks off and comes back with a mug, then sips and watches Claude work from behind the desk |
 | A tool fails | jolts, sweats and types twice as fast ("Eek! An error!"); a few in a row and she's in tears |
 | Something scary (`rm -rf`, `git push --force`, `git reset --hard`…) | "Are you sure about that?! 😰" |
 | Tests run / pass / fail | fingers crossed, then "All green! 🟢" or "Red tests… 😭" |
@@ -95,7 +96,7 @@ Right-click her (or click the tray icon) for the menu.
 
 ## Achievements 🏆
 
-52 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in `achievements.json` in the app's user-data folder; the list lives in `ACHIEVEMENTS` in `main.js`.
+53 of them, from the everyday (**Head Pats**, **Shipped**, **All Green**) to the rarer (**Eagle Eye**: find her in hide and seek within 3 seconds; **Night Owl**: prompt Claude between 2 and 5 am; **Five More Minutes**: wake her in the middle of the night). A gold toast pops up over her head when you unlock one, and the **Achievements 🏆** menu lists them all with what's left to get. Progress is saved in `achievements.json` in the app's user-data folder; the list lives in `ACHIEVEMENTS` in `main.js`.
 
 **Mood:** pats, treats, finding her, finished work and passing tests cheer her up; teasing, errors and being ignored wear her down. A happy clawde chan hums and dances more; a grumpy one mopes and has a shorter fuse. Her mood and the menu toggles are remembered across restarts.
 

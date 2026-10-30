@@ -8,7 +8,7 @@ const hit = document.getElementById('hit');
 const bubble = document.getElementById('bubble');
 const bubbleText = document.getElementById('bubble-text');
 
-const POSES = ['idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk', 'hop', 'snack', 'megane', 'peek', 'pullout', 'stalk', 'pounce', 'perch', 'stuffed', 'hang', 'climb', 'toestand', 'hifive'];
+const POSES = ['brew', 'idle', 'walk', 'work', 'wait', 'cheer', 'hello', 'dance', 'sleep', 'drag', 'fall', 'flop', 'twirl', 'backflip', 'achoo', 'lounge', 'topple', 'yeet', 'exit', 'sulk', 'hop', 'snack', 'megane', 'peek', 'pullout', 'stalk', 'pounce', 'perch', 'stuffed', 'hang', 'climb', 'toestand', 'hifive'];
 
 // Goofy tricks she does now and then: [pose, duration ms, lines]
 const TRICKS = [
@@ -86,7 +86,7 @@ const TOOL_KINDS = [
 const BADGE_KINDS = ['think', 'term', 'read', 'search', 'edit', 'web', 'agent', 'plan', 'gear', 'ask', 'done', 'battery'];
 const toolKind = (tool) => (tool ? (TOOL_KINDS.find(([re]) => re.test(tool)) || [, 'gear'])[1] : 'think');
 // the current Claude turn, for the badge's tool count and timer
-const turn = { start: 0, tools: 0, doneUntil: 0, doneText: '', spin: 0 };
+const turn = { start: 0, tools: 0, doneUntil: 0, doneText: '', spin: 0, brewed: false };
 // she's a little Claude: while Claude thinks, her badge cycles through the same kind of whimsical words
 // Claude Code's spinner uses
 const SPIN_WORDS = ['Pondering', 'Musing', 'Noodling', 'Cogitating', 'Percolating', 'Ruminating', 'Brewing', 'Clauding',
@@ -105,6 +105,7 @@ const toolLine = (tool) => (TOOL_LINES.find(([re]) => re.test(tool || '')) || [,
 // how she works for each kind of tool (anything else: plain typing)
 const WORK_STYLE = { think: 'think', plan: 'think', agent: 'think', read: 'read', web: 'read', search: 'search', term: 'term' };
 const WORK_STYLES = ['think', 'read', 'search', 'term'];
+const BREW_AFTER_MS = 5 * 60 * 1000; // a task this long: she leaves the laptop on a desk and fetches a coffee
 const FIDGET_AFTER_MS = 45 * 1000; // a turn this long: she stretches or cracks her knuckles now and then
 
 function claudeStatus() {
@@ -163,6 +164,8 @@ api.onClaude((ev) => {
       turn.errors = 0;
       turn.spin = Math.floor(Math.random() * SPIN_WORDS.length);
       turn.doneUntil = 0;
+      turn.brewed = false;
+      state.brew = null;
       if (Math.random() < 0.4) {
         setFace('fired', 2000);
         say(pick(['Let\'s go! 🔥', 'Leave it to me! 🔥', 'Yosh!']), 2500);
@@ -221,13 +224,15 @@ api.onClaude((ev) => {
       if (ev.limit) { turn.start = 0; outOfJuice(ev.limit); break; }
       if (claudeStatus().status === 'idle') {
         const took = turn.start ? Date.now() - turn.start : 0;
+        const onBreak = !!state.brew;
+        state.brew = null;
         turn.doneUntil = Date.now() + 2600;
         turn.doneText = (turn.tools ? '⚙' + turn.tools + ' · ' : '') + clock(took);
         turn.start = 0;
         // long run: she's earned a coffee
         achieve('done');
         if (took > 10 * 60 * 1000) achieve('marathon');
-        if (took > 3 * 60 * 1000) setTimeout(() => { if (claudeStatus().status === 'idle' && !state.action) snack('coffee', 'Phew… coffee break ☕'); }, 2600);
+        if (took > 3 * 60 * 1000 && !onBreak) setTimeout(() => { if (claudeStatus().status === 'idle' && !state.action) snack('coffee', 'Phew… coffee break ☕'); }, 2600);
         doAction('cheer', 2200);
         sfx('chime');
         changeMood(2);
@@ -1494,6 +1499,19 @@ function setPose(pose, extra = []) {
   charEl.classList.toggle('dizzy', Date.now() < state.dizzyUntil); // shaken or spun around: swirly stars, wobbly
   charEl.classList.toggle('mj', state.action === 'moonwalk' || state.action === 'toestand'); // fedora + glove
   charEl.classList.toggle('flip', state.dir < 0 && pose === 'walk');
+  // coffee break: which step she's on; walking off and back uses the side view, sips borrow the snack arms
+  const brew = pose === 'brew' && state.brew ? state.brew.phase : '';
+  for (const p of ['set', 'out', 'away', 'back', 'sip']) charEl.classList.toggle('brew-' + p, brew === p);
+  if (brew === 'out' || brew === 'back') charEl.classList.add('walk');
+  const sipping = brew === 'sip' && Date.now() < state.brew.sipUntil;
+  if (sipping) {
+    for (const i of ITEMS) charEl.classList.toggle('item-' + i, i === 'coffee');
+    charEl.classList.add('snack', 'drinking');
+  }
+  if (sipping !== charEl.classList.contains('brew-sipping')) {
+    charEl.classList.toggle('brew-sipping', sipping);
+    if (!sipping && pose !== 'snack') charEl.classList.remove('snack', 'drinking', 'item-coffee');
+  }
   if (!spinning) charEl.classList.toggle('view-back', pose === 'sulk' || (pose === 'exit' && !!state.exitBack));
   charEl.classList.toggle('specs', state.alwaysGlasses || Date.now() < state.glassesUntil);
   charEl.classList.toggle('panic', Date.now() < state.panicUntil);
@@ -1536,7 +1554,7 @@ function choosePose(now) {
   // asleep in bed: she sleeps through Claude's work (only you can wake her)
   if (state.asleepSince && bedHours()) { state.inBed = true; return ['sleep', ['lie', 'inbed']]; }
   const claude = claudeStatus();
-  if (claude.status === 'waiting') return ['wait'];
+  if (claude.status === 'waiting') { if (state.brew) { state.brew = null; turn.brewed = true; } return ['wait']; }
   if (claude.status === 'working') {
     state.walkTarget = null;
     if (state.laptopGone) {
@@ -1544,6 +1562,7 @@ function choosePose(now) {
       pullLaptop();
       return [state.action];
     }
+    if (state.brew || (!turn.brewed && turn.start && now - turn.start > BREW_AFTER_MS && !state.dragging && !state.perch)) return brewPose(now);
     return ['work', claude.tool ? [] : ['thinking']];
   }
   if (bubbleSticky) hideBubble();
@@ -1569,6 +1588,32 @@ function choosePose(now) {
   if (now - state.lastActivity > LOUNGE_AFTER_MS) return ['lounge'];
   if (state.walkTarget != null) return ['walk'];
   return ['idle'];
+}
+
+// ---------- coffee break: set the laptop on a desk, walk off, come back with a coffee, sip while Claude works ----------
+const BREW_STEPS = { set: [1500, 'out'], out: [2400, 'away'], away: [6000, 'back'], back: [2400, 'sip'] };
+function brewPose(now) {
+  if (!state.brew) {
+    turn.brewed = true;
+    state.brew = { phase: 'set', at: now, sipAt: 0, sipUntil: 0 };
+    setFace('uwu', 1800);
+    say(pick(['This\'ll take a while~ coffee time ☕', 'Claude\'s got this. Coffee run! ☕', 'Brb, grabbing a coffee~ ☕']), 2600);
+  }
+  const b = state.brew;
+  const step = BREW_STEPS[b.phase];
+  if (step && now - b.at > step[0]) {
+    b.phase = step[1];
+    b.at = now;
+    if (b.phase === 'away') hideBubble();
+    if (b.phase === 'sip') { achieve('coffeebreak'); say(pick(['Back~ ☕ How\'s it going?', '*sip* …still going? Take your time~', 'Coffee acquired ☕']), 2600); b.sipAt = now + 3000; }
+  }
+  // back at the desk: a sip every so often, eyes on the screen in between
+  if (b.phase === 'sip' && now > b.sipAt) {
+    b.sipAt = now + 9000 + Math.random() * 7000;
+    b.sipUntil = now + 3200;
+    setFace('sip', 3000);
+  }
+  return ['brew'];
 }
 
 // ---------- movement ----------
